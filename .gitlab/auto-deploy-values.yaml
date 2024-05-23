@@ -10,13 +10,13 @@ image:
 application.migrateCommand: ["zammad-init"]
 startupProbe:
   probeType: "exec"
-  command: "true"
+  command: ["true"]
 livenessProbe:
   probeType: "exec"
-  command: "true"
+  command: ["true"]
 readinessProbe:
   probeType: "exec"
-  command: "true"
+  command: ["true"]
 resources:
   requests:
     # cpu: 300m
@@ -39,13 +39,13 @@ workers:
     command: ["zammad-scheduler"]
     startupProbe:
       probeType: "exec"
-      command: "true"
+      command: ["true"]
     livenessProbe:
       probeType: "exec"
-      command: "true"
+      command: ["true"]
     readinessProbe:
       probeType: "exec"
-      command: "true"
+      command: ["true"]
     # resources:
     #   requests:
     #     memory: 1Gi
