@@ -36,7 +36,7 @@ persistence:
 workers:
   worker:
     replicaCount: "1"
-    command: ["zammad-scheduler"]
+    command: ["/docker-entrypoint.sh", "zammad-scheduler"]
     startupProbe:
       probeType: "exec"
       command: ["true"]
