@@ -1,32 +1,26 @@
 service:
   externalPort: 3000
   internalPort: 3000
-# image:
-#   secrets:
-#   - name: skdigital-bonet-registry
+image:
+  secrets:
+  - name: skdigital-bonet-registry
 # ingress:
 #   annotations:
 #     nginx.ingress.kubernetes.io/proxy-body-size: 256m
-# application.migrateCommand: ["bundle", "exec", "rails", "db:migrate"]
+application.migrateCommand: ["zammad-init"]
 startupProbe:
-  periodSeconds: 5
   probeType: "exec"
-  command:
-  - "true"
+  command: "true"
 livenessProbe:
-  initialDelaySeconds: 20
   probeType: "exec"
-  command:
-  - "true"
+  command: "true"
 readinessProbe:
-  initialDelaySeconds: 20
   probeType: "exec"
-  command:
-  - "true"
-# resources:
-#   requests:
-#     cpu: 300m
-#     memory: 1.5Gi
+  command: "true"
+resources:
+  requests:
+    # cpu: 300m
+    memory: 1Gi
 #   limits:
 #     memory: 600Mi
 persistence:
@@ -39,24 +33,21 @@ persistence:
       accessMode: ReadWriteMany
       size: 1Gi
       storageClass: nfs-client
-# workers:
-#   worker:
-#     replicaCount: "1"
-#     command: ["bundle", "exec", "good_job", "start"]
-#     startupProbe:
-#       probeType: "exec"
-#       command:
-#       - "true"
-#     livenessProbe:
-#       probeType: "exec"
-#       command:
-#       - "true"
-#     readinessProbe:
-#       probeType: "exec"
-#       command:
-#       - "true"
-#     # resources:
-#     #   requests:
-#     #     memory: 1Gi
-#     #   limits:
-#     #     memory: 1Gi
+workers:
+  worker:
+    replicaCount: "1"
+    command: ["zammad-scheduler"]
+    startupProbe:
+      probeType: "exec"
+      command: "true"
+    livenessProbe:
+      probeType: "exec"
+      command: "true"
+    readinessProbe:
+      probeType: "exec"
+      command: "true"
+    # resources:
+    #   requests:
+    #     memory: 1Gi
+    #   limits:
+    #     memory: 1Gi
