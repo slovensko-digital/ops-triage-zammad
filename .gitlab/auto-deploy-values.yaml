@@ -19,10 +19,9 @@ readinessProbe:
   command: ["true"]
 resources:
   requests:
-    # cpu: 300m
-    memory: 1Gi
-#   limits:
-#     memory: 600Mi
+    memory: 600Mi
+  limits:
+    memory: 800Mi
 persistence:
   enabled: true
   volumes:
@@ -46,8 +45,8 @@ workers:
     readinessProbe:
       probeType: "exec"
       command: ["true"]
-    # resources:
-    #   requests:
-    #     memory: 1Gi
-    #   limits:
-    #     memory: 1Gi
+    resources:
+      requests:
+        memory: 2Gi
+      limits:
+        memory: 2.5Gi
