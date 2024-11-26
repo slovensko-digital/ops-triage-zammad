@@ -4,9 +4,9 @@ service:
 image:
   secrets:
   - name: skdigital-bonet-registry
-# ingress:
-#   annotations:
-#     nginx.ingress.kubernetes.io/proxy-body-size: 256m
+ingress:
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 256m
 application.migrateCommand: ["zammad-init"]
 startupProbe:
   probeType: "exec"
