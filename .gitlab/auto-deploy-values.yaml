@@ -30,9 +30,9 @@ readinessProbe:
   command: ["true"]
 resources:
   requests:
-    memory: 600Mi
+    memory: 1.5Gi
   limits:
-    memory: 800Mi
+    memory: 2Gi
 persistence:
   enabled: true
   volumes:
