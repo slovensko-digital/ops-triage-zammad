@@ -1,0 +1,103 @@
+service: triage-zammad
+
+image: sd/triage-zammad
+
+servers:
+  web:
+    # nginx should be started just after the initialization is done
+    cmd: "/docker-entrypoint.sh zammad-init && /docker-entrypoint.sh zammad-nginx"
+  railsserver:
+    cmd: "/docker-entrypoint.sh zammad-railsserver"
+  websocket:
+    cmd: "/docker-entrypoint.sh zammad-websocket"
+  worker:
+    cmd: "/docker-entrypoint.sh zammad-scheduler"
+
+deploy_timeout: 120
+
+proxy:
+  ssl: true
+  host: triage.hetzner.slovensko.digital
+  app_port: 8080
+  healthcheck:
+    path: /
+    interval: 10
+
+env:
+  clear:
+    NGINX_EXPOSE_PORT: 8080
+    NGINX_PORT: 8080
+    # NGINX_SERVER_SCHEME: \$scheme
+    ZAMMAD_RAILSSERVER_HOST: triage-zammad-railsserver
+    ZAMMAD_RAILSSERVER_PORT: 3000
+    ZAMMAD_WEBSOCKET_HOST: triage-zammad-websocket
+    ZAMMAD_WEBSOCKET_PORT: 6042
+
+    BACKGROUND_SERVICES_LOG_TO_STDOUT: 1
+    POSTGRESQL_DB: triage_zammad_staging
+    POSTGRESQL_HOST: triage-zammad-postgres
+    POSTGRESQL_USER: triage_zammad
+    RAILS_LOG_TO_STDOUT: true
+    RAILS_SERVE_STATIC_FILES: true
+    REDIS_URL: redis://triage-zammad-redis:6379/1
+    ZAMMAD_PROCESS_DELAYED_JOBS_WORKERS: 1
+    ZAMMAD_PROCESS_SCHEDULED_JOBS_WORKERS: 1
+    
+    # TODO use ES in future
+    ELASTICSEARCH_ENABLED: false
+
+  secret:
+    - RAILS_MASTER_KEY
+    - POSTGRESQL_PASS
+
+registry:
+  server: registry.hetzner.slovensko.digital
+  username:
+    - KAMAL_REGISTRY_USERNAME
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+accessories:
+  postgres:
+    image: postgres:15
+    roles:
+      - railsserver
+      - websocket
+      - worker
+    env:
+      clear:
+        POSTGRES_USER: triage_zammad
+        POSTGRES_DB: triage_zammad_staging
+      secret:
+        - POSTGRES_PASSWORD
+    directories:
+      - data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7.0
+    roles:
+      - railsserver
+      - websocket
+      - worker
+    directories:
+      - data:/data    
+
+builder:
+  arch: amd64
+  remote: ssh://marek-celuch@hetzner
+
+volumes:
+  - "triage_zammad_storage:/opt/zammad/storage"
+
+# Bridge fingerprinted assets, like JS and CSS, between versions to avoid
+# hitting 404 on in-flight requests. Combines all files from new and old
+# version inside the asset_path.
+#
+# asset_path: /app/public/assets
+
+# Configure rolling deploys by setting a wait time between batches of restarts.
+#
+# boot:
+#   limit: 10 # Can also specify as a percentage of total hosts, such as "25%"
+#   wait: 2
+

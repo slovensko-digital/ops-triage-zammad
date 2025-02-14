@@ -1,0 +1,19 @@
+servers:
+  web:
+    hosts:
+      - hetzner
+  worker:
+    hosts:
+      - hetzner
+  railsserver:
+    hosts:
+      - hetzner
+  websocket:
+    hosts:
+      - hetzner
+
+proxy:
+  host: hops.hetzner.slovensko.digital
+
+ssh:
+  user: marek-celuch
