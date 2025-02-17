@@ -5,13 +5,19 @@ image: sd/triage-zammad
 servers:
   web:
     # nginx should be started just after the initialization is done
-    cmd: "/docker-entrypoint.sh zammad-init && /docker-entrypoint.sh zammad-nginx"
+    # cmd: "'/docker-entrypoint.sh zammad-init && /docker-entrypoint.sh zammad-nginx'"
+    labels:
+      service: "nginx"
   railsserver:
-    cmd: "/docker-entrypoint.sh zammad-railsserver"
+    cmd: "'/docker-entrypoint.sh zammad-railsserver'"
+    options:
+      network-alias: "triage-zammad-railsserver-<%= `git rev-parse HEAD`.strip %>"
   websocket:
-    cmd: "/docker-entrypoint.sh zammad-websocket"
+    cmd: "'/docker-entrypoint.sh zammad-websocket'"
+    options:
+      network-alias: "triage-zammad-websocket-<%= `git rev-parse HEAD`.strip %>"
   worker:
-    cmd: "/docker-entrypoint.sh zammad-scheduler"
+    cmd: "'/docker-entrypoint.sh zammad-scheduler'"
 
 deploy_timeout: 120
 
@@ -28,9 +34,9 @@ env:
     NGINX_EXPOSE_PORT: 8080
     NGINX_PORT: 8080
     # NGINX_SERVER_SCHEME: \$scheme
-    ZAMMAD_RAILSSERVER_HOST: triage-zammad-railsserver
+    ZAMMAD_RAILSSERVER_HOST: "triage-zammad-railsserver-<%= `git rev-parse HEAD`.strip %>"
     ZAMMAD_RAILSSERVER_PORT: 3000
-    ZAMMAD_WEBSOCKET_HOST: triage-zammad-websocket
+    ZAMMAD_WEBSOCKET_HOST: "triage-zammad-websocket-<%= `git rev-parse HEAD`.strip %>"
     ZAMMAD_WEBSOCKET_PORT: 6042
 
     BACKGROUND_SERVICES_LOG_TO_STDOUT: 1
