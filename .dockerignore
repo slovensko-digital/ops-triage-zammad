@@ -1,6 +1,5 @@
 .gitlab-ci.yml
 .gitlab/
 chart/
-config/
 .kamal/
 .ruby-version
