@@ -6,6 +6,9 @@ servers:
     hosts:
       - dev.slovensko.digital
 
+x-load-env:
+  - "<% require 'dotenv'; Dotenv.load('.env.staging') %>"
+
 proxy:
   host: triage.ops.dev.slovensko.digital
 
