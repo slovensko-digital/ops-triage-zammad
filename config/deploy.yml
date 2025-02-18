@@ -52,10 +52,10 @@ aliases:
   shell: app exec --interactive --reuse "bash"
   logs: app logs -f
   dbc: app exec --interactive --reuse "bin/rails dbconsole"
-  zammad-init: kamal accessory exec railsserver "/docker-entrypoint.sh zammad-init"
+  zammad_init: accessory exec railsserver -i --reuse "/docker-entrypoint.sh zammad-init"
 
 registry: &registry
-  server: registry.hetzner.slovensko.digital
+  server: registry.dev.slovensko.digital
   username:
     - KAMAL_REGISTRY_USERNAME
   password:
@@ -91,7 +91,7 @@ accessories:
 
 builder:
   arch: amd64
-  remote: ssh://marek-celuch@hetzner
+  remote: ssh://kamal@hetzner
 
 volumes:
   - ops_triage_zammad_storage:/opt/zammad/storage

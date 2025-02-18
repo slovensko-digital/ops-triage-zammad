@@ -10,4 +10,4 @@ proxy:
   host: triage.ops.dev.slovensko.digital
 
 ssh:
-  user: marek-celuch
+  user: kamal

@@ -1,4 +1,4 @@
-FROM zammad/zammad-docker-compose:stable
+FROM zammad/zammad-docker-compose:6.4.1-49
 
 # RUN sed -i 's/config.log_level = :info/config.log_level = :debug/' /opt/zammad/config/environments/production.rb
 
