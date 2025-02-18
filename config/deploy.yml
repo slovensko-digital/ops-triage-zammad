@@ -7,7 +7,7 @@ servers:
     # nginx should be started just after the initialization is done
     # run `kamal zammad-init` first
     cmd: "'/usr/sbin/nginx -g \"daemon off;\"'"
-    # might ditch the whole nginx when https://github.com/basecamp/kamal-proxy/issues/48 is implemented
+    # TODO might ditch the whole nginx when https://github.com/basecamp/kamal-proxy/issues/48 is implemented
     options:
       "add-host": host.docker.internal:host-gateway
 
@@ -91,7 +91,7 @@ accessories:
 
 builder:
   arch: amd64
-  remote: ssh://kamal@hetzner
+  remote: ssh://kamal@dev.slovensko.digital
 
 volumes:
   - ops_triage_zammad_storage:/opt/zammad/storage

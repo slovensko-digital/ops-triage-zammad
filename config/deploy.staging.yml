@@ -1,10 +1,10 @@
 servers:
   web:
     hosts:
-      - hetzner
+      - dev.slovensko.digital
   worker:
     hosts:
-      - hetzner
+      - dev.slovensko.digital
 
 proxy:
   host: triage.ops.dev.slovensko.digital
