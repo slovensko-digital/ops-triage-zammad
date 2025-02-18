@@ -1,9 +1,9 @@
 upstream zammad-railsserver {
-  server 172.18.0.10:3000;
+  server ops-triage-zammad-railsserver:3000;
 }
 
 upstream zammad-websocket {
-  server 172.18.0.12:6042;
+  server ops-triage-zammad-websocket:6042;
 }
 
 server {
