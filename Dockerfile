@@ -4,8 +4,9 @@ FROM zammad/zammad-docker-compose:6.4.1-49
 
 COPY ./config/nginx.conf /etc/nginx/sites-enabled/default
 
+COPY ./lib/tasks/ops/triage.rake ./lib/tasks/ops/triage.rake
+
 EXPOSE 3000
 EXPOSE 6042
 
-ENTRYPOINT [ "/bin/sh", "-c" ]
-CMD [ "/docker-entrypoint.sh", "zammad-railsserver" ]
+CMD [ "zammad-railsserver" ]
