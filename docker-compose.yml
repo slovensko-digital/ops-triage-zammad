@@ -60,7 +60,7 @@ x-shared:
 services:
   zammad-backup:
     <<: *zammad-service
-    command: ["/docker-entrypoint.sh zammad-backup"]
+    command: ["zammad-backup"]
     volumes:
       - zammad-backup:/var/tmp/zammad
       - zammad-storage:/opt/zammad/storage:ro
@@ -82,7 +82,7 @@ services:
 
   zammad-init:
     <<: *zammad-service
-    command: ["/docker-entrypoint.sh zammad-init"]
+    command: ["zammad-init"]
     depends_on:
       - zammad-postgresql
     restart: on-failure
@@ -95,7 +95,7 @@ services:
 
   zammad-nginx:
     <<: *zammad-service
-    command: ["/docker-entrypoint.sh zammad-nginx"]
+    command: ["zammad-nginx"]
     expose:
       - "${NGINX_PORT:-8080}"
     ports:
@@ -115,7 +115,7 @@ services:
 
   zammad-railsserver:
     <<: *zammad-service
-    command: ["/docker-entrypoint.sh zammad-railsserver"]
+    command: ["zammad-railsserver"]
 
   zammad-redis:
     image: redis:${REDIS_VERSION:-7.4.2-alpine}
@@ -125,11 +125,11 @@ services:
 
   zammad-scheduler:
     <<: *zammad-service
-    command: ["/docker-entrypoint.sh zammad-scheduler"]
+    command: ["zammad-scheduler"]
 
   zammad-websocket:
     <<: *zammad-service
-    command: ["/docker-entrypoint.sh zammad-websocket"]
+    command: ["zammad-websocket"]
 
 volumes:
   elasticsearch-data:
