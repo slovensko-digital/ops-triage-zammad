@@ -14,7 +14,7 @@ servers:
     options:
       "add-host": host.docker.internal:host-gateway
 
-deploy_timeout: 180
+deploy_timeout: 90
 
 proxy:
   ssl: true

@@ -1,1 +1,1 @@
-/docker-entrypoint.sh zammad-init && /usr/sbin/nginx -g \"daemon off;\"
+/docker-entrypoint.sh zammad-init && /usr/sbin/nginx -g "daemon off;"
