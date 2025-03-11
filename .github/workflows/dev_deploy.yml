@@ -1,0 +1,38 @@
+name: Deploy to DEV
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  dev-deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEV_DEPLOY_KEY }}
+
+      - name: Run deploy command
+        env:
+          KAMAL_REGISTRY_USERNAME: ${{ secrets.KAMAL_REGISTRY_USERNAME }}
+          KAMAL_REGISTRY_PASSWORD: ${{ secrets.KAMAL_REGISTRY_PASSWORD }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+
+        run: |
+          kamal build push -d staging
+          kamal deploy -P -d staging
+          kamal accessory reboot railsserver -d staging
+          kamal accessory reboot websocket -d staging
