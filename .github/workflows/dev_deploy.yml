@@ -35,3 +35,4 @@ jobs:
           kamal build push -d staging
           kamal deploy -P -d staging
           kamal accessory reboot railsserver -d staging
+          kamal accessory reboot websocket -d staging
