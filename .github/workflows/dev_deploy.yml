@@ -2,6 +2,11 @@ name: Deploy to DEV
 
 on:
   workflow_call:
+    secrets:
+      POSTGRES_PASSWORD:
+        required: true
+      RAILS_MASTER_KEY:
+        required: true
   workflow_dispatch:
 
 jobs:
