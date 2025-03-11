@@ -34,4 +34,4 @@ jobs:
         run: |
           kamal build push -d staging
           kamal deploy -P -d staging
-          kamal accessory reboot all -d staging
+          kamal accessory reboot railsserver -d staging
