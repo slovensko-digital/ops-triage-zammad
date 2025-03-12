@@ -121,8 +121,8 @@ namespace :ops do
 
       Setting.set('customer_ticket_create', false) # disable WEB interface ticket creation
 
-      # create role for OPS users
-      ops_user_role = Role.find_or_initialize_by(name: 'OPS User') do |role|
+      # create role for Portal users
+      ops_user_role = Role.find_or_initialize_by(name: 'Portal User') do |role|
         role.note = __('OPS Portal users.')
         role.default_at_signup = false
         role.preferences = {}
