@@ -122,14 +122,34 @@ namespace :ops do
       Setting.set('customer_ticket_create', false) # disable WEB interface ticket creation
 
       # create role for Portal users
-      ops_user_role = Role.find_or_initialize_by(name: 'Portal User') do |role|
+      Role.find_or_initialize_by(name: 'Portal User').tap do |role|
         role.note = __('OPS Portal users.')
         role.default_at_signup = false
         role.preferences = {}
         role.updated_by_id = 1
         role.created_by_id = 1
+      end.save!
+
+      # create Incoming group
+      incoming_group = Group.find_or_initialize_by(name: 'Incoming').tap do |group|
+        group.note = __('OPS Incoming tickets group.')
+        group.active = true
+        group.updated_by_id = 1
+        group.created_by_id = 1
       end
-      ops_user_role.save!
+      incoming_group.save!
+
+      # create role for Portal Tech Account
+      portal_tech_account = Role.find_or_initialize_by(name: 'Portal Tech Account').tap do |role|
+        role.note = __('OPS Portal tech account.')
+        role.active = true
+        role.updated_by_id = 1
+        role.created_by_id = 1
+      end
+      portal_tech_account.permission_grant('admin.user')
+      portal_tech_account.permission_grant('ticket.agent')
+      portal_tech_account.permission_grant('user_preferences.access_token')
+      portal_tech_account.save!
 
       ObjectManager::Attribute.add(
         object: 'Ticket',
@@ -222,6 +242,105 @@ namespace :ops do
         updated_by_id: 1
       )
 
+      ObjectManager::Attribute.add(
+        object: 'Ticket',
+        name: 'origin',
+        display: __('Zdroj tiketu'),
+        data_type: 'select',
+        data_option: {
+          options: [
+            { name: 'Portál', value: 'portal' },
+          ],
+          customsort: 'off',
+          default: '',
+          null: true,
+          nulloption: true,
+          maxlength: 255,
+        },
+        active: true,
+        screens: {
+          create_middle: {
+            'ticket.customer' => { shown: true },
+            'ticket.agent' => { shown: true }
+          },
+          edit: {
+            'ticket.customer' => { shown: true },
+            'ticket.agent' => { shown: true }
+          }
+        },
+        position: 2000,
+        created_by_id: 1,
+        updated_by_id: 1
+      )
+
+      ObjectManager::Attribute.add(
+        object: 'Ticket',
+        name: 'municipality',
+        display: __('Oblasť'),
+        data_type: 'tree_select',
+        data_option: {
+          options: [],
+          default: '',
+          null: true,
+          nulloption: true,
+          maxlength: 255,
+        },
+        active: true,
+        screens: {
+          create_middle: {
+            'ticket.customer' => { shown: true },
+            'ticket.agent' => { shown: true }
+          },
+          edit: {
+            'ticket.customer' => { shown: true },
+            'ticket.agent' => { shown: true }
+          }
+        },
+        position: 21,
+        created_by_id: 1,
+        updated_by_id: 1
+      ) unless ObjectManager::Attribute.where(name: 'municipality', object_lookup: ObjectLookup.by_name('Ticket')).exists?
+
+      {
+        'address_state' => 'Adresa (Kraj)',
+        'address_county' => 'Adresa (Okres)',
+        'address_city' => 'Adresa (Mesto)',
+        'address_city_district' => 'Adresa (Mestská časť)',
+        'address_suburb' => 'Adresa (Miestna časť)',
+        'address_village' => 'Adresa (Obec)',
+        'address_road' => 'Adresa (Ulica)',
+        'address_house_number' => 'Adresa (Číslo domu)',
+      }.each.with_index(51) do |(name, title), position|
+        ObjectManager::Attribute.find_by_name(name)&.update(editable: true) # allow editing in migration
+        ObjectManager::Attribute.add(
+          object: 'Ticket',
+          name: name.dup,
+          display: __(title),
+          data_type: 'input',
+          data_option: {
+            type: 'text',
+            default: '',
+            null: true,
+            maxlength: 255,
+          },
+          active: true,
+          screens: {
+            create_middle: {
+              'ticket.customer' => { shown: true },
+              'ticket.agent' => { shown: true }
+            },
+            edit: {
+              'ticket.customer' => { shown: true },
+              'ticket.agent' => { shown: true }
+            }
+          },
+          position: position,
+          created_by_id: 1,
+          updated_by_id: 1
+        )
+        ObjectManager::Attribute.find_by_name(name).update(editable: false)
+      end
+
       subcategory_names = OPS_CATEGORIES_MAP.values.flat_map { |v| v.keys.map(&:to_s) }.uniq - [ "" ]
       ObjectManager::Attribute.add(
         object: 'Ticket',
@@ -282,6 +401,7 @@ namespace :ops do
         updated_by_id: 1
       )
 
+      ObjectManager::Attribute.find_by_name('likes_count')&.update(editable: true)
       ObjectManager::Attribute.add(
         object: 'Ticket',
         name: 'likes_count',
@@ -305,6 +425,7 @@ namespace :ops do
         created_by_id: 1,
         updated_by_id: 1,
       )
+      ObjectManager::Attribute.find_by_name('likes_count').update(editable: false)
 
       ObjectManager::Attribute.migration_execute
 
@@ -316,7 +437,8 @@ namespace :ops do
         flow.condition_selected = {}
         flow.perform = {
           "ticket.process_type" => { "operator" => "set_readonly", "set_readonly" => "true" },
-          "ticket.likes_count" => { "operator" => "set_readonly", "set_readonly" => "true" }
+          "ticket.likes_count" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.origin" => { "operator" => "set_readonly", "set_readonly" => "true" },
         }
         flow.active = true
         flow.stop_after_match = false
