@@ -1,11 +1,11 @@
 OPS_OLD_CATEGORIES_MAP = {
-  "_5" => "Automobily(parkovanie, dlhodobo odstavené vozidlá)",
-  "_1" => "Cesty a chodníky(cesty, cyklotrasy, schody, oplotenie)",
-  "_3" => "Dopravné značenie (značky, semafory, stĺpiky)",
-  "_4" => "Mestský mobiliár(koše, ihriská, lavičky, zastávky MHD)",
-  "_6" => "Verejné služby(osvetlenie, kanalizácia, MHD, web, rozvodné siete)",
-  "_7" => "Verejný poriadok(stavby, reklama, vandalizmus)",
-  "_2" => "Zeleň a životné prostredie(stromy, neporiadok, znečisťovanie)"
+  "5" => "Automobily",
+  "1" => "Cesty a chodníky",
+  "3" => "Dopravné značenie",
+  "4" => "Mestský mobiliár",
+  "6" => "Verejné služby",
+  "7" => "Verejný poriadok",
+  "2" => "Zeleň a životné prostredie"
 }
 
 OPS_CATEGORIES_MAP = {
@@ -252,14 +252,14 @@ namespace :ops do
         updated_by_id: 1
       )
 
-      subsubcategory_names = OPS_CATEGORIES_MAP.values.flat_map { |v| v.values }.flatten.uniq - [ "" ]
+      subtype_names = OPS_CATEGORIES_MAP.values.flat_map { |v| v.values }.flatten.uniq - [ "" ]
       ObjectManager::Attribute.add(
         object: 'Ticket',
-        name: 'subcategory_type',
+        name: 'subtype',
         display: __('Typ Problému'),
         data_type: 'select',
         data_option: {
-          options: subsubcategory_names.map { |v| { name: v, value: v } },
+          options: subtype_names.map { |v| { name: v, value: v } },
           customsort: 'on',
           default: '',
           null: true,
@@ -401,11 +401,11 @@ namespace :ops do
           flow.changeable = false
         end.save!
 
-        subcats.each do |subcat, subcat_types|
-          perform = if subcat_types.any?
+        subcats.each do |subcat, subtypes|
+          perform = if subtypes.any?
             { "ticket.subcategory_type" =>
                 { "operator" => [ "set_fixed_to", "set_mandatory" ],
-                  "set_fixed_to" => [ "" ] + subcat_types
+                  "set_fixed_to" => [ "" ] + subtypes
                 }
             }
           else
