@@ -351,6 +351,33 @@ namespace :ops do
 
       ObjectManager::Attribute.add(
         object: 'Ticket',
+        name: 'responsible_subject',
+        display: __('Zodpovedný subjekt'),
+        data_type: 'tree_select',
+        data_option: {
+          options: [],
+          customsort: 'off',
+          default: '',
+          null: true,
+          nulloption: true,
+          maxlength: 255,
+        },
+        active: true,
+        screens: {
+          create_middle: {
+            'ticket.agent' => { shown: true }
+          },
+          edit: {
+            'ticket.agent' => { shown: true }
+          }
+        },
+        position: 22,
+        created_by_id: 1,
+        updated_by_id: 1
+      ) unless ObjectManager::Attribute.where(name: 'responsible_subject', object_lookup: ObjectLookup.by_name('Ticket')).exists?
+
+      ObjectManager::Attribute.add(
+        object: 'Ticket',
         name: 'municipality',
         display: __('Oblasť'),
         data_type: 'tree_select',
