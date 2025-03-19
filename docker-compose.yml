@@ -29,7 +29,7 @@ x-shared:
       ELASTICSEARCH_REINDEX:
       ELASTICSEARCH_SSL_VERIFY:
       NGINX_PORT:
-      NGINX_CLIENT_MAX_BODY_SIZE:
+      NGINX_CLIENT_MAX_BODY_SIZE: "100M"
       NGINX_SERVER_NAME:
       NGINX_SERVER_SCHEME:
       RAILS_TRUSTED_PROXIES:
@@ -58,13 +58,21 @@ x-shared:
       - zammad-redis
 
 services:
-  zammad-backup:
-    <<: *zammad-service
-    command: ["zammad-backup"]
-    volumes:
-      - zammad-backup:/var/tmp/zammad
-      - zammad-storage:/opt/zammad/storage:ro
-    user: 0:0
+#  zammad-backup:
+#    <<: *zammad-service
+#    command: ["zammad-backup"]
+#    volumes:
+#      - zammad-backup:/var/tmp/zammad
+#      - zammad-storage:/opt/zammad/storage:ro
+#    user: 0:0
+
+#  zammad-elasticsearch:
+#    image: bitnami/elasticsearch:${ELASTICSEARCH_VERSION:-8.17.3}
+#    restart: ${RESTART:-always}
+#    volumes:
+#      - zammad-backup:/var/tmp/zammad
+#      - zammad-storage:/opt/zammad/storage:ro
+#    user: 0:0
 
 #  zammad-elasticsearch:
 #    image: bitnami/elasticsearch:${ELASTICSEARCH_VERSION:-8.17.3}
