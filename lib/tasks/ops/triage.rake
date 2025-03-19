@@ -9,6 +9,77 @@ OPS_OLD_CATEGORIES_MAP = {
 }
 
 OPS_CATEGORIES_MAP = {
+  # OLD categories
+  [ "5", "Automobily" ] => {
+    "dlhodobo odstavené vozidlá" => [ "vozidlo s EČV, s platnou TK a EK", "vozidlo bez EČV, s platnou TK a EK", "vozidlo bez EČV, bez platnej TK a EK", "vozidlo s EČV, bez platnej TK a EK", "nezistené EČV a TK a EK", "zahraničné vozidlo" ],
+    "parkovanie" => [ "problémové", "chýbajúce miesta", "nevyznačené miesta" ],
+    "iné" => []
+  },
+
+  [ "2", "Zeleň a životné prostredie" ] => {
+    "neporiadok a odpadky" => [ "neodpratané lístie", "čierne skládky", "neporiadok vo verejnom priestranstve" ],
+    "strom" => [ "suchý", "chýbajúci", "neorezaný", "zlomený konár", "napadnutý", "invazívna rastlina", "poškodená podpera" ],
+    "trávnatá plocha" => [ "nepokosená", "vyschnutá", "vyjazdené koľaje" ],
+    "krík" => [ "suchý", "neostrihaný", "chýbajúci" ],
+    "zviera" => [ "túlavé", "uhynuté", "deratizácia" ],
+    "znečisťovanie" => [ "ovzdušia", "vody", "pôdy" ],
+    "iné" => []
+  },
+
+  [ "4", "Mestský mobiliár" ] => {
+    "lavička" => [ "chýbajúca", "poškodená", "znečistená" ],
+    "socha, pamätník" => [ "znečistená", "poškodená" ],
+    "zastávka MHD" => [ "poškodená", "chýbajúca", "znečistená" ],
+    "kôš" => [ "poškodený", "preplnený", "chýbajúci", "nevhodne umiestnený", "chýbajúce sáčky" ],
+    "detské ihrisko" => [ "poškodené", "chýbajúce", "potrebná údržba" ],
+    "cyklostojan" => [ "chýbajúci", "poškodený", "zle umiestnený" ],
+    "fontánka" => [ "nefunkčná", "poškodená", "znečistená" ],
+    "informačná tabuľa" => [ "poškodená", "zle otočená", "zle umiestnená", "chýbajúca" ],
+    "kvetináč" => [ "poškodený", "posunutý", "zanedbaný", "chýbajúci" ],
+    "iné" => []
+  },
+
+  [ "6", "Verejné služby" ] => {
+    "MHD" => [ "technické problémy", "meškanie spojov", "poškodené vozidlo", "zlé nastavenie cestovného poriadku" ],
+    "kanalizácia" => [ "upchatá", "chýbajúci kanalizačný poklop", "havária kanalizačného potrubia", "poškodený kanalizačný poklop" ],
+    "osvetlenie" => [ "nefunkčné", "poškodené stĺpy", "chýbajúce/nedostatočné", "nevhodné (silné a pod.)" ],
+    "webová stránka mesta" => [ "chýbajúce informácie", "neaktuálne informácie", "nesprávne informácie", "nefunkčná stránka" ],
+    "rozvodné siete" => [ "poškodená rozvodná skriňa", "nebezpečný kábel" ],
+    "zdieľaná mobilita" => [ "nevhodne zaparkovaný dopravný prostriedok", "nevhodne umiestnené parkovisko", "obmedzenie rýchlosti v zóne", "iné" ],
+    "iné" => []
+  },
+
+  [ "1", "Cesty a chodníky" ] => {
+    "schody" => [ "poškodené", "neodhrnuté", "neposypané", "znečistené" ],
+    "cesta" => [ "výtlk", "rozbitá (väčší úsek)", "znečistená", "neodhrnutá", "neposypaná", "rozkopaná", "poškodená dlažba" ],
+    "chodník" => [ "výtlk", "znečistený", "neodhrnutý", "neposypaný", "bariérový", "rozkopaný", "chýbajúci", "poškodená dlažba", "bariéra na chodníku" ],
+    "cyklotrasa" => [ "poškodená", "chýbajúca", "neoznačená", "znečistená", "neodhrnutá", "neposypaná" ],
+    "zábradlie" => [ "chýbajúce", "poškodené", "zhrdzavené" ],
+    "oplotenie" => [ "chýbajúce", "poškodené", "zhrdzavené" ],
+    "iné" => []
+  },
+
+  [ "7", "Verejný poriadok" ] => {
+    "stavby a budovy" => [ "neohlásené stavebné úpravy", "prekračovanie limitov hluku", "prekračovanie limitov prašnosti", "opustená budova", "zlý stav budovy" ],
+    "vandalizmus" => [ "graffiti", "rušenie nočného pokoja", "pitie alkoholu na verejnosti" ],
+    "reklama" => [ "vizuálny smog", "nevhodne umiestnená (na chodníku a pod.)", "vylepené plagáty", "nebezpečná (na spadnutie a pod.)" ],
+    "iné" => []
+  },
+
+  [ "3", "Dopravné značenie" ] => {
+    "priechod pre chodcov" => [ "chýbajúci", "zle viditeľný" ],
+    "semafor" => [ "nefunkčný", "zle nastavený", "chýbajúci" ],
+    "dopravné zrkadlo" => [ "chýbajúce", "zle natočené", "poškodené" ],
+    "vodorovná značka" => [ "chýbajúca", "neaktuálna", "zle viditeľná" ],
+    "riešenie dopravnej situácie" => [ "nebezpečné", "dopravu spomaľujúce", "nedodržiavanie dopravných predpisov" ],
+    "zvislá značka" => [ "poškodená", "neaktuálna", "chýbajúca", "vyblednutá", "zle otočená" ],
+    "spomaľovač" => [ "chýbajúci", "poškodený" ],
+    "betónová zábrana (biskupský klobúk)" => [ "chýbajúca", "posunutá", "poškodená" ],
+    "stĺpik" => [ "chýbajúci", "poškodený", "nadbytočný" ],
+    "iné" => []
+  },
+
+  # NEW categories
   "Komunikácie": {
     "cesta": [ "výtlk", "rozbitá cesta (väčší úsek)", "znečistená", "neodhrnutá", "neposypaná", "rozkopaná", "poškodená dlažba" ],
     "chodník": [ "výtlk", "znečistený", "neodhrnutý", "neposypaný", "rozkopaný", "chýbajúci", "poškodená dlažba", "bariéra na chodníku" ],
@@ -218,8 +289,13 @@ namespace :ops do
         display: __('Kategória'),
         data_type: 'select',
         data_option: {
-          options: OPS_OLD_CATEGORIES_MAP.map { |k, v| { "name": v.to_s, "value": k.to_s } } +
-            OPS_CATEGORIES_MAP.keys.map { |k| { "name": k.to_s, "value": k.to_s } },
+          options: OPS_CATEGORIES_MAP.keys.map do |k|
+            if k.is_a?(Array)
+              { "name" => k.last, "value" => k.first }
+            else
+              { "name" => k.to_s, "value" => k.to_s }
+            end
+          end,
           customsort: 'on',
           default: '',
           null: true,
@@ -481,7 +557,7 @@ namespace :ops do
         flow.preferences = { "screen" => [ "create_middle", "edit" ] }
         flow.condition_saved = {}
         flow.condition_selected = { "ticket.subcategory" => { "operator" => "not set", "value" => [] } }
-        flow.perform = { "ticket.subcategory_type" => { "operator" => [ "set_fixed_to", "select" ], "set_fixed_to" => [ "" ], "select" => "" } }
+        flow.perform = { "ticket.subtype" => { "operator" => [ "set_fixed_to", "select" ], "set_fixed_to" => [ "" ], "select" => "" } }
         flow.active = true
         flow.stop_after_match = false
         flow.changeable = true
@@ -505,19 +581,20 @@ namespace :ops do
       end.save!
 
       OPS_CATEGORIES_MAP.each do |cat, subcats|
-        CoreWorkflow.find_or_initialize_by(name: "ops - category - #{cat} - visible options").tap do |flow|
+        cat_name = cat.is_a?(Array) ? cat.last : cat
+        cat_value = cat.is_a?(Array) ? cat.first : cat
+        CoreWorkflow.find_or_initialize_by(name: "ops - category - #{cat_name} - visible options").tap do |flow|
           flow.object = "Ticket"
           flow.preferences = { "screen" => [ "create_middle", "edit" ] }
           flow.condition_saved = {}
-          flow.condition_selected = { "ticket.category" => { "operator" => "is", "value" => [ cat.to_s ] } }
+          flow.condition_selected = { "ticket.category" => { "operator" => "is", "value" => [ cat_value.to_s ] } }
           flow.perform = { "ticket.subcategory" =>
                              { "operator" => [ "set_fixed_to", "set_mandatory" ],
                                "set_fixed_to" => [ "" ] + subcats.keys.map(&:to_s),
                                "set_mandatory" => "true" } }
           flow.active = true
           flow.stop_after_match = false
-          flow.changeable = true
-          flow.priority = 700
+          flow.priority = 600
           flow.updated_by_id = 1
           flow.created_by_id = 1
           flow.changeable = false
@@ -525,20 +602,20 @@ namespace :ops do
 
         subcats.each do |subcat, subtypes|
           perform = if subtypes.any?
-            { "ticket.subcategory_type" =>
+            { "ticket.subtype" =>
                 { "operator" => [ "set_fixed_to", "set_mandatory" ],
                   "set_fixed_to" => [ "" ] + subtypes
                 }
             }
           else
-            { "ticket.subcategory_type" => { "operator" => "set_fixed_to", "set_fixed_to" => [ "" ] } }
+            { "ticket.subtype" => { "operator" => "set_fixed_to", "set_fixed_to" => [ "" ] } }
           end
 
           CoreWorkflow.find_or_initialize_by(name: "ops - subcategory - #{subcat} - visible options").tap do |flow|
             flow.object = "Ticket"
             flow.preferences = { "screen" => [ "create_middle", "edit" ] }
             flow.condition_saved = {}
-            flow.condition_selected = { "ticket.category" => { "operator" => "is", "value" => [ cat.to_s ] },
+            flow.condition_selected = { "ticket.category" => { "operator" => "is", "value" => [ cat_value.to_s ] },
                                         "ticket.subcategory" => { "operator" => "is", "value" => [ subcat.to_s ] } }
             flow.perform = perform
             flow.priority = 700
