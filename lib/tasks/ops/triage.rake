@@ -441,7 +441,6 @@ namespace :ops do
           created_by_id: 1,
           updated_by_id: 1
         )
-        ObjectManager::Attribute.find_by_name(name).update(editable: false)
       end
 
       subcategory_names = OPS_CATEGORIES_MAP.values.flat_map { |v| v.keys.map(&:to_s) }.uniq - [ "" ]
@@ -528,7 +527,6 @@ namespace :ops do
         created_by_id: 1,
         updated_by_id: 1,
       )
-      ObjectManager::Attribute.find_by_name('likes_count').update(editable: false)
 
       ObjectManager::Attribute.migration_execute
 
