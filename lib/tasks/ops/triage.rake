@@ -253,7 +253,7 @@ namespace :ops do
       ObjectManager::Attribute.add(
         object: 'Ticket',
         name: 'issue_type',
-        display: __('Typ podnetu'),
+        display: __('Typ dopytu'),
         data_type: 'select',
         data_option: {
           options: [
