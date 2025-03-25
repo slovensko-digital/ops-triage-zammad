@@ -211,6 +211,27 @@ namespace :ops do
         role.created_by_id = 1
       end.save!
 
+      # create role for External Responsible Subjects
+      external_role = Role.find_or_initialize_by(name: 'Externý zodpovedný subjekt').tap do |role|
+        role.default_at_signup = false
+        role.preferences = {}
+        role.updated_by_id = 1
+        role.created_by_id = 1
+      end
+      external_role.save!
+
+      # create user used for templates
+      template_external_responsible_subject_user = User.create_if_not_exists(
+        login: 'template-ext',
+        firstname: 'Vzor',
+        lastname: 'Externý zodpovedný subjekt',
+        email: '',
+        active: false,
+        role_ids: [external_role.id],
+        updated_by_id: 1,
+        created_by_id: 1,
+      )
+
       # create Incoming group
       incoming_group = Group.find_or_initialize_by(name: 'Incoming').tap do |group|
         group.note = __('OPS Incoming tickets group.')
@@ -633,6 +654,56 @@ namespace :ops do
           end.save!
         end
       end
+
+      # create triggers
+      Trigger.find_or_initialize_by(name: 'ops - preposielanie - VZOR - <subjekt> - komentáre z portálu').tap do |trigger|
+        trigger.condition = {
+          "ticket.responsible_subject" => { "operator" => "is", "value_completion" => "", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
+          "article.action" => { "operator" => "is", "value" => "create" },
+          "article.internal" => { "operator" => "is", "value" => [ "false" ] },
+          "article.sender_id" => { "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id ] },
+          "customer.origin" => { "operator" => "is", "value" => [ "portal" ] }
+        }
+        trigger.perform = {
+          "notification.email" => {
+            "body" => "<div>OK</div><div><br></div>\#{article.body}",
+            "internal" => "true",
+            "recipient" => [ "userid_21" ],
+            "subject" => "Nový komentár k podnetu \#{ticket.number}",
+            "include_attachments" => "true"
+          }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = false
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: 'ops - preposielanie - VZOR - <subjekt> - komentáre z triáže').tap do |trigger|
+        trigger.condition = {
+          "ticket.responsible_subject" => { "operator" => "is", "value_completion" => "", "value" => [ { "label" => "Test", "value" => 0 } ] },
+          "article.action" => { "operator" => "is", "value" => "create" },
+          "article.internal" => { "operator" => "is", "value" => [ "true" ] },
+          "article.sender_id" => { "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Agent").id ] },
+          "article.body" => { "operator" => "contains", "value" => "[[zodpovedny]]" }
+        }
+        trigger.perform = {
+          "notification.email" => {
+            "body" => "<div>Tu Odkaz pre starostu, tento podnet vam padol na zodpovednost. Odpoved na tento email bude zverejnena na portali Odkaz pre starostu.</div><div><br></div>\#{article.body}<br><br><div></div>",
+            "internal" => "true",
+            "recipient" => [ "userid_21" ],
+            "subject" => "Nový komentár od správcu podnetu \#{ticket.title}",
+            "include_attachments" => "true"
+          }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = false
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
     end
   end
 end
