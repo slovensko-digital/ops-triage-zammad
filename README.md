@@ -12,7 +12,7 @@ kamal accessory boot kibana -d staging
 # Zammad deploy
 kamal build push -d staging
 kamal accessory boot railsserver -d staging
-kamal accessory boot websockt -d staging
+kamal accessory boot websocket -d staging
 kamal deploy -d staging
 ```
 
