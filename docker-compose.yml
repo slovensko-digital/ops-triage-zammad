@@ -47,6 +47,8 @@ x-shared:
       # for docs refer to https://github.com/nginx-proxy/acme-companion
       LETSENCRYPT_HOST:
       LETSENCRYPT_EMAIL:
+      # custom ENVS
+      OPS_PORTAL_URL: http://172.17.0.1:5000
 
     build: .
 
