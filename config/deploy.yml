@@ -64,7 +64,7 @@ aliases:
   dbc: app exec --interactive --reuse "/docker-entrypoint.sh bin/rails dbconsole"
   zammad_init: accessory exec railsserver -i --reuse "zammad-init"
   elastic_shell: accessory exec elastic -i --reuse "bash"
-  elastic_set_kibanapass: accessory exec elastic -i --reuse "bin/elasticsearch-reset-password auto -u kibana_system"
+  elastic_generate_kibanapass: accessory exec elastic -i --reuse "bin/elasticsearch-reset-password auto -u kibana_system"
   reindex_elastic: app exec -r worker -p -i --reuse "/docker-entrypoint.sh bin/rake zammad:searchindex:rebuild"
 
 registry: &registry
