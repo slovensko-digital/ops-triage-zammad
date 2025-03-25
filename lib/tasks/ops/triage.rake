@@ -177,6 +177,14 @@ OPS_CATEGORIES_MAP = {
   }
 }
 
+def setup_elastic
+  puts "Setting up Elasticsearch..."
+  Setting.set('es_url', "#{ENV.fetch('ELASTICSEARCH_SCHEMA')}://#{ENV.fetch('ELASTICSEARCH_HOST')}:#{ENV.fetch('ELASTICSEARCH_PORT')}")
+  Setting.set('es_user', ENV.fetch('ZAMMAD_ELASTICSEARCH_USER'))
+  Setting.set('es_password', ENV.fetch('ZAMMAD_ELASTICSEARCH_PASSWORD'))
+  Setting.set('es_index', ENV.fetch('ELASTICSEARCH_NAMESPACE'))
+end
+
 namespace :ops do
   namespace :triage do
     desc "Migrates triage environment"
@@ -191,6 +199,8 @@ namespace :ops do
       Setting.set('auth_third_party_no_create_user', true)
 
       Setting.set('customer_ticket_create', false) # disable WEB interface ticket creation
+
+      setup_elastic if ENV['ELASTICSEARCH_ENABLED'] == 'true'
 
       # create role for Portal users
       Role.find_or_initialize_by(name: 'Portal User').tap do |role|

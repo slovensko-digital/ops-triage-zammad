@@ -44,13 +44,18 @@ env: &env
     ZAMMAD_PROCESS_SCHEDULED_JOBS_WORKERS: 1
 
     ELASTICSEARCH_ENABLED: true
-
+    ELASTICSEARCH_HOST: ops-triage-zammad-elastic
+    ELASTICSEARCH_PORT: 9200
+    ELASTICSEARCH_SCHEMA: http
+    ELASTICSEARCH_NAMESPACE: ops-triage-zammad-index
 
     POSTGRESQL_DB_CREATE: false
 
   secret:
     - RAILS_MASTER_KEY
     - POSTGRESQL_PASS
+    - ZAMMAD_ELASTICSEARCH_USER
+    - ZAMMAD_ELASTICSEARCH_PASSWORD
 
 aliases:
   console: app exec --interactive --reuse "/docker-entrypoint.sh bin/rails console"
