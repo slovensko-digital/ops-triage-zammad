@@ -34,6 +34,10 @@ jobs:
           KAMAL_REGISTRY_PASSWORD: ${{ secrets.KAMAL_REGISTRY_PASSWORD }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+          ELASTIC_PASSWORD: ${{ secrets.ELASTIC_PASSWORD }}
+          KIBANA_PASSWORD: ${{ secrets.KIBANA_PASSWORD }}
+          ZAMMAD_ELASTICSEARCH_USER: ${{ secrets.ZAMMAD_ELASTICSEARCH_USER }}
+          ZAMMAD_ELASTICSEARCH_PASSWORD: ${{ secrets.ZAMMAD_ELASTICSEARCH_PASSWORD }}
 
         run: |
           kamal deploy -d staging
