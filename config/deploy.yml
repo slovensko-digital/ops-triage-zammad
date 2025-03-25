@@ -51,6 +51,8 @@ env: &env
 
     POSTGRESQL_DB_CREATE: false
 
+    OPS_PORTAL_URL: <%= ENV.fetch('OPS_PORTAL_URL') %>
+
   secret:
     - RAILS_MASTER_KEY
     - POSTGRESQL_PASS
