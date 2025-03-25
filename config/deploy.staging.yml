@@ -12,5 +12,10 @@ x-load-env:
 proxy:
   host: triage.ops.dev.slovensko.digital
 
+accessories:
+  kibana:
+    proxy:
+      host: kibana.ops.dev.slovensko.digital
+
 ssh:
   user: kamal

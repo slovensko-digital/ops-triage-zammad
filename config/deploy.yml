@@ -1,3 +1,6 @@
+x-load-env:
+  - "<% require 'dotenv'; Dotenv.load('.env.' + ENV.fetch('KAMAL_DESTINATION')) %>"
+
 service: ops-triage-zammad
 
 image: sd/ops-triage-zammad
@@ -33,14 +36,15 @@ env: &env
     POSTGRESQL_DB: ops_triage_zammad_staging
     POSTGRESQL_HOST: host.docker.internal
     POSTGRESQL_USER: ops_triage_zammad
+    POSTGRESQL_OPTIONS: "?pool=50"
     RAILS_LOG_TO_STDOUT: true
     RAILS_SERVE_STATIC_FILES: true
     REDIS_URL: redis://ops-triage-zammad-redis:6379/1
     ZAMMAD_PROCESS_DELAYED_JOBS_WORKERS: 1
     ZAMMAD_PROCESS_SCHEDULED_JOBS_WORKERS: 1
-    
-    # TODO use ES in future
-    ELASTICSEARCH_ENABLED: false
+
+    ELASTICSEARCH_ENABLED: true
+
 
     POSTGRESQL_DB_CREATE: false
 
@@ -49,11 +53,14 @@ env: &env
     - POSTGRESQL_PASS
 
 aliases:
-  console: app exec --interactive --reuse "bin/rails console"
+  console: app exec --interactive --reuse "/docker-entrypoint.sh bin/rails console"
   shell: app exec --interactive --reuse "bash"
   logs: app logs -f
-  dbc: app exec --interactive --reuse "bin/rails dbconsole"
+  dbc: app exec --interactive --reuse "/docker-entrypoint.sh bin/rails dbconsole"
   zammad_init: accessory exec railsserver -i --reuse "zammad-init"
+  elastic_shell: accessory exec elastic -i --reuse "bash"
+  elastic_set_kibanapass: accessory exec elastic -i --reuse "bin/elasticsearch-reset-password auto -u kibana_system"
+  reindex_elastic: app exec -r worker -p -i --reuse "/docker-entrypoint.sh bin/rake zammad:searchindex:rebuild"
 
 registry: &registry
   server: registry.dev.slovensko.digital
@@ -89,6 +96,41 @@ accessories:
       - worker
     directories:
       - data:/data
+
+  elastic:
+    image: elasticsearch:8.17.3
+    roles:
+      - web
+      - worker
+    directories:
+      - elastic-data:/usr/share/elasticsearch/data
+    env:
+      clear:
+        discovery.type: single-node
+        xpack.security.enabled: true
+      secret:
+        - ELASTIC_PASSWORD
+
+  kibana:
+    image: kibana:8.17.3
+    roles:
+      - web
+      - worker
+    proxy:
+      app_port: 5601
+      ssl: true
+      healthcheck:
+        path: /
+        interval: 10
+        timeout: 90
+    directories:
+      - kibana-data:/usr/share/kibana/data
+    env:
+      clear:
+        ELASTICSEARCH_HOSTS: http://ops-triage-zammad-elastic:9200
+        ELASTICSEARCH_USERNAME: kibana_system
+      secret:
+        - ELASTICSEARCH_PASSWORD
 
 builder:
   arch: amd64
