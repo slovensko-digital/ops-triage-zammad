@@ -461,7 +461,7 @@ namespace :ops do
         position: 39,
         created_by_id: 1,
         updated_by_id: 1
-      ) unless ObjectManager::Attribute.where(name: 'ops_state', object_lookup: ObjectLookup.by_name('Ticket')).exists?
+      )
 
       subcategory_names = OPS_CATEGORIES_MAP.values.flat_map { |v| v.keys.map(&:to_s) }.uniq - [ "" ]
       ObjectManager::Attribute.add(
