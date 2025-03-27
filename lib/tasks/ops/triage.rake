@@ -426,6 +426,43 @@ namespace :ops do
         )
       end
 
+      ObjectManager::Attribute.add(
+        object: 'Ticket',
+        name: 'ops_state',
+        display: __('Stav v Odkaze pre starostu'),
+        data_type: 'select',
+        data_option: {
+          options: {
+            "waiting" => "Čakajúci",
+            "rejected" => "Zamietnutý",
+            "sent_to_responsible" => "Zaslaný zodpovednému",
+            "in_progress" => "V riešení",
+            "marked_as_resolved" => "Označený za vyriešený",
+            "resolved" => "Vyriešený",
+            "unresolved" => "Neriešený",
+            "closed" => "Uzavretý",
+            "referred" => "Odstúpený",
+          },
+          default: 'waiting',
+          nulloption: true,
+          null: true,
+        },
+        active: true,
+        screens: {
+          create_middle: {
+            'ticket.agent' => { shown: true },
+            'ticket.customer' => { shown: false },
+          },
+          edit: {
+            'ticket.agent' => { shown: true },
+            'ticket.customer' => { shown: true },
+          }
+        },
+        position: 39,
+        created_by_id: 1,
+        updated_by_id: 1
+      ) unless ObjectManager::Attribute.where(name: 'ops_state', object_lookup: ObjectLookup.by_name('Ticket')).exists?
+
       subcategory_names = OPS_CATEGORIES_MAP.values.flat_map { |v| v.keys.map(&:to_s) }.uniq - [ "" ]
       ObjectManager::Attribute.add(
         object: 'Ticket',
