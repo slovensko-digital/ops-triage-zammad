@@ -1,6 +1,7 @@
 class CreateAutocompleteResponsibleSubjectField < ActiveRecord::Migration[7.1]
   def up
-    # remove old attribute when created without migration
+    return unless Setting.exists?(name: 'system_init_done')
+
     if ObjectManager::Attribute.where(name: 'responsible_subject', data_type: 'tree_select', object_lookup: ObjectLookup.by_name('Ticket')).exists?
       ObjectManager::Attribute.remove(object: 'Ticket', name: 'responsible_subject')
 
