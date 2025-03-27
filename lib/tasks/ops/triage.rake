@@ -179,10 +179,11 @@ OPS_CATEGORIES_MAP = {
 
 def setup_elastic
   puts "Setting up Elasticsearch..."
-  Setting.set('es_url', "#{ENV.fetch('ELASTICSEARCH_SCHEMA')}://#{ENV.fetch('ELASTICSEARCH_HOST')}:#{ENV.fetch('ELASTICSEARCH_PORT')}")
-  Setting.set('es_user', ENV.fetch('ZAMMAD_ELASTICSEARCH_USER'))
-  Setting.set('es_password', ENV.fetch('ZAMMAD_ELASTICSEARCH_PASSWORD'))
-  Setting.set('es_index', ENV.fetch('ELASTICSEARCH_NAMESPACE'))
+  es_url = "#{ENV.fetch('ELASTICSEARCH_SCHEMA')}://#{ENV.fetch('ELASTICSEARCH_HOST')}:#{ENV.fetch('ELASTICSEARCH_PORT')}"
+  Setting.set('es_url', es_url) unless Setting.get('es_url') == es_url
+  Setting.set('es_user', ENV.fetch('ZAMMAD_ELASTICSEARCH_USER')) unless Setting.get('es_user') == ENV.fetch('ZAMMAD_ELASTICSEARCH_USER')
+  Setting.set('es_password', ENV.fetch('ZAMMAD_ELASTICSEARCH_PASSWORD')) unless Setting.get('es_password') == ENV.fetch('ZAMMAD_ELASTICSEARCH_PASSWORD')
+  Setting.set('es_index', ENV.fetch('ELASTICSEARCH_NAMESPACE')) unless Setting.get('es_index') == ENV.fetch('ELASTICSEARCH_NAMESPACE')
 end
 
 namespace :ops do
