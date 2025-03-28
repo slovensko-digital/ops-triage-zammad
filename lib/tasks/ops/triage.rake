@@ -590,6 +590,20 @@ namespace :ops do
         flow.created_by_id = 1
       end.save!
 
+      CoreWorkflow.find_or_initialize_by(name: 'ops - show read-only user origin if set').tap do |flow|
+        flow.object = "User"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved = { "user.origin" => { "operator" => "is set", "value" => [] }}
+        flow.condition_selected = {}
+        flow.perform = { "customer.origin" => { "operator" => [ "set_readonly", "show" ], "set_readonly" => "true", "show" => "true" } }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true # TODO consider hiding from end users
+        flow.priority = 100
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
       CoreWorkflow.find_or_initialize_by(name: 'ops - likes_count visible only for ops issues').tap do |flow|
         flow.object = "Ticket"
         flow.preferences = { "screen" => [ "create_middle", "edit" ] }
