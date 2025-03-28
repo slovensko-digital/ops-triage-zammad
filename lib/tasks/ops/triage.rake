@@ -211,6 +211,27 @@ namespace :ops do
         role.created_by_id = 1
       end.save!
 
+      # create role for External Responsible Subjects
+      external_role = Role.find_or_initialize_by(name: 'Externý zodpovedný subjekt').tap do |role|
+        role.default_at_signup = false
+        role.preferences = {}
+        role.updated_by_id = 1
+        role.created_by_id = 1
+      end
+      external_role.save!
+
+      # create user used for templates
+      template_external_responsible_subject_user = User.create_if_not_exists(
+        login: 'template-ext',
+        firstname: 'Vzor',
+        lastname: 'Externý zodpovedný subjekt',
+        email: '',
+        active: false,
+        role_ids: [external_role.id],
+        updated_by_id: 1,
+        created_by_id: 1,
+      )
+
       # create Incoming group
       incoming_group = Group.find_or_initialize_by(name: 'Incoming').tap do |group|
         group.note = __('OPS Incoming tickets group.')
@@ -569,6 +590,20 @@ namespace :ops do
         flow.created_by_id = 1
       end.save!
 
+      CoreWorkflow.find_or_initialize_by(name: 'ops - show read-only user origin if set').tap do |flow|
+        flow.object = "User"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved = { "user.origin" => { "operator" => "is set", "value" => [] }}
+        flow.condition_selected = {}
+        flow.perform = { "customer.origin" => { "operator" => [ "set_readonly", "show" ], "set_readonly" => "true", "show" => "true" } }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true # TODO consider hiding from end users
+        flow.priority = 100
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
       CoreWorkflow.find_or_initialize_by(name: 'ops - likes_count visible only for ops issues').tap do |flow|
         flow.object = "Ticket"
         flow.preferences = { "screen" => [ "create_middle", "edit" ] }
@@ -670,6 +705,65 @@ namespace :ops do
           end.save!
         end
       end
+
+      # create triggers
+      Trigger.find_or_initialize_by(name: 'ops - preposielanie - VZOR - <subjekt> - komentáre z portálu').tap do |trigger|
+        trigger.condition = {
+          "ticket.responsible_subject" => { "operator" => "is", "value_completion" => "", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
+          "article.action" => { "operator" => "is", "value" => "create" },
+          "article.internal" => { "operator" => "is", "value" => [ "false" ] },
+          "article.sender_id" => { "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id ] },
+          "customer.origin" => { "operator" => "is", "value" => [ "portal" ] }
+        }
+        trigger.perform = {
+          "notification.email" => {
+            "body" => "<div>K podnetu na portáli <b>Odkaz pre starostu</b> bol pridaný komentár od používateľa. Môžete na neho reagovať odpovedaním na tento email.</div><div><br></div><div><b>Obsah komentára:</b></div><div>\#{article.body_as_html}</div><div><br></div><div><i>Reagovať na túto správu môžete odpoveďou na tento email.</i></div>",
+            "internal" => "true",
+            "recipient" => [ "userid_#{template_external_responsible_subject_user.id}" ],
+            "subject" => "Nový komentár k podnetu: \#{ticket.title}",
+            "include_attachments" => "true"
+          }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = false
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: 'ops - preposielanie - VZOR - <subjekt> - komentáre z triáže').tap do |trigger|
+        trigger.condition = {
+          "ticket.responsible_subject" => { "operator" => "is", "value_completion" => "", "value" => [ { "label" => "Test", "value" => 0 } ] },
+          "article.action" => { "operator" => "is", "value" => "create" },
+          "article.internal" => { "operator" => "is", "value" => [ "true" ] },
+          "article.sender_id" => { "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Agent").id ] },
+          "article.body" => { "operator" => "contains", "value" => "[[pre zodpovedny subjekt]]" }
+        }
+        trigger.perform = {
+          "notification.email" => {
+            "body" => "<div>Správca podnetu na portáli Odkaz pre starostu vám posiela novú správu.</div><div><br></div><div><b>Obsah správy:</b></div>\#{article.body_as_html}<br><br><div></div><div><i>Reagovať na túto správu môžete odpoveďou na tento email.</i></div>",
+            "internal" => "true",
+            "recipient" => [ "userid_#{template_external_responsible_subject_user.id}" ],
+            "subject" => "Nová správa od správcu k podnetu: \#{ticket.title}",
+            "include_attachments" => "true"
+          }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = false
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      TextModule.create_or_update(
+        name: "Správa pre zodpovedný subjekt",
+        keywords: "zodpovedny",
+        content: "[[zodpovedny]]<div><br></div><div>Tento podnet...</div>",
+        note: "",
+        active: true,
+        updated_by_id: 1,
+        created_by_id: 1,
+      )
     end
   end
 end
