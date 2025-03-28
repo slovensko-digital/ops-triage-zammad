@@ -717,10 +717,10 @@ namespace :ops do
         }
         trigger.perform = {
           "notification.email" => {
-            "body" => "<div>OK</div><div><br></div>\#{article.body}",
+            "body" => "<div>K podnetu na portáli <b>Odkaz pre starostu</b> bol pridaný komentár od používateľa. Môžete na neho reagovať odpovedaním na tento email.</div><div><br></div><div><b>Obsah komentára:</b></div><div>\#{article.body_as_html}</div><div><br></div><div><i>Reagovať na túto správu môžete odpoveďou na tento email.</i></div>",
             "internal" => "true",
-            "recipient" => [ "userid_21" ],
-            "subject" => "Nový komentár k podnetu \#{ticket.number}",
+            "recipient" => [ "userid_#{template_external_responsible_subject_user.id}" ],
+            "subject" => "Nový komentár k podnetu: \#{ticket.title}",
             "include_attachments" => "true"
           }
         }
@@ -737,14 +737,14 @@ namespace :ops do
           "article.action" => { "operator" => "is", "value" => "create" },
           "article.internal" => { "operator" => "is", "value" => [ "true" ] },
           "article.sender_id" => { "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Agent").id ] },
-          "article.body" => { "operator" => "contains", "value" => "[[zodpovedny]]" }
+          "article.body" => { "operator" => "contains", "value" => "[[pre zodpovedny subjekt]]" }
         }
         trigger.perform = {
           "notification.email" => {
-            "body" => "<div>Tu Odkaz pre starostu, tento podnet vam padol na zodpovednost. Odpoved na tento email bude zverejnena na portali Odkaz pre starostu.</div><div><br></div>\#{article.body}<br><br><div></div>",
+            "body" => "<div>Správca podnetu na portáli Odkaz pre starostu vám posiela novú správu.</div><div><br></div><div><b>Obsah správy:</b></div>\#{article.body_as_html}<br><br><div></div><div><i>Reagovať na túto správu môžete odpoveďou na tento email.</i></div>",
             "internal" => "true",
-            "recipient" => [ "userid_21" ],
-            "subject" => "Nový komentár od správcu podnetu \#{ticket.title}",
+            "recipient" => [ "userid_#{template_external_responsible_subject_user.id}" ],
+            "subject" => "Nová správa od správcu k podnetu: \#{ticket.title}",
             "include_attachments" => "true"
           }
         }
@@ -755,6 +755,15 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
+      TextModule.create_or_update(
+        name: "Správa pre zodpovedný subjekt",
+        keywords: "zodpovedny",
+        content: "[[zodpovedny]]<div><br></div><div>Tento podnet...</div>",
+        note: "",
+        active: true,
+        updated_by_id: 1,
+        created_by_id: 1,
+      )
     end
   end
 end
