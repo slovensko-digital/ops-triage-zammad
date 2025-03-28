@@ -56,12 +56,12 @@ class CreateAddressLatLonFields < ActiveRecord::Migration[7.1]
   end
 
   def down
-    ObjectManager.remove(
+    ObjectManager::Attribute.remove(
       object: 'Ticket',
       name: 'address_lat',
     )
 
-    ObjectManager.remove(
+    ObjectManager::Attribute.remove(
       object: 'Ticket',
       name: 'address_lon',
       )
