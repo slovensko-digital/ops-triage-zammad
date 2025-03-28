@@ -48,6 +48,7 @@ env: &env
     ELASTICSEARCH_PORT: 9200
     ELASTICSEARCH_SCHEMA: http
     ELASTICSEARCH_NAMESPACE: ops-triage-zammad-index
+    ELASTICSEARCH_REINDEX: false
 
     POSTGRESQL_DB_CREATE: false
 
