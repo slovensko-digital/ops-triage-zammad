@@ -31,6 +31,34 @@ ObjectManager::Attribute.add(
 
 ObjectManager::Attribute.add(
   object: 'Ticket',
+  name: 'responsible_subject_changed_at',
+  display: 'Posledná zmena zodpovedného subjektu',
+  data_type: 'datetime',
+  data_option: {
+    future: true,
+    past: true,
+    diff: nil,
+    default: nil,
+    null: true,
+    options: {},
+    relation: ''
+  },
+  active: true,
+  screens: {
+    create_middle: {
+      'ticket.agent' => { shown: false }
+    },
+    edit: {
+      'ticket.agent' => { shown: true }
+    },
+  },
+  position: 23,
+  created_by_id: 1,
+  updated_by_id: 1
+)
+
+ObjectManager::Attribute.add(
+  object: 'Ticket',
   name: 'address_postcode',
   display: 'Adresa (PSČ)',
   data_type: 'input',
