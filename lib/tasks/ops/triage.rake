@@ -581,6 +581,7 @@ namespace :ops do
           "ticket.process_type" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.likes_count" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.origin" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.responsible_subject_changed_at" => { "operator" => "set_readonly", "set_readonly" => "true" },
         }
         flow.active = true
         flow.stop_after_match = false
@@ -751,6 +752,16 @@ namespace :ops do
         trigger.activator = "action"
         trigger.execution_condition_mode = "selective"
         trigger.active = false
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: 'ops - nastavenie času poslednej zmeny zodpovedného subjektu').tap do |trigger|
+        trigger.condition = { "ticket.responsible_subject" => { "operator" => "has changed", "value_completion" => "", "value" => [] } }
+        trigger.perform = { "ticket.responsible_subject_changed_at" => { "operator" => "relative", "value" => "1", "range" => "minute" } }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
         trigger.updated_by_id = 1
         trigger.created_by_id = 1
       end.save!
