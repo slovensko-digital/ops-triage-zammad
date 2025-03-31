@@ -18,10 +18,10 @@ ObjectManager::Attribute.add(
   active: true,
   screens: {
     create_middle: {
-      'ticket.agent' => { shown: true }
+      'ticket.agent' => { shown: false }
     },
     edit: {
-      'ticket.agent' => { shown: true }
+      'ticket.agent' => { shown: false }
     }
   },
   position: 22,
@@ -49,10 +49,38 @@ ObjectManager::Attribute.add(
       'ticket.agent' => { shown: false }
     },
     edit: {
-      'ticket.agent' => { shown: true }
+      'ticket.agent' => { shown: false }
     },
   },
   position: 23,
+  created_by_id: 1,
+  updated_by_id: 1
+)
+
+ObjectManager::Attribute.add(
+  object: 'Ticket',
+  name: 'address_municipality',
+  display: __('Adresa (Oblasť)'),
+  data_type: 'tree_select',
+  data_option: {
+    options: [],
+    default: '',
+    null: true,
+    nulloption: true,
+    maxlength: 255,
+  },
+  active: true,
+  screens: {
+    create_middle: {
+      'ticket.customer' => { shown: false },
+      'ticket.agent' => { shown: false }
+    },
+    edit: {
+      'ticket.customer' => { shown: false },
+      'ticket.agent' => { shown: false }
+    }
+  },
+  position: 50,
   created_by_id: 1,
   updated_by_id: 1
 )
@@ -74,7 +102,7 @@ ObjectManager::Attribute.add(
   active: true,
   screens: {
     edit: {
-      'ticket.agent' => { shown: true }
+      'ticket.agent' => { shown: false }
     },
   },
   position: 58,
@@ -99,7 +127,7 @@ ObjectManager::Attribute.add(
   active: true,
   screens: {
     edit: {
-      'ticket.agent' => { shown: true }
+      'ticket.agent' => { shown: false }
     },
   },
   position: 59,
@@ -124,7 +152,7 @@ ObjectManager::Attribute.add(
   active: true,
   screens: {
     edit: {
-      'ticket.agent' => { shown: true }
+      'ticket.agent' => { shown: false }
     },
   },
   position: 60,
