@@ -823,7 +823,7 @@ namespace :ops do
       TextModule.create_or_update(
         name: "Správa pre zodpovedný subjekt",
         keywords: "zodpovedny",
-        content: "[[zodpovedny]]<div><br></div><div>Tento podnet...</div>",
+        content: "[[pre zodpovedny subjekt]]<div><br></div><div>Tento podnet...</div>",
         note: "",
         active: true,
         updated_by_id: 1,
