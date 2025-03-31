@@ -1,3 +1,28 @@
+require 'csv'
+
+def load_municipalities
+  map = {}
+  d = CSV.readlines('db/ops_data/municipality_districts.csv', headers: true)
+  d.group_by { |r| r["parent_name"] }.each do |k, v|
+    map[k] = {
+      name: k,
+      value: k,
+      children: v.map do |l|
+        { name: l["name"], value: "#{k}::#{l["name"]}" }
+      end
+    }
+  end
+  d = CSV.readlines('db/ops_data/municipalities.csv', headers: true)
+  d.each do |r|
+    next if map[r["name"]]
+    map[r["name"]] = {
+      name: r["name"],
+      value: r["name"],
+    }
+  end
+  map.values.sort_by { |v| v[:name] }
+end
+
 OPS_OLD_CATEGORIES_MAP = {
   "5" => "Automobily",
   "1" => "Cesty a chodníky",
@@ -273,10 +298,10 @@ namespace :ops do
         active: true,
         screens: {
           edit: {
-            'ticket.agent' => { shown: true },
+            'ticket.agent' => { shown: false },
           },
         },
-        position: 1000,
+        position: 2,
         created_by_id: 1,
         updated_by_id: 1,
       )
@@ -301,12 +326,12 @@ namespace :ops do
         active: true,
         screens: {
           create_middle: {
-            'ticket.customer' => { shown: true },
-            'ticket.agent' => { shown: true }
+            'ticket.customer' => { shown: false },
+            'ticket.agent' => { shown: false }
           },
           edit: {
-            'ticket.customer' => { shown: true },
-            'ticket.agent' => { shown: true }
+            'ticket.customer' => { shown: false },
+            'ticket.agent' => { shown: false }
           }
         },
         position: 15,
@@ -336,12 +361,12 @@ namespace :ops do
         active: true,
         screens: {
           create_middle: {
-            'ticket.customer' => { shown: true },
-            'ticket.agent' => { shown: true }
+            'ticket.customer' => { shown: false },
+            'ticket.agent' => { shown: false }
           },
           edit: {
-            'ticket.customer' => { shown: true },
-            'ticket.agent' => { shown: true }
+            'ticket.customer' => { shown: false },
+            'ticket.agent' => { shown: false }
           }
         },
         position: 17,
@@ -367,12 +392,12 @@ namespace :ops do
         active: true,
         screens: {
           create_middle: {
-            'ticket.customer' => { shown: true },
-            'ticket.agent' => { shown: true }
+            'ticket.customer' => { shown: false },
+            'ticket.agent' => { shown: false }
           },
           edit: {
-            'ticket.customer' => { shown: true },
-            'ticket.agent' => { shown: true }
+            'ticket.customer' => { shown: false },
+            'ticket.agent' => { shown: false }
           }
         },
         position: 2000,
@@ -380,42 +405,10 @@ namespace :ops do
         updated_by_id: 1
       )
 
-      ObjectManager::Attribute.add(
-        object: 'Ticket',
-        name: 'municipality',
-        display: __('Oblasť'),
-        data_type: 'tree_select',
-        data_option: {
-          options: [],
-          default: '',
-          null: true,
-          nulloption: true,
-          maxlength: 255,
-        },
-        active: true,
-        screens: {
-          create_middle: {
-            'ticket.customer' => { shown: true },
-            'ticket.agent' => { shown: true }
-          },
-          edit: {
-            'ticket.customer' => { shown: true },
-            'ticket.agent' => { shown: true }
-          }
-        },
-        position: 21,
-        created_by_id: 1,
-        updated_by_id: 1
-      ) unless ObjectManager::Attribute.where(name: 'municipality', object_lookup: ObjectLookup.by_name('Ticket')).exists?
-
       {
         'address_state' => 'Adresa (Kraj)',
         'address_county' => 'Adresa (Okres)',
-        'address_city' => 'Adresa (Mesto)',
-        'address_city_district' => 'Adresa (Mestská časť)',
-        'address_suburb' => 'Adresa (Miestna časť)',
-        'address_village' => 'Adresa (Obec)',
-        'address_road' => 'Adresa (Ulica)',
+        'address_street' => 'Adresa (Ulica)',
         'address_house_number' => 'Adresa (Číslo domu)',
       }.each.with_index(51) do |(name, title), position|
         ObjectManager::Attribute.find_by_name(name)&.update(editable: true) # allow editing in migration
@@ -433,12 +426,12 @@ namespace :ops do
           active: true,
           screens: {
             create_middle: {
-              'ticket.customer' => { shown: true },
-              'ticket.agent' => { shown: true }
+              'ticket.customer' => { shown: false },
+              'ticket.agent' => { shown: false }
             },
             edit: {
-              'ticket.customer' => { shown: true },
-              'ticket.agent' => { shown: true }
+              'ticket.customer' => { shown: false },
+              'ticket.agent' => { shown: false }
             }
           },
           position: position,
@@ -471,12 +464,12 @@ namespace :ops do
         active: true,
         screens: {
           create_middle: {
-            'ticket.agent' => { shown: true },
+            'ticket.agent' => { shown: false },
             'ticket.customer' => { shown: false },
           },
           edit: {
-            'ticket.agent' => { shown: true },
-            'ticket.customer' => { shown: true },
+            'ticket.agent' => { shown: false },
+            'ticket.customer' => { shown: false },
           }
         },
         position: 39,
@@ -501,12 +494,12 @@ namespace :ops do
         active: true,
         screens: {
           create_middle: {
-            'ticket.customer' => { shown: true },
-            'ticket.agent' => { shown: true }
+            'ticket.customer' => { shown: false },
+            'ticket.agent' => { shown: false }
           },
           edit: {
-            'ticket.customer' => { shown: true },
-            'ticket.agent' => { shown: true }
+            'ticket.customer' => { shown: false },
+            'ticket.agent' => { shown: false }
           }
         },
         position: 19,
@@ -531,12 +524,12 @@ namespace :ops do
         active: true,
         screens: {
           create_middle: {
-            'ticket.customer' => { shown: true },
-            'ticket.agent' => { shown: true }
+            'ticket.customer' => { shown: false },
+            'ticket.agent' => { shown: false }
           },
           edit: {
-            'ticket.customer' => { shown: true },
-            'ticket.agent' => { shown: true }
+            'ticket.customer' => { shown: false },
+            'ticket.agent' => { shown: false }
           }
         },
         position: 20,
@@ -556,12 +549,12 @@ namespace :ops do
         active: true,
         screens: {
           edit: {
-            'ticket.agent' => { shown: true },
-            'ticket.customer' => { shown: true },
+            'ticket.agent' => { shown: false },
+            'ticket.customer' => { shown: false },
           },
           create_middle: {
-            'ticket.agent' => { shown: true },
-            'ticket.customer' => { shown: true },
+            'ticket.agent' => { shown: false },
+            'ticket.customer' => { shown: false },
           }
         },
         position: 100,
@@ -569,12 +562,87 @@ namespace :ops do
         updated_by_id: 1,
       )
 
+      # load municipalities
+      a = ObjectManager::Attribute.find_by(name: 'address_municipality', object_lookup_id: ObjectLookup.by_name('Ticket'))
+
+      a.data_option['options'] = load_municipalities
+      a.save!
+
       ObjectManager::Attribute.migration_execute
 
       # add ops flows
+      CoreWorkflow.find_or_initialize_by(name: 'ops - ticket - triage process - setup attributes').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved = {
+          "ticket.origin" => { "operator" => "is", "value" => [ "portal" ] },
+          "ticket.process_type" => { "operator" => "is", "value" => [ "portal_issue_triage" ] }
+        }
+        flow.condition_selected = {}
+        flow.perform = {
+          "ticket.process_type" => { "operator" => "show", "show" => "true" },
+          "ticket.origin" => { "operator" => "show", "show" => "true" },
+          "ticket.responsible_subject_changed_at" => { "operator" => "show", "show" => "true" },
+          "ticket.category" => { "operator" => "show", "show" => "true" },
+          "ticket.subcategory" => { "operator" => "show", "show" => "true" },
+          "ticket.subtype" => { "operator" => "show", "show" => "true" },
+          "ticket.responsible_subject" => { "operator" => "show", "show" => "true" },
+          "ticket.ops_state" => { "operator" => "show", "show" => "true" },
+          "ticket.address_municipality" => { "operator" => "show", "show" => "true" },
+          "ticket.address_state" => { "operator" => "show", "show" => "true" },
+          "ticket.address_county" => { "operator" => "show", "show" => "true" },
+          "ticket.address_street" => { "operator" => "show", "show" => "true" },
+          "ticket.address_house_number" => { "operator" => "show", "show" => "true" },
+          "ticket.address_postcode" => { "operator" => "show", "show" => "true" },
+          "ticket.address_lat" => { "operator" => "show", "show" => "true" },
+          "ticket.address_lon" => { "operator" => "show", "show" => "true" },
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true # TODO consider hiding from end users
+        flow.priority = 150
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
+      CoreWorkflow.find_or_initialize_by(name: 'ops - ticket - resolution process - setup attributes').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved = {
+          "ticket.origin" => { "operator" => "is", "value" => [ "portal" ] },
+          "ticket.process_type" => { "operator" => "is", "value" => [ "portal_issue_resolution" ] }
+        }
+        flow.condition_selected = {}
+        flow.perform = {
+          "ticket.process_type" => { "operator" => "show", "show" => "true" },
+          "ticket.likes_count" => { "operator" => "show", "show" => "true" },
+          "ticket.origin" => { "operator" => "show", "show" => "true" },
+          "ticket.responsible_subject_changed_at" => { "operator" => "show", "show" => "true" },
+          "ticket.category" => { "operator" => "show", "show" => "true" },
+          "ticket.subcategory" => { "operator" => "show", "show" => "true" },
+          "ticket.subtype" => { "operator" => "show", "show" => "true" },
+          "ticket.responsible_subject" => { "operator" => "show", "show" => "true" },
+          "ticket.ops_state" => { "operator" => "show", "show" => "true" },
+          "ticket.address_municipality" => { "operator" => "show", "show" => "true" },
+          "ticket.address_state" => { "operator" => "show", "show" => "true" },
+          "ticket.address_county" => { "operator" => "show", "show" => "true" },
+          "ticket.address_street" => { "operator" => "show", "show" => "true" },
+          "ticket.address_house_number" => { "operator" => "show", "show" => "true" },
+          "ticket.address_postcode" => { "operator" => "show", "show" => "true" },
+          "ticket.address_lat" => { "operator" => "show", "show" => "true" },
+          "ticket.address_lon" => { "operator" => "show", "show" => "true" },
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true # TODO consider hiding from end users
+        flow.priority = 150
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
       CoreWorkflow.find_or_initialize_by(name: 'ops - read-only ticket attributes').tap do |flow|
         flow.object = "Ticket"
-        flow.preferences = { "screen" => [ "create_middle", "edit" ] }
+        flow.preferences = { "screen" => [ "edit" ] }
         flow.condition_saved = {}
         flow.condition_selected = {}
         flow.perform = {
@@ -601,20 +669,6 @@ namespace :ops do
         flow.stop_after_match = false
         flow.changeable = true # TODO consider hiding from end users
         flow.priority = 100
-        flow.updated_by_id = 1
-        flow.created_by_id = 1
-      end.save!
-
-      CoreWorkflow.find_or_initialize_by(name: 'ops - likes_count visible only for ops issues').tap do |flow|
-        flow.object = "Ticket"
-        flow.preferences = { "screen" => [ "create_middle", "edit" ] }
-        flow.condition_saved = {}
-        flow.condition_selected = { "ticket.issue_type" => { "operator" => "not set", "value" => [ "issue", "question", "praise" ] } }
-        flow.perform = { "ticket.likes_count" => { "operator" => "hide", "hide" => "true" } }
-        flow.active = true
-        flow.stop_after_match = false
-        flow.changeable = true
-        flow.priority = 500
         flow.updated_by_id = 1
         flow.created_by_id = 1
       end.save!
