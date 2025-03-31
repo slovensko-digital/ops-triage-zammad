@@ -1,3 +1,28 @@
+require 'csv'
+
+def load_municipalities
+  map = {}
+  d = CSV.readlines('db/ops_data/municipality_districts.csv', headers: true)
+  d.group_by { |r| r["parent_name"] }.each do |k, v|
+    map[k] = {
+      name: k,
+      value: k,
+      children: v.map do |l|
+        { name: l["name"], value: "#{k}::#{l["name"]}" }
+      end
+    }
+  end
+  d = CSV.readlines('db/ops_data/municipalities.csv', headers: true)
+  d.each do |r|
+    next if map[r["name"]]
+    map[r["name"]] = {
+      name: r["name"],
+      value: r["name"],
+    }
+  end
+  map.values.sort_by { |v| v[:name] }
+end
+
 OPS_OLD_CATEGORIES_MAP = {
   "5" => "Automobily",
   "1" => "Cesty a chodníky",
@@ -536,6 +561,12 @@ namespace :ops do
         created_by_id: 1,
         updated_by_id: 1,
       )
+
+      # load municipalities
+      a = ObjectManager::Attribute.find_by(name: 'address_municipality', object_lookup_id: ObjectLookup.by_name('Ticket'))
+
+      a.data_option['options'] = load_municipalities
+      a.save!
 
       ObjectManager::Attribute.migration_execute
 
