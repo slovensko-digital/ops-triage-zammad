@@ -230,6 +230,17 @@ def setup_admin_user
   Service::User::AddFirstAdmin.new.execute(user_data: admin_user_data, request: request)
 end
 
+def setup_google_oauth
+  return unless ENV['GOOGLE_OAUTH2_CLIENT_ID'].present? && ENV['GOOGLE_OAUTH2_CLIENT_SECRET'].present?
+
+  Rails.logger.info "Setting up Google OAuth2..."
+  Setting.set("auth_google_oauth2", true)
+  Setting.set("auth_google_oauth2_credentials", {
+    "client_id"=>ENV.fetch('GOOGLE_OAUTH2_CLIENT_ID'),
+    "client_secret"=>ENV.fetch('GOOGLE_OAUTH2_CLIENT_SECRET')
+  })
+end
+
 namespace :ops do
   namespace :triage do
     desc "Migrates triage environment"

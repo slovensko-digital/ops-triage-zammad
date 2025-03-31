@@ -32,11 +32,21 @@ jobs:
         env:
           KAMAL_REGISTRY_USERNAME: ${{ secrets.KAMAL_REGISTRY_USERNAME }}
           KAMAL_REGISTRY_PASSWORD: ${{ secrets.KAMAL_REGISTRY_PASSWORD }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+          GOOGLE_OAUTH2_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH2_CLIENT_ID }}
+          GOOGLE_OAUTH2_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH2_CLIENT_SECRET }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           ELASTIC_PASSWORD: ${{ secrets.ELASTIC_PASSWORD }}
           KIBANA_PASSWORD: ${{ secrets.KIBANA_PASSWORD }}
           ZAMMAD_ELASTICSEARCH_PASSWORD: ${{ secrets.ZAMMAD_ELASTICSEARCH_PASSWORD }}
+          ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
+          FQDN: ${{ vars.FQDN }}
+          PRODUCT_NAME: ${{ vars.PRODUCT_NAME }}
+          ORGANIZATION: ${{ vars.ORGANIZATION }}
+          RAILS_LOG_LEVEL: ${{ vars.RAILS_LOG_LEVEL }}
+          Z_LOCALES: ${{ vars.Z_LOCALES }}
           OPS_PORTAL_URL: ${{ vars.OPS_PORTAL_URL }}
           ZAMMAD_ELASTICSEARCH_USER: ${{ vars.ZAMMAD_ELASTICSEARCH_USER }}
 
