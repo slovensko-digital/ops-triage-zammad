@@ -8,6 +8,7 @@ RUN sed -i 's/\(seeds = %w\[.*\)\]/\1 ops_custom_roles ops_custom_user_fields op
 COPY --chown=zammad:zammad ./config/nginx.conf /etc/nginx/sites-enabled/default
 COPY --chown=zammad:zammad ./zammad_init_and_nginx.sh /opt/zammad_init_and_nginx.sh
 
+COPY ./db/ops_data ./db/ops_data
 COPY ./db/migrate/* ./db/migrate/.
 COPY ./db/seeds/* ./db/seeds/.
 COPY ./lib/tasks/ops/triage.rake ./lib/tasks/ops/triage.rake
