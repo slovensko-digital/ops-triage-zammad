@@ -1,4 +1,5 @@
 responsible_subject_role = Role.find_or_initialize_by(name: 'Zodpovedný Subjekt').tap do |role|
+  role.id = 4
   role.note = __('NEMENIŤ! Používa sa pre používateľov "Zodpovedný Subjekt".')
   role.default_at_signup = false
   role.preferences = {}
