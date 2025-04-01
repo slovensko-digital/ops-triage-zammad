@@ -3,7 +3,7 @@ class AddWebhooks < ActiveRecord::Migration[7.1]
     return unless Setting.exists?(name: 'system_init_done')
 
     # add ticket.created webhook
-    Webhook.find_or_initialize_by(name: 'Nový podnet pre zodpovedný subjekt').tap do |webhook|
+    Webhook.find_or_initialize_by(name: 'OPS - Nový podnet pre zodpovedný subjekt').tap do |webhook|
       webhook.endpoint = File.join(ENV.fetch('OPS_PORTAL_URL', 'http://host.docker.internal:3000'), 'triage/webhook')
       webhook.signature_token = ENV.fetch('WEBHOOK_SECRET', Random.hex(32))
       webhook.ssl_verify = ENV.fetch('OPS_PORTAL_URL', 'http').start_with?('https')
@@ -23,7 +23,7 @@ class AddWebhooks < ActiveRecord::Migration[7.1]
     end.save!
 
     # add article.created webhook
-    Webhook.find_or_initialize_by(name: 'Nový komentár pre zodpovedný subjekt').tap do |webhook|
+    Webhook.find_or_initialize_by(name: 'OPS - Nový komentár pre zodpovedný subjekt').tap do |webhook|
       webhook.endpoint = File.join(ENV.fetch('OPS_PORTAL_URL', 'http://host.docker.internal:3000'), 'triage/webhook')
       webhook.signature_token = ENV.fetch('WEBHOOK_SECRET', Random.hex(32))
       webhook.ssl_verify = ENV.fetch('OPS_PORTAL_URL', 'http').start_with?('https')
@@ -44,7 +44,7 @@ class AddWebhooks < ActiveRecord::Migration[7.1]
     end.save!
 
     # add ticket.updated webhook
-    Webhook.find_or_initialize_by(name: 'Upravený podnet pre zodpovedný subjekt').tap do |webhook|
+    Webhook.find_or_initialize_by(name: 'OPS - Upravený podnet pre zodpovedný subjekt').tap do |webhook|
       webhook.endpoint = File.join(ENV.fetch('OPS_PORTAL_URL', 'http://host.docker.internal:3000'), 'triage/webhook')
       webhook.signature_token = ENV.fetch('WEBHOOK_SECRET', Random.hex(32))
       webhook.ssl_verify = ENV.fetch('OPS_PORTAL_URL', 'http').start_with?('https')
@@ -65,8 +65,8 @@ class AddWebhooks < ActiveRecord::Migration[7.1]
   end
 
   def down
-    Webhook.where(name: 'Nový podnet pre zodpovedný subjekt').destroy_all
-    Webhook.where(name: 'Nový komentár pre zodpovedný subjekt').destroy_all
-    Webhook.where(name: 'Upravený podnet pre zodpovedný subjekt').destroy_all
+    Webhook.where(name: 'OPS - Nový podnet pre zodpovedný subjekt').destroy_all
+    Webhook.where(name: 'OPS - Nový komentár pre zodpovedný subjekt').destroy_all
+    Webhook.where(name: 'OPS - Upravený podnet pre zodpovedný subjekt').destroy_all
   end
 end
