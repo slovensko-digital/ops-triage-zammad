@@ -210,6 +210,37 @@ def setup_elastic
   Setting.set('es_index', ENV.fetch('ELASTICSEARCH_NAMESPACE'))
 end
 
+class RequestMock
+  attr_accessor :remote_ip, :env
+  def initialize(remote_ip, env)
+    @remote_ip = remote_ip
+    @env = env
+  end
+end
+
+def setup_admin_user
+  admin_user_data = {
+    email: ENV.fetch('ADMIN_EMAIL'),
+    password: ENV.fetch('ADMIN_PASSWORD'),
+    firstname: ENV.fetch('ADMIN_FIRSTNAME'),
+    lastname: ENV.fetch('ADMIN_LASTNAME')
+  }
+
+  request = RequestMock.new('127.0.0.1', { 'HTTP_ACCEPT_LANGUAGE' => ENV.fetch('DEFAULT_LOCALE', 'sk') })
+  Service::User::AddFirstAdmin.new.execute(user_data: admin_user_data, request: request)
+end
+
+def setup_google_oauth
+  return unless ENV['GOOGLE_OAUTH2_CLIENT_ID'].present? && ENV['GOOGLE_OAUTH2_CLIENT_SECRET'].present?
+
+  Rails.logger.info "Setting up Google OAuth2..."
+  Setting.set("auth_google_oauth2", true)
+  Setting.set("auth_google_oauth2_credentials", {
+    "client_id"=>ENV.fetch('GOOGLE_OAUTH2_CLIENT_ID'),
+    "client_secret"=>ENV.fetch('GOOGLE_OAUTH2_CLIENT_SECRET')
+  })
+end
+
 namespace :ops do
   namespace :triage do
     desc "Migrates triage environment"
@@ -217,6 +248,17 @@ namespace :ops do
       next unless User.any?
 
       puts "Migrating triage environment..."
+      if User.count <= 2
+        setup_admin_user
+
+        Rails.logger.info "Setting branding..."
+        Setting.set('fqdn', ENV.fetch('FQDN'))
+        Setting.set('product_name', ENV.fetch('PRODUCT_NAME'))
+        Setting.set('organization', ENV.fetch('ORGANIZATION'))
+        Setting.set('http_type', ENV.fetch('HTTP_TYPE', 'http'))
+        Setting.set('ticket_hook', "Tiket#")
+      end
+
       Setting.set('user_create_account', false) # Disable user creation via web interface
       Setting.set('api_password_access', false) # Disable password access to REST API
 
@@ -276,7 +318,35 @@ namespace :ops do
       portal_tech_account.permission_grant('admin.user')
       portal_tech_account.permission_grant('ticket.agent')
       portal_tech_account.permission_grant('user_preferences.access_token')
+      portal_tech_account.groups << incoming_group
       portal_tech_account.save!
+
+      params = {
+        "firstname":"Aplikácia",
+        "lastname":"Odkaz pre starostu",
+        "note":"",
+        "role_ids": [ portal_tech_account.id ],
+        "active":true,
+        "vip":false,
+        "id":"c-3",
+        "updated_by_id": "1",
+        "created_by_id": "1",
+      }
+      unless User.find_by(firstname: 'Aplikácia', lastname: 'Odkaz pre starostu')
+        tech_user = User.new(params)
+        tech_user.associations_from_param(params)
+        tech_user.save!
+
+        token = Token.create!(
+          action:     'api',
+          persistent: true,
+          user_id:    tech_user.id,
+          name: "Token for OPS Portal and API",
+          preferences: {"permission"=>["admin.user", "report", "ticket.agent"]}
+        )
+        token.token = ENV.fetch('API_TOKEN', SecureRandom.urlsafe_base64(48))
+        token.save!
+      end
 
       ObjectManager::Attribute.add(
         object: 'Ticket',
@@ -823,7 +893,7 @@ namespace :ops do
       TextModule.create_or_update(
         name: "Správa pre zodpovedný subjekt",
         keywords: "zodpovedny",
-        content: "[[zodpovedny]]<div><br></div><div>Tento podnet...</div>",
+        content: "[[pre zodpovedny subjekt]]<div><br></div><div>Tento podnet...</div>",
         note: "",
         active: true,
         updated_by_id: 1,

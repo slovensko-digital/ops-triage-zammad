@@ -54,9 +54,26 @@ env: &env
 
     OPS_PORTAL_URL: <%= ENV.fetch('OPS_PORTAL_URL') %>
 
+    ADMIN_EMAIL: <%= ENV['ADMIN_EMAIL'] %>
+    ADMIN_FIRSTNAME: Superadmin
+    ADMIN_LASTNAME: User
+    DEFAULT_LOCALE: sk
+
+    FQDN: <%= ENV.fetch('FQDN') %>
+    PRODUCT_NAME: <%= ENV.fetch('PRODUCT_NAME') %>
+    ORGANIZATION: <%= ENV.fetch('ORGANIZATION') %>
+
+    RAILS_LOG_LEVEL: <%= ENV.fetch('RAILS_LOG_LEVEL', 'info') %>
+    Z_LOCALES: <%= ENV.fetch('Z_LOCALES', 'sk:en-us') %>
+
   secret:
+    - ADMIN_PASSWORD
+    - API_TOKEN
+    - GOOGLE_OAUTH2_CLIENT_ID
+    - GOOGLE_OAUTH2_CLIENT_SECRET
     - RAILS_MASTER_KEY
     - POSTGRESQL_PASS
+    - WEBHOOK_SECRET
     - ZAMMAD_ELASTICSEARCH_USER
     - ZAMMAD_ELASTICSEARCH_PASSWORD
 

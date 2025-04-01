@@ -48,7 +48,15 @@ x-shared:
       LETSENCRYPT_HOST:
       LETSENCRYPT_EMAIL:
       # custom ENVS
-      OPS_PORTAL_URL: http://172.17.0.1:5000
+
+    env_file:
+      - path: .env.sample
+        required: false
+      - path: .env
+        required: false
+
+    extra_hosts:
+      - host.docker.internal:host-gateway
 
     build: .
 
