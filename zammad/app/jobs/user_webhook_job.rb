@@ -1,11 +1,16 @@
 class UserWebhookJob < ApplicationJob
   USER_WEBHOOK_NAME = 'OPS - Upravený používateľ'
+  class UserWebhookJob::RequestError < StandardError; end
+
+  retry_on UserWebhookJob::RequestError, attempts: 5, wait: lambda { |executions|
+    executions * 10.seconds
+  }
 
   def perform(user)
     webhook = Webhook.find_by(name: USER_WEBHOOK_NAME)
     return if !webhook
 
-    UserAgent.post(
+    result = UserAgent.post(
       webhook.endpoint,
       { type: 'user.updated', timestamp: DateTime.current, data: { user_id: user.id } },
       {
@@ -25,6 +30,8 @@ class UserWebhookJob < ApplicationJob
         },
       },
       )
+
+    raise UserWebhookJob::RequestError if !result.success?
   end
 
   def headers
