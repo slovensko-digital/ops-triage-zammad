@@ -666,6 +666,7 @@ namespace :ops do
           "ticket.address_postcode" => { "operator" => "show", "show" => "true" },
           "ticket.address_lat" => { "operator" => "show", "show" => "true" },
           "ticket.address_lon" => { "operator" => "show", "show" => "true" },
+          "ticket.portal_url" => { "operator" => "show", "show" => "true" },
         }
         flow.active = true
         flow.stop_after_match = false
@@ -701,6 +702,7 @@ namespace :ops do
           "ticket.address_postcode" => { "operator" => "show", "show" => "true" },
           "ticket.address_lat" => { "operator" => "show", "show" => "true" },
           "ticket.address_lon" => { "operator" => "show", "show" => "true" },
+          "ticket.portal_url" => { "operator" => "show", "show" => "true" },
         }
         flow.active = true
         flow.stop_after_match = false
@@ -720,6 +722,7 @@ namespace :ops do
           "ticket.likes_count" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.origin" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.responsible_subject_changed_at" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.portal_url" => { "operator" => "set_readonly", "set_readonly" => "true" },
         }
         flow.active = true
         flow.stop_after_match = false
