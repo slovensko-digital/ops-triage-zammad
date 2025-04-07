@@ -703,6 +703,7 @@ namespace :ops do
           "ticket.address_lat" => { "operator" => "show", "show" => "true" },
           "ticket.address_lon" => { "operator" => "show", "show" => "true" },
           "ticket.portal_url" => { "operator" => "show", "show" => "true" },
+          "ticket.investment" => { "operator" => "show", "show" => "true" },
         }
         flow.active = true
         flow.stop_after_match = false
