@@ -29,7 +29,7 @@ class OpsAddProSubjectsNotifyTriggers < ActiveRecord::Migration[7.1]
           { "name" => "ticket.subcategory", "operator" => "has changed", "value" => [] },
           { "name" => "ticket.subtype", "operator" => "has changed", "value" => [] },
           { "name" => "ticket.address_municipality", "operator" => "has changed", "value" => [] },
-          { "name" => "ticket.address_district", "operator" => "has changed", "value" => [] },
+          { "name" => "ticket.address_municipality_district", "operator" => "has changed", "value" => [] },
           { "name" => "ticket.address_street", "operator" => "has changed" },
           { "name" => "ticket.address_house_number", "operator" => "has changed" },
           { "name" => "ticket.address_postcode", "operator" => "has changed" },
