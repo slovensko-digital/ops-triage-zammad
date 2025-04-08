@@ -337,12 +337,11 @@ namespace :ops do
       end
       tech_user.save!
 
-      token = Token.find_or_initialize_by(name: "Token for OPS Portal and API").tap do |token|
-        token.action = 'api'
-        token.persistent = true
-        token.user_id = tech_user.id
-        token.preferences = {"permission"=>["admin.user", "admin.group", "report", "ticket.agent"]}
-      end
+      token = Token.find_or_initialize_by(name: "Token for OPS Portal and API")
+      token.action = 'api'
+      token.persistent = true
+      token.user_id = tech_user.id
+      token.preferences = {"permission"=>["admin.user", "admin.group", "report", "ticket.agent"]}
       token.token = ENV.fetch('API_TOKEN', SecureRandom.urlsafe_base64(48))
       token.save!
 
