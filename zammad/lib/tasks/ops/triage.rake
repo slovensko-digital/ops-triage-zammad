@@ -316,6 +316,7 @@ namespace :ops do
         role.created_by_id = 1
       end
       portal_tech_account.permission_grant('admin.user')
+      portal_tech_account.permission_grant('admin.group')
       portal_tech_account.permission_grant('ticket.agent')
       portal_tech_account.permission_grant('user_preferences.access_token')
       portal_tech_account.groups << incoming_group
@@ -328,25 +329,21 @@ namespace :ops do
         "role_ids": [ portal_tech_account.id ],
         "active":true,
         "vip":false,
-        "id":"c-3",
         "updated_by_id": "1",
         "created_by_id": "1",
       }
-      unless User.find_by(firstname: 'Aplikácia', lastname: 'Odkaz pre starostu')
-        tech_user = User.new(params)
-        tech_user.associations_from_param(params)
-        tech_user.save!
-
-        token = Token.create!(
-          action:     'api',
-          persistent: true,
-          user_id:    tech_user.id,
-          name: "Token for OPS Portal and API",
-          preferences: {"permission"=>["admin.user", "report", "ticket.agent"]}
-        )
-        token.token = ENV.fetch('API_TOKEN', SecureRandom.urlsafe_base64(48))
-        token.save!
+      tech_user = User.find_or_initialize_by(firstname: 'Aplikácia', lastname: 'Odkaz pre starostu').tap do |tech_user|
+        tech_user.assign_attributes(params)
       end
+      tech_user.save!
+
+      token = Token.find_or_initialize_by(name: "Token for OPS Portal and API")
+      token.action = 'api'
+      token.persistent = true
+      token.user_id = tech_user.id
+      token.preferences = {"permission"=>["admin.user", "admin.group", "report", "ticket.agent"]}
+      token.token = ENV.fetch('API_TOKEN', SecureRandom.urlsafe_base64(48))
+      token.save!
 
       ObjectManager::Attribute.add(
         object: 'Ticket',
