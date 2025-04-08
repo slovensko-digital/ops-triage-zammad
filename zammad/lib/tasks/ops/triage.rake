@@ -835,6 +835,7 @@ namespace :ops do
       # create triggers
       Trigger.find_or_initialize_by(name: 'ops - preposielanie - VZOR - <subjekt> - komentáre z portálu').tap do |trigger|
         trigger.condition = {
+          "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.responsible_subject" => { "operator" => "is", "value_completion" => "", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
           "article.action" => { "operator" => "is", "value" => "create" },
           "article.internal" => { "operator" => "is", "value" => [ "false" ] },
@@ -859,6 +860,7 @@ namespace :ops do
 
       Trigger.find_or_initialize_by(name: 'ops - preposielanie - VZOR - <subjekt> - komentáre z triáže').tap do |trigger|
         trigger.condition = {
+          "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.responsible_subject" => { "operator" => "is", "value_completion" => "", "value" => [ { "label" => "Test", "value" => 0 } ] },
           "article.action" => { "operator" => "is", "value" => "create" },
           "article.internal" => { "operator" => "is", "value" => [ "true" ] },
