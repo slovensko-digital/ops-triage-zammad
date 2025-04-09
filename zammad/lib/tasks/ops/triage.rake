@@ -649,7 +649,6 @@ namespace :ops do
         flow.perform = {
           "ticket.process_type" => { "operator" => "show", "show" => "true" },
           "ticket.origin" => { "operator" => "show", "show" => "true" },
-          "ticket.responsible_subject_changed_at" => { "operator" => "show", "show" => "true" },
           "ticket.category" => { "operator" => "show", "show" => "true" },
           "ticket.subcategory" => { "operator" => "show", "show" => "true" },
           "ticket.subtype" => { "operator" => "show", "show" => "true" },
