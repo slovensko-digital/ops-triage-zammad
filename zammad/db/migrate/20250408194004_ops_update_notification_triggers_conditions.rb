@@ -1,5 +1,7 @@
 class OpsUpdateNotificationTriggersConditions < ActiveRecord::Migration[7.1]
   def up
+    return unless Setting.exists?(name: 'system_init_done')
+
     Trigger.find_by(name: 'ops - preposielanie nových podnetov PRO zodpovedným subjektom').update(
       condition: {
         "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },

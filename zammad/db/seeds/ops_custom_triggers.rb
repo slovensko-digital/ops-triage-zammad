@@ -73,6 +73,7 @@ Trigger.find_or_initialize_by(name: 'ops - preposielanie upravených podnetov na
       { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
       { "operator" => "OR", "conditions" => [
         { "name" => "ticket.title", "operator" => "has changed" },
+        { "name" => "ticket.triage_ticket_description", "operator" => "has changed" },
         { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
         { "name" => "ticket.issue_type", "operator" => "has changed", "value" => [] },
         { "name" => "ticket.responsible_subject", "operator" => "has changed" },
@@ -87,7 +88,6 @@ Trigger.find_or_initialize_by(name: 'ops - preposielanie upravených podnetov na
         { "name" => "ticket.address_lat", "operator" => "has changed" },
         { "name" => "ticket.address_lon", "operator" => "has changed" },
         { "name" => "ticket.investment", "operator" => "has changed", "value" => [] },
-        { "name" => "ticket.likes_count", "operator" => "has changed" },
         { "name" => "ticket.portal_url", "operator" => "has changed" },
       ]}
     ]

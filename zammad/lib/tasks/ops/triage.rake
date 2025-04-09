@@ -539,7 +539,7 @@ namespace :ops do
             'ticket.customer' => { shown: false },
           }
         },
-        position: 39,
+        position: 38,
         created_by_id: 1,
         updated_by_id: 1
       )
@@ -648,12 +648,18 @@ namespace :ops do
         flow.condition_selected = {}
         flow.perform = {
           "ticket.process_type" => { "operator" => "show", "show" => "true" },
+          "ticket.issue_type" => { "operator" => "show", "show" => "true" },
           "ticket.origin" => { "operator" => "show", "show" => "true" },
+          "ticket.triage_ticket_description" => { "operator" => "show", "show" => "true" },
           "ticket.category" => { "operator" => "show", "show" => "true" },
           "ticket.subcategory" => { "operator" => "show", "show" => "true" },
           "ticket.subtype" => { "operator" => "show", "show" => "true" },
           "ticket.responsible_subject" => { "operator" => "show", "show" => "true" },
-          "ticket.ops_state" => { "operator" => "show", "show" => "true" },
+          "ticket.ops_state" => {
+            "operator" => [ "show", "set_fixed_to"],
+            "show" => "true",
+            "set_fixed_to" => [ "waiting", "sent_to_responsible" , "rejected" ]
+          },
           "ticket.address_municipality" => { "operator" => "show", "show" => "true" },
           "ticket.address_state" => { "operator" => "show", "show" => "true" },
           "ticket.address_county" => { "operator" => "show", "show" => "true" },
@@ -682,6 +688,7 @@ namespace :ops do
         flow.condition_selected = {}
         flow.perform = {
           "ticket.process_type" => { "operator" => "show", "show" => "true" },
+          "ticket.issue_type" => { "operator" => "show", "show" => "true" },
           "ticket.likes_count" => { "operator" => "show", "show" => "true" },
           "ticket.origin" => { "operator" => "show", "show" => "true" },
           "ticket.responsible_subject_changed_at" => { "operator" => "show", "show" => "true" },
@@ -830,6 +837,69 @@ namespace :ops do
           end.save!
         end
       end
+
+      CoreWorkflow.find_or_initialize_by(name: 'ops - ticket - triage process finalisation').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved = {
+          "ticket.origin" => { "operator" => "is", "value" => [ "portal" ] },
+          "ticket.process_type" => { "operator" => "is", "value" => [ "portal_issue_triage" ] },
+        }
+        flow.condition_selected = {
+          "ticket.ops_state" => { "operator" => "is", "value" => [ "sent_to_responsible" ] },
+        }
+        flow.perform = {
+          "ticket.triage_ticket_description" => { "operator" => "set_mandatory", "set_mandatory" => "true" },
+          "ticket.responsible_subject" => { "operator" => "set_mandatory", "set_mandatory" => "true" },
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true
+        flow.priority = 159
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
+      CoreWorkflow.find_or_initialize_by(name: 'ops - ticket - triage process closed set readonly attributes').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved =  {
+          "ticket.state_id" => { "operator" => "is", "value" => [ Ticket::State.find_by(name: "closed").id ] },
+          "ticket.process_type" => { "operator" => "is", "value" => ["portal_issue_triage"]},
+          "ticket.origin" => { "operator" => "is", "value" => ["portal"]}
+        }
+        flow.condition_selected = {}
+        flow.perform = {
+          "ticket.triage_ticket_description" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.responsible_subject" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.ops_state" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.process_type" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.responsible_subject_changed_at" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.category" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.subcategory" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.subtype" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_municipality" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_state" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_county" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_street" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_house_number" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_postcode" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_lat" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_lon" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.group_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.owner_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.title" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.priority_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.state_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.issue_type" => { "operator" => "set_readonly", "set_readonly" => "true" }
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true
+        flow.priority = 160
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
 
       # create triggers
       Trigger.find_or_initialize_by(name: 'ops - preposielanie - VZOR - <subjekt> - komentáre z portálu').tap do |trigger|
