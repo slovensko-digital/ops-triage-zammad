@@ -962,10 +962,129 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
+      Trigger.find_or_initialize_by(name: 'ops - preposielanie upravených podnetov na portál').tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND", "conditions" => [
+            { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+            { "operator" => "OR", "conditions" => [
+              { "name" => "ticket.title", "operator" => "has changed" },
+              { "name" => "ticket.triage_ticket_description", "operator" => "has changed" },
+              { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.issue_type", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.responsible_subject", "operator" => "has changed" },
+              { "name" => "ticket.category", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.subcategory", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.subtype", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.address_municipality", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.address_municipality_district", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.address_street", "operator" => "has changed" },
+              { "name" => "ticket.address_house_number", "operator" => "has changed" },
+              { "name" => "ticket.address_postcode", "operator" => "has changed" },
+              { "name" => "ticket.address_lat", "operator" => "has changed" },
+              { "name" => "ticket.address_lon", "operator" => "has changed" },
+              { "name" => "ticket.investment", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.portal_url", "operator" => "has changed" },
+            ]}
+          ]
+        }
+        trigger.perform = {
+          "notification.webhook" => { "webhook_id" => Webhook.find_by(name: "OPS - Upravený podnet pre OPS portál").id }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: 'ops - preposielanie nových komentárov na portál').tap do |trigger|
+        trigger.condition = {
+          "operator" => "OR", "conditions" => [
+            { "operator" => "AND", "conditions" => [
+              { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
+              { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+              { "name" => "article.internal", "operator" => "is", "value" => "false" },
+              { "name" => "article.body", "operator" => "contains", "value" => "[[ops portal]]" },
+              { "name" => "article.action", "operator" => "is", "value" => "create" },
+            ] },
+            { "operator" => "AND", "conditions" => [
+              { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_triage" ] },
+              { "name" => "ticket.state_id", "operator" => "is not", "value" => [ Ticket::State.find_by(name: "closed").id ] },
+              { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+              { "name" => "article.internal", "operator" => "is", "value" => "false" },
+              { "name" => "article.sender_id", "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Agent").id ] },
+              { "name" => "article.action", "operator" => "is", "value" => "create" },
+            ] }
+          ]
+        }
+        trigger.perform = {
+          "notification.webhook" => { "webhook_id" => Webhook.find_by(name: "OPS - Nový komentár pre OPS portál").id }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: 'ops - upozornenie na komentovanie uzavretých prijatých triážnych tiketov').tap do |trigger|
+        trigger.condition = {
+          "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_triage" },
+          "ticket.state_id" => { "operator" => "is", "value" => [ Ticket::State.find_by(name: "closed").id ] },
+          "ticket.ops_state" => { "operator" => "is", "value" => [ "sent_to_responsible" ] },
+          "article.action" => { "operator" => "is", "value" => "create" },
+          "article.internal" => { "operator" => "is", "value" => "false" }
+        }
+        trigger.perform = {
+          "article.note" => {
+            "body" => "Tento tiket je už uzavretý a nahradený novým tiketom. Ak chcete pridať komentár, použite, prosím, nový tiket v odkazoch vpravo dole.",
+            "internal" => "true",
+            "subject" => "Komentár k uzavretému podnetu",
+          }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: 'ops - upozornenie na komentovanie uzavretých zamietnutých triážnych tiketov').tap do |trigger|
+        trigger.condition = {
+          "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_triage" },
+          "ticket.state_id" => { "operator" => "is", "value" => [ Ticket::State.find_by(name: "closed").id ] },
+          "ticket.ops_state" => { "operator" => "is", "value" => [ "rejected" ] },
+          "article.action" => { "operator" => "is", "value" => "create" },
+          "article.internal" => { "operator" => "is", "value" => "false" }
+        }
+        trigger.perform = {
+          "article.note" => {
+            "body" => "Tento tiket je už uzavretý a zamietnutý.",
+            "internal" => "true",
+            "subject" => "Komentár k uzavretému podnetu",
+          }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
       TextModule.create_or_update(
         name: "Správa pre zodpovedný subjekt",
         keywords: "zodpovedny",
         content: "[[pre zodpovedny subjekt]]<div><br></div><div>Tento podnet...</div>",
+        note: "",
+        active: true,
+        updated_by_id: 1,
+        created_by_id: 1,
+      )
+
+      TextModule.create_or_update(
+        name: "Správa pre portál odkazu pre starostu",
+        keywords: "ops,portal,zakaznik",
+        content: "[[ops portal]]<div><br></div><div>Tento podnet...</div>",
         note: "",
         active: true,
         updated_by_id: 1,
