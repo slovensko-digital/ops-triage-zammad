@@ -650,7 +650,7 @@ namespace :ops do
           "ticket.process_type" => { "operator" => "show", "show" => "true" },
           "ticket.issue_type" => { "operator" => "show", "show" => "true" },
           "ticket.origin" => { "operator" => "show", "show" => "true" },
-          "ticket.triage_ticket_description" => { "operator" => "show", "show" => "true" },
+          "ticket.body" => { "operator" => "show", "show" => "true" },
           "ticket.category" => { "operator" => "show", "show" => "true" },
           "ticket.subcategory" => { "operator" => "show", "show" => "true" },
           "ticket.subtype" => { "operator" => "show", "show" => "true" },
@@ -849,7 +849,7 @@ namespace :ops do
           "ticket.ops_state" => { "operator" => "is", "value" => [ "sent_to_responsible" ] },
         }
         flow.perform = {
-          "ticket.triage_ticket_description" => { "operator" => "set_mandatory", "set_mandatory" => "true" },
+          "ticket.body" => { "operator" => "set_mandatory", "set_mandatory" => "true" },
           "ticket.responsible_subject" => { "operator" => "set_mandatory", "set_mandatory" => "true" },
         }
         flow.active = true
@@ -870,7 +870,7 @@ namespace :ops do
         }
         flow.condition_selected = {}
         flow.perform = {
-          "ticket.triage_ticket_description" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.body" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.responsible_subject" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.ops_state" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.process_type" => { "operator" => "set_readonly", "set_readonly" => "true" },
@@ -968,7 +968,7 @@ namespace :ops do
             { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
             { "operator" => "OR", "conditions" => [
               { "name" => "ticket.title", "operator" => "has changed" },
-              { "name" => "ticket.triage_ticket_description", "operator" => "has changed" },
+              { "name" => "ticket.body", "operator" => "has changed" },
               { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
               { "name" => "ticket.issue_type", "operator" => "has changed", "value" => [] },
               { "name" => "ticket.responsible_subject", "operator" => "has changed" },

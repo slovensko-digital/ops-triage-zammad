@@ -1,10 +1,10 @@
-class OpsAddTicketDescriptionTextarea < ActiveRecord::Migration[7.1]
+class OpsAddTicketBodyTextarea < ActiveRecord::Migration[7.1]
   def up
     return unless Setting.exists?(name: 'system_init_done')
 
     ObjectManager::Attribute.add(
       object: 'Ticket',
-      name: 'triage_ticket_description',
+      name: 'body',
       display: __('Finálny text podnetu'),
       data_type: 'textarea',
       data_option: {
@@ -33,15 +33,15 @@ class OpsAddTicketDescriptionTextarea < ActiveRecord::Migration[7.1]
 
     Ticket.where(origin: "portal").each do |ticket|
       first_article = ticket.articles.first
-      ticket.triage_ticket_description = first_article.body if first_article
+      ticket.body = first_article.body if first_article
       ticket.save
     end
 
-    Ticket.where(triage_ticket_description: nil).update_all(triage_ticket_description: '')
+    Ticket.where(body: nil).update_all(body: '')
   end
 
   def down
-    ObjectManager::Attribute.remove(object: 'Ticket', name: 'triage_ticket_description')
+    ObjectManager::Attribute.remove(object: 'Ticket', name: 'body')
 
     ObjectManager::Attribute.migration_execute
   end

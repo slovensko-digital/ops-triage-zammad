@@ -219,7 +219,7 @@ ObjectManager::Attribute.add(
 
 ObjectManager::Attribute.add(
   object: 'Ticket',
-  name: 'triage_ticket_description',
+  name: 'body',
   display: __('Finálny text podnetu'),
   data_type: 'textarea',
   data_option: {
