@@ -216,3 +216,30 @@ ObjectManager::Attribute.add(
   created_by_id: 1,
   updated_by_id: 1
 )
+
+ObjectManager::Attribute.add(
+  object: 'Ticket',
+  name: 'body',
+  display: __('Finálny text podnetu'),
+  data_type: 'textarea',
+  data_option: {
+    default: '',
+    maxlength: 8192,
+    rows: 10,
+    null: true,
+  },
+  active: true,
+  screens: {
+    create_middle: {
+      'ticket.customer' => { shown: false },
+      'ticket.agent' => { shown: false }
+    },
+    edit: {
+      'ticket.customer' => { shown: false },
+      'ticket.agent' => { shown: false }
+    }
+  },
+  position: 39,
+  created_by_id: 1,
+  updated_by_id: 1
+)
