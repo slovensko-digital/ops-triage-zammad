@@ -901,6 +901,29 @@ namespace :ops do
         flow.created_by_id = 1
       end.save!
 
+      CoreWorkflow.find_or_initialize_by(name: 'ops - disallow non-administrators to change ticket owner').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved = {
+          "ticket.owner_id" => { "operator" => "is set" }
+        }
+        flow.condition_selected = {
+          "session.role_ids" => { "operator" => "is not", "value" => [
+            Role.find_by(name: 'Admin').id,
+            Role.find_by(name: 'Administrátor dobrovoľníkov').id
+          ]}
+        }
+        flow.perform = {
+          "ticket.owner_id" => { "operator" => "set_readonly", "set_readonly" => "true" }
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true
+        flow.priority = 200
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
       # create triggers
       Trigger.find_or_initialize_by(name: 'ops - preposielanie - VZOR - <subjekt> - komentáre z portálu').tap do |trigger|
         trigger.condition = {
