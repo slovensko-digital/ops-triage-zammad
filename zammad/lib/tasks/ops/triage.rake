@@ -259,6 +259,8 @@ namespace :ops do
         Setting.set('ticket_hook', "Tiket#")
       end
 
+      Ticket::Article::Type.find_by_name(:note).update!(communication: true)
+
       Setting.set('user_create_account', false) # Disable user creation via web interface
       Setting.set('api_password_access', false) # Disable password access to REST API
 
@@ -1064,6 +1066,58 @@ namespace :ops do
             "subject" => "Komentár k uzavretému podnetu",
           }
         }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: 'ops - podnet označený za vyriešený - notifikácia').tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND", "conditions" => [
+            { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
+            { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+            { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "marked_as_resolved" ] },
+            { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
+            { "name" => "ticket.updated_by_id", "operator" => "is", "pre_condition" => "specific", "value" => [ tech_user.id ] },
+          ]
+        }
+        trigger.perform = {
+          "article.note" => {
+            "body" => "Podnet bol označený za vyriešený a čaká na schválenie.",
+            "internal" => "false",
+            "subject" => "Označený za vyriešený",
+            "sender" => "Customer"
+          }
+        }
+        trigger.note = "NEMENIŤ - spúšťač používa špeciálne parametre, ktoré budú zmazané pri úprave spúšťača."
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: 'ops - zmena zodpovedného subjektu - notifikácia').tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND", "conditions" => [
+            { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
+            { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+            { "name" => "ticket.responsible_subject", "operator" => "has changed", "value" => [] },
+            { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "sent_to_responsible" ] },
+            { "name" => "ticket.updated_by_id", "operator" => "is", "pre_condition" => "specific", "value" => [ tech_user.id ] },
+          ]
+        }
+        trigger.perform = {
+          "article.note" => {
+            "body" => "Zodpovedný subjekt bol zmenený.",
+            "internal" => "false",
+            "subject" => "Zmena zodpovedného subjektu",
+            "sender" => "Customer"
+          }
+        }
+        trigger.note = "NEMENIŤ - spúšťač používa špeciálne parametre, ktoré budú zmazané pri úprave spúšťača."
         trigger.activator = "action"
         trigger.execution_condition_mode = "selective"
         trigger.active = true
