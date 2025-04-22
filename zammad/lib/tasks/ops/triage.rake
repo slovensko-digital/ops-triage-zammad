@@ -316,6 +316,7 @@ namespace :ops do
         role.created_by_id = 1
       end
       portal_tech_account.permission_grant('admin.user')
+      portal_tech_account.permission_grant('admin.group')
       portal_tech_account.permission_grant('ticket.agent')
       portal_tech_account.permission_grant('user_preferences.access_token')
       portal_tech_account.groups << incoming_group
@@ -328,25 +329,21 @@ namespace :ops do
         "role_ids": [ portal_tech_account.id ],
         "active":true,
         "vip":false,
-        "id":"c-3",
         "updated_by_id": "1",
         "created_by_id": "1",
       }
-      unless User.find_by(firstname: 'Aplikácia', lastname: 'Odkaz pre starostu')
-        tech_user = User.new(params)
-        tech_user.associations_from_param(params)
-        tech_user.save!
-
-        token = Token.create!(
-          action:     'api',
-          persistent: true,
-          user_id:    tech_user.id,
-          name: "Token for OPS Portal and API",
-          preferences: {"permission"=>["admin.user", "report", "ticket.agent"]}
-        )
-        token.token = ENV.fetch('API_TOKEN', SecureRandom.urlsafe_base64(48))
-        token.save!
+      tech_user = User.find_or_initialize_by(firstname: 'Aplikácia', lastname: 'Odkaz pre starostu').tap do |tech_user|
+        tech_user.assign_attributes(params)
       end
+      tech_user.save!
+
+      token = Token.find_or_initialize_by(name: "Token for OPS Portal and API")
+      token.action = 'api'
+      token.persistent = true
+      token.user_id = tech_user.id
+      token.preferences = {"permission"=>["admin.user", "admin.group", "report", "ticket.agent"]}
+      token.token = ENV.fetch('API_TOKEN', SecureRandom.urlsafe_base64(48))
+      token.save!
 
       ObjectManager::Attribute.add(
         object: 'Ticket',
@@ -542,7 +539,7 @@ namespace :ops do
             'ticket.customer' => { shown: false },
           }
         },
-        position: 39,
+        position: 38,
         created_by_id: 1,
         updated_by_id: 1
       )
@@ -651,13 +648,18 @@ namespace :ops do
         flow.condition_selected = {}
         flow.perform = {
           "ticket.process_type" => { "operator" => "show", "show" => "true" },
+          "ticket.issue_type" => { "operator" => "show", "show" => "true" },
           "ticket.origin" => { "operator" => "show", "show" => "true" },
-          "ticket.responsible_subject_changed_at" => { "operator" => "show", "show" => "true" },
+          "ticket.body" => { "operator" => "show", "show" => "true" },
           "ticket.category" => { "operator" => "show", "show" => "true" },
           "ticket.subcategory" => { "operator" => "show", "show" => "true" },
           "ticket.subtype" => { "operator" => "show", "show" => "true" },
           "ticket.responsible_subject" => { "operator" => "show", "show" => "true" },
-          "ticket.ops_state" => { "operator" => "show", "show" => "true" },
+          "ticket.ops_state" => {
+            "operator" => [ "show", "set_fixed_to"],
+            "show" => "true",
+            "set_fixed_to" => [ "waiting", "sent_to_responsible" , "rejected" ]
+          },
           "ticket.address_municipality" => { "operator" => "show", "show" => "true" },
           "ticket.address_state" => { "operator" => "show", "show" => "true" },
           "ticket.address_county" => { "operator" => "show", "show" => "true" },
@@ -666,6 +668,7 @@ namespace :ops do
           "ticket.address_postcode" => { "operator" => "show", "show" => "true" },
           "ticket.address_lat" => { "operator" => "show", "show" => "true" },
           "ticket.address_lon" => { "operator" => "show", "show" => "true" },
+          "ticket.portal_url" => { "operator" => "show", "show" => "true" },
         }
         flow.active = true
         flow.stop_after_match = false
@@ -685,6 +688,7 @@ namespace :ops do
         flow.condition_selected = {}
         flow.perform = {
           "ticket.process_type" => { "operator" => "show", "show" => "true" },
+          "ticket.issue_type" => { "operator" => "show", "show" => "true" },
           "ticket.likes_count" => { "operator" => "show", "show" => "true" },
           "ticket.origin" => { "operator" => "show", "show" => "true" },
           "ticket.responsible_subject_changed_at" => { "operator" => "show", "show" => "true" },
@@ -701,6 +705,8 @@ namespace :ops do
           "ticket.address_postcode" => { "operator" => "show", "show" => "true" },
           "ticket.address_lat" => { "operator" => "show", "show" => "true" },
           "ticket.address_lon" => { "operator" => "show", "show" => "true" },
+          "ticket.portal_url" => { "operator" => "show", "show" => "true" },
+          "ticket.investment" => { "operator" => "show", "show" => "true" },
         }
         flow.active = true
         flow.stop_after_match = false
@@ -720,6 +726,7 @@ namespace :ops do
           "ticket.likes_count" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.origin" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.responsible_subject_changed_at" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.portal_url" => { "operator" => "set_readonly", "set_readonly" => "true" },
         }
         flow.active = true
         flow.stop_after_match = false
@@ -831,9 +838,73 @@ namespace :ops do
         end
       end
 
+      CoreWorkflow.find_or_initialize_by(name: 'ops - ticket - triage process finalisation').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved = {
+          "ticket.origin" => { "operator" => "is", "value" => [ "portal" ] },
+          "ticket.process_type" => { "operator" => "is", "value" => [ "portal_issue_triage" ] },
+        }
+        flow.condition_selected = {
+          "ticket.ops_state" => { "operator" => "is", "value" => [ "sent_to_responsible" ] },
+        }
+        flow.perform = {
+          "ticket.body" => { "operator" => "set_mandatory", "set_mandatory" => "true" },
+          "ticket.responsible_subject" => { "operator" => "set_mandatory", "set_mandatory" => "true" },
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true
+        flow.priority = 159
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
+      CoreWorkflow.find_or_initialize_by(name: 'ops - ticket - triage process closed set readonly attributes').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved =  {
+          "ticket.state_id" => { "operator" => "is", "value" => [ Ticket::State.find_by(name: "closed").id ] },
+          "ticket.process_type" => { "operator" => "is", "value" => ["portal_issue_triage"]},
+          "ticket.origin" => { "operator" => "is", "value" => ["portal"]}
+        }
+        flow.condition_selected = {}
+        flow.perform = {
+          "ticket.body" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.responsible_subject" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.ops_state" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.process_type" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.responsible_subject_changed_at" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.category" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.subcategory" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.subtype" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_municipality" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_state" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_county" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_street" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_house_number" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_postcode" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_lat" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_lon" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.group_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.owner_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.title" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.priority_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.state_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.issue_type" => { "operator" => "set_readonly", "set_readonly" => "true" }
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true
+        flow.priority = 160
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
       # create triggers
       Trigger.find_or_initialize_by(name: 'ops - preposielanie - VZOR - <subjekt> - komentáre z portálu').tap do |trigger|
         trigger.condition = {
+          "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.responsible_subject" => { "operator" => "is", "value_completion" => "", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
           "article.action" => { "operator" => "is", "value" => "create" },
           "article.internal" => { "operator" => "is", "value" => [ "false" ] },
@@ -858,6 +929,7 @@ namespace :ops do
 
       Trigger.find_or_initialize_by(name: 'ops - preposielanie - VZOR - <subjekt> - komentáre z triáže').tap do |trigger|
         trigger.condition = {
+          "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.responsible_subject" => { "operator" => "is", "value_completion" => "", "value" => [ { "label" => "Test", "value" => 0 } ] },
           "article.action" => { "operator" => "is", "value" => "create" },
           "article.internal" => { "operator" => "is", "value" => [ "true" ] },
@@ -890,10 +962,129 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
+      Trigger.find_or_initialize_by(name: 'ops - preposielanie upravených podnetov na portál').tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND", "conditions" => [
+            { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+            { "operator" => "OR", "conditions" => [
+              { "name" => "ticket.title", "operator" => "has changed" },
+              { "name" => "ticket.body", "operator" => "has changed" },
+              { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.issue_type", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.responsible_subject", "operator" => "has changed" },
+              { "name" => "ticket.category", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.subcategory", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.subtype", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.address_municipality", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.address_municipality_district", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.address_street", "operator" => "has changed" },
+              { "name" => "ticket.address_house_number", "operator" => "has changed" },
+              { "name" => "ticket.address_postcode", "operator" => "has changed" },
+              { "name" => "ticket.address_lat", "operator" => "has changed" },
+              { "name" => "ticket.address_lon", "operator" => "has changed" },
+              { "name" => "ticket.investment", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.portal_url", "operator" => "has changed" },
+            ]}
+          ]
+        }
+        trigger.perform = {
+          "notification.webhook" => { "webhook_id" => Webhook.find_by(name: "OPS - Upravený podnet pre OPS portál").id }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: 'ops - preposielanie nových komentárov na portál').tap do |trigger|
+        trigger.condition = {
+          "operator" => "OR", "conditions" => [
+            { "operator" => "AND", "conditions" => [
+              { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
+              { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+              { "name" => "article.internal", "operator" => "is", "value" => "false" },
+              { "name" => "article.body", "operator" => "contains", "value" => "[[ops portal]]" },
+              { "name" => "article.action", "operator" => "is", "value" => "create" },
+            ] },
+            { "operator" => "AND", "conditions" => [
+              { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_triage" ] },
+              { "name" => "ticket.state_id", "operator" => "is not", "value" => [ Ticket::State.find_by(name: "closed").id ] },
+              { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+              { "name" => "article.internal", "operator" => "is", "value" => "false" },
+              { "name" => "article.sender_id", "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Agent").id ] },
+              { "name" => "article.action", "operator" => "is", "value" => "create" },
+            ] }
+          ]
+        }
+        trigger.perform = {
+          "notification.webhook" => { "webhook_id" => Webhook.find_by(name: "OPS - Nový komentár pre OPS portál").id }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: 'ops - upozornenie na komentovanie uzavretých prijatých triážnych tiketov').tap do |trigger|
+        trigger.condition = {
+          "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_triage" },
+          "ticket.state_id" => { "operator" => "is", "value" => [ Ticket::State.find_by(name: "closed").id ] },
+          "ticket.ops_state" => { "operator" => "is", "value" => [ "sent_to_responsible" ] },
+          "article.action" => { "operator" => "is", "value" => "create" },
+          "article.internal" => { "operator" => "is", "value" => "false" }
+        }
+        trigger.perform = {
+          "article.note" => {
+            "body" => "Tento tiket je už uzavretý a nahradený novým tiketom. Ak chcete pridať komentár, použite, prosím, nový tiket v odkazoch vpravo dole.",
+            "internal" => "true",
+            "subject" => "Komentár k uzavretému podnetu",
+          }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: 'ops - upozornenie na komentovanie uzavretých zamietnutých triážnych tiketov').tap do |trigger|
+        trigger.condition = {
+          "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_triage" },
+          "ticket.state_id" => { "operator" => "is", "value" => [ Ticket::State.find_by(name: "closed").id ] },
+          "ticket.ops_state" => { "operator" => "is", "value" => [ "rejected" ] },
+          "article.action" => { "operator" => "is", "value" => "create" },
+          "article.internal" => { "operator" => "is", "value" => "false" }
+        }
+        trigger.perform = {
+          "article.note" => {
+            "body" => "Tento tiket je už uzavretý a zamietnutý.",
+            "internal" => "true",
+            "subject" => "Komentár k uzavretému podnetu",
+          }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
       TextModule.create_or_update(
         name: "Správa pre zodpovedný subjekt",
         keywords: "zodpovedny",
         content: "[[pre zodpovedny subjekt]]<div><br></div><div>Tento podnet...</div>",
+        note: "",
+        active: true,
+        updated_by_id: 1,
+        created_by_id: 1,
+      )
+
+      TextModule.create_or_update(
+        name: "Správa pre portál odkazu pre starostu",
+        keywords: "ops,portal,zakaznik",
+        content: "[[ops portal]]<div><br></div><div>Tento podnet...</div>",
         note: "",
         active: true,
         updated_by_id: 1,
