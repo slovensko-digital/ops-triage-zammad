@@ -954,7 +954,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: 'ops - nastavenie času poslednej zmeny zodpovedného subjektu').tap do |trigger|
+      Trigger.find_or_initialize_by(name: 'Z - ops - nastavenie času poslednej zmeny zodpovedného subjektu').tap do |trigger|
         trigger.condition = { "ticket.responsible_subject" => { "operator" => "has changed", "value_completion" => "", "value" => [] } }
         trigger.perform = { "ticket.responsible_subject_changed_at" => { "operator" => "relative", "value" => "1", "range" => "minute" } }
         trigger.activator = "action"
@@ -1105,7 +1105,6 @@ namespace :ops do
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
             { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
             { "name" => "ticket.responsible_subject", "operator" => "has changed", "value" => [] },
-            { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "sent_to_responsible" ] },
             { "name" => "ticket.updated_by_id", "operator" => "is", "pre_condition" => "specific", "value" => [ tech_user.id ] },
           ]
         }
@@ -1113,8 +1112,7 @@ namespace :ops do
           "article.note" => {
             "body" => "Zodpovedný subjekt bol zmenený.",
             "internal" => "false",
-            "subject" => "Zmena zodpovedného subjektu",
-            "sender" => "Customer"
+            "subject" => "Zmena zodpovedného subjektu"
           }
         }
         trigger.note = "NEMENIŤ - spúšťač používa špeciálne parametre, ktoré budú zmazané pri úprave spúšťača."
