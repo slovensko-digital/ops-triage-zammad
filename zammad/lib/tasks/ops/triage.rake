@@ -903,22 +903,28 @@ namespace :ops do
         flow.created_by_id = 1
       end.save!
 
+      # deactivate predefined triggers
+      Trigger.find_by(name: 'auto reply (on new tickets)')&.update!(active: false)
+
       # create triggers
-      Trigger.find_or_initialize_by(name: 'ops - preposielanie - VZOR - <subjekt> - komentáre z portálu').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '2 - ops - preposielanie - VZOR - <subjekt> - nový podnet').tap do |trigger|
         trigger.condition = {
-          "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
-          "ticket.responsible_subject" => { "operator" => "is", "value_completion" => "", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
-          "article.action" => { "operator" => "is", "value" => "create" },
-          "article.internal" => { "operator" => "is", "value" => [ "false" ] },
-          "article.sender_id" => { "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id ] },
-          "customer.origin" => { "operator" => "is", "value" => [ "portal" ] }
+          "operator" => "AND",
+          "conditions" => [
+            { "name" => "ticket.process_type", "operator" => "is", "value" => "portal_issue_resolution" },
+            { "name" => "ticket.responsible_subject", "operator" => "is", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
+            { "operator" => "OR", "conditions" => [
+              { "name" => "ticket.action", "operator" => "is", "value" => "create" },
+              { "name" => "ticket.responsible_subject", "operator" => "has changed", "value" => [] }
+            ] }
+          ]
         }
         trigger.perform = {
           "notification.email" => {
-            "body" => "<div>K podnetu na portáli <b>Odkaz pre starostu</b> bol pridaný komentár od používateľa. Môžete na neho reagovať odpovedaním na tento email.</div><div><br></div><div><b>Obsah komentára:</b></div><div>\#{article.body_as_html}</div><div><br></div><div><i>Reagovať na túto správu môžete odpoveďou na tento email.</i></div>",
+            "body" => "<div>Správca podnetu na portáli Odkaz pre starostu vám priradil podnet.</div><div><br></div><div><b>Názov podnetu:</b>&nbsp;\#{ticket.title}<br><br><div></div><div><b>Adresa:</b>&nbsp;\#{ticket.address_municipality} - \#{ticket.address_street}</div><div><b>Text podnetu:</b></div><div>\#{ticket.body}<br><br>Odkaz na portál:&nbsp;\#{ticket.portal_url} <br><br><div></div><div><i>Reagovať na túto správu môžete odpoveďou na tento email.</i></div></div>",
             "internal" => "true",
             "recipient" => [ "userid_#{template_external_responsible_subject_user.id}" ],
-            "subject" => "Nový komentár k podnetu: \#{ticket.title}",
+            "subject" => "Odkaz pre starostu - \#{ticket.title}",
             "include_attachments" => "true"
           }
         }
@@ -929,12 +935,37 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: 'ops - preposielanie - VZOR - <subjekt> - komentáre z triáže').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '2 - ops - preposielanie - VZOR - <subjekt> - komentáre z portálu').tap do |trigger|
+        trigger.condition = {
+          "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
+          "ticket.responsible_subject" => { "operator" => "is", "value_completion" => "", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
+          "article.action" => { "operator" => "is", "value" => "create" },
+          "article.internal" => { "operator" => "is", "value" => [ "false" ] },
+          "article.sender_id" => { "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id ] },
+          "article.type_id" => { "operator" => "is not", "value" => [ Ticket::Article::Type.find_by_name("email").id ] },
+        }
+        trigger.perform = {
+          "notification.email" => {
+            "body" => "<div>K podnetu na portáli <b>Odkaz pre starostu</b> bol pridaný komentár od používateľa. Môžete na neho reagovať odpovedaním na tento email.</div><div><br></div><div><b>Obsah komentára:</b></div><div>\#{article.body_as_html}</div><div><br></div><div><i>Reagovať na túto správu môžete odpoveďou na tento email.</i></div>",
+            "internal" => "true",
+            "recipient" => [ "userid_#{template_external_responsible_subject_user.id}" ],
+            "subject" => "Odkaz pre starostu - \#{ticket.title}",
+            "include_attachments" => "true"
+          }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = false
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: '2 - ops - preposielanie - VZOR - <subjekt> - komentáre z triáže').tap do |trigger|
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.responsible_subject" => { "operator" => "is", "value_completion" => "", "value" => [ { "label" => "Test", "value" => 0 } ] },
           "article.action" => { "operator" => "is", "value" => "create" },
-          "article.internal" => { "operator" => "is", "value" => [ "true" ] },
+          "article.internal" => { "operator" => "is", "value" => [ "false" ] },
           "article.sender_id" => { "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Agent").id ] },
           "article.body" => { "operator" => "contains", "value" => "[[pre zodpovedny subjekt]]" }
         }
@@ -943,7 +974,7 @@ namespace :ops do
             "body" => "<div>Správca podnetu na portáli Odkaz pre starostu vám posiela novú správu.</div><div><br></div><div><b>Obsah správy:</b></div>\#{article.body_as_html}<br><br><div></div><div><i>Reagovať na túto správu môžete odpoveďou na tento email.</i></div>",
             "internal" => "true",
             "recipient" => [ "userid_#{template_external_responsible_subject_user.id}" ],
-            "subject" => "Nová správa od správcu k podnetu: \#{ticket.title}",
+            "subject" => "Odkaz pre starostu - \#{ticket.title}",
             "include_attachments" => "true"
           }
         }
@@ -954,7 +985,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: 'Z - ops - nastavenie času poslednej zmeny zodpovedného subjektu').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '9 - ops - nastavenie času poslednej zmeny zodpovedného subjektu').tap do |trigger|
         trigger.condition = { "ticket.responsible_subject" => { "operator" => "has changed", "value_completion" => "", "value" => [] } }
         trigger.perform = { "ticket.responsible_subject_changed_at" => { "operator" => "relative", "value" => "1", "range" => "minute" } }
         trigger.activator = "action"
@@ -964,7 +995,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: 'ops - preposielanie upravených podnetov na portál').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '2 - ops - preposielanie upravených podnetov na portál').tap do |trigger|
         trigger.condition = {
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
@@ -999,7 +1030,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: 'ops - preposielanie nových komentárov na portál').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '2 - ops - preposielanie nových komentárov na portál').tap do |trigger|
         trigger.condition = {
           "operator" => "OR", "conditions" => [
             { "operator" => "AND", "conditions" => [
@@ -1029,7 +1060,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: 'ops - upozornenie na komentovanie uzavretých prijatých triážnych tiketov').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '1 - ops - upozornenie na komentovanie uzavretých prijatých triážnych tiketov').tap do |trigger|
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_triage" },
           "ticket.state_id" => { "operator" => "is", "value" => [ Ticket::State.find_by(name: "closed").id ] },
@@ -1051,7 +1082,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: 'ops - upozornenie na komentovanie uzavretých zamietnutých triážnych tiketov').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '1 - ops - upozornenie na komentovanie uzavretých zamietnutých triážnych tiketov').tap do |trigger|
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_triage" },
           "ticket.state_id" => { "operator" => "is", "value" => [ Ticket::State.find_by(name: "closed").id ] },
@@ -1073,7 +1104,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: 'ops - podnet označený za vyriešený - notifikácia').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '8 - ops - podnet označený za vyriešený - notifikácia').tap do |trigger|
         trigger.condition = {
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
@@ -1099,7 +1130,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: 'ops - zmena zodpovedného subjektu - notifikácia').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '8 - ops - zmena zodpovedného subjektu - notifikácia').tap do |trigger|
         trigger.condition = {
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
@@ -1110,9 +1141,33 @@ namespace :ops do
         }
         trigger.perform = {
           "article.note" => {
-            "body" => "Zodpovedný subjekt bol zmenený.",
+            "body" => "Zodpovedný subjekt bol zmenený úradníkom na iný subjekt.",
             "internal" => "false",
-            "subject" => "Zmena zodpovedného subjektu"
+            "subject" => "Zmena zodpovedného subjektu úradníkom"
+          }
+        }
+        trigger.note = "NEMENIŤ - spúšťač používa špeciálne parametre, ktoré budú zmazané pri úprave spúšťača."
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: '8 - ops - zmena zodpovedného subjektu agentom - notifikácia').tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND", "conditions" => [
+            { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
+            { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+            { "name" => "ticket.responsible_subject", "operator" => "has changed", "value" => [] },
+            { "name" => "ticket.updated_by_id", "operator" => "is not", "pre_condition" => "specific", "value" => [ tech_user.id ] },
+          ]
+        }
+        trigger.perform = {
+          "article.note" => {
+            "body" => "Zodpovedný subjekt bol zmenený agentom.",
+            "internal" => "false",
+            "subject" => "Zmena zodpovedného subjektu agentom"
           }
         }
         trigger.note = "NEMENIŤ - spúšťač používa špeciálne parametre, ktoré budú zmazané pri úprave spúšťača."
