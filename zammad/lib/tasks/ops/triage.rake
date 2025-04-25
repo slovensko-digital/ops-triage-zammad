@@ -901,18 +901,13 @@ namespace :ops do
         flow.created_by_id = 1
       end.save!
 
-      CoreWorkflow.find_or_initialize_by(name: 'ops - disallow non-administrators to change ticket owner').tap do |flow|
+      CoreWorkflow.find_or_initialize_by(name: 'ops - disallow all users to change ticket owner if set already').tap do |flow|
         flow.object = "Ticket"
         flow.preferences = { "screen" => [ "edit" ] }
         flow.condition_saved = {
           "ticket.owner_id" => { "operator" => "is set" }
         }
-        flow.condition_selected = {
-          "session.role_ids" => { "operator" => "is not", "value" => [
-            Role.find_by(name: 'Admin').id,
-            Role.find_by(name: 'Administrátor dobrovoľníkov').id
-          ]}
-        }
+        flow.condition_selected = {}
         flow.perform = {
           "ticket.owner_id" => { "operator" => "set_readonly", "set_readonly" => "true" }
         }
@@ -920,6 +915,27 @@ namespace :ops do
         flow.stop_after_match = false
         flow.changeable = true
         flow.priority = 200
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
+      CoreWorkflow.find_or_initialize_by(name: 'ops - allow admins to change ticket owner').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved = {}
+        flow.condition_selected = {
+          "session.role_ids" => { "operator" => "is", "value" => [
+            Role.find_by(name: 'Admin').id,
+            Role.find_by(name: 'Administrátor dobrovoľníkov').id
+          ]}
+        }
+        flow.perform = {
+          "ticket.owner_id" => { "operator" => "unset_readonly", "unset_readonly" => "true" }
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true
+        flow.priority = 190
         flow.updated_by_id = 1
         flow.created_by_id = 1
       end.save!
