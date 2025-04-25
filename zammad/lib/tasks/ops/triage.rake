@@ -907,7 +907,7 @@ namespace :ops do
       Trigger.find_by(name: 'auto reply (on new tickets)')&.update!(active: false)
 
       # create triggers
-      Trigger.find_or_initialize_by(name: '2 - ops - preposielanie - VZOR - <subjekt> - nový podnet').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - VZOR - <subjekt> - nový podnet').tap do |trigger|
         trigger.condition = {
           "operator" => "AND",
           "conditions" => [
@@ -935,7 +935,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '2 - ops - preposielanie - VZOR - <subjekt> - komentáre z portálu').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - VZOR - <subjekt> - komentáre z portálu').tap do |trigger|
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.responsible_subject" => { "operator" => "is", "value_completion" => "", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
@@ -960,7 +960,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '2 - ops - preposielanie - VZOR - <subjekt> - komentáre z triáže').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - VZOR - <subjekt> - komentáre z triáže').tap do |trigger|
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.responsible_subject" => { "operator" => "is", "value_completion" => "", "value" => [ { "label" => "Test", "value" => 0 } ] },
@@ -985,7 +985,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '9 - ops - nastavenie času poslednej zmeny zodpovedného subjektu').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '900 - ops - nastavenie času poslednej zmeny zodpovedného subjektu').tap do |trigger|
         trigger.condition = { "ticket.responsible_subject" => { "operator" => "has changed", "value_completion" => "", "value" => [] } }
         trigger.perform = { "ticket.responsible_subject_changed_at" => { "operator" => "relative", "value" => "1", "range" => "minute" } }
         trigger.activator = "action"
@@ -995,7 +995,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '2 - ops - preposielanie upravených podnetov na portál').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie upravených podnetov na portál').tap do |trigger|
         trigger.condition = {
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
@@ -1030,7 +1030,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '2 - ops - preposielanie nových komentárov na portál').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie nových komentárov na portál').tap do |trigger|
         trigger.condition = {
           "operator" => "OR", "conditions" => [
             { "operator" => "AND", "conditions" => [
@@ -1060,7 +1060,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '1 - ops - upozornenie na komentovanie uzavretých prijatých triážnych tiketov').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '100 - ops - upozornenie na komentovanie uzavretých prijatých triážnych tiketov').tap do |trigger|
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_triage" },
           "ticket.state_id" => { "operator" => "is", "value" => [ Ticket::State.find_by(name: "closed").id ] },
@@ -1082,7 +1082,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '1 - ops - upozornenie na komentovanie uzavretých zamietnutých triážnych tiketov').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '100 - ops - upozornenie na komentovanie uzavretých zamietnutých triážnych tiketov').tap do |trigger|
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_triage" },
           "ticket.state_id" => { "operator" => "is", "value" => [ Ticket::State.find_by(name: "closed").id ] },
@@ -1104,7 +1104,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '8 - ops - podnet označený za vyriešený - notifikácia').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '800 - ops - podnet označený za vyriešený - notifikácia').tap do |trigger|
         trigger.condition = {
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
@@ -1130,7 +1130,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '8 - ops - zmena zodpovedného subjektu - notifikácia').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '800 - ops - zmena zodpovedného subjektu - notifikácia').tap do |trigger|
         trigger.condition = {
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
@@ -1154,7 +1154,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '8 - ops - zmena zodpovedného subjektu agentom - notifikácia').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '800 - ops - zmena zodpovedného subjektu agentom - notifikácia').tap do |trigger|
         trigger.condition = {
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
