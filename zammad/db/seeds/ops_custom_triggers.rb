@@ -1,4 +1,4 @@
-Trigger.find_or_initialize_by(name: 'ops - preposielanie nových podnetov PRO zodpovedným subjektom').tap do |trigger|
+Trigger.find_or_initialize_by(name: '200 - ops - preposielanie nových podnetov PRO zodpovedným subjektom').tap do |trigger|
   trigger.condition = {
     "operator" => "AND", "conditions" => [
       { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
@@ -20,7 +20,7 @@ Trigger.find_or_initialize_by(name: 'ops - preposielanie nových podnetov PRO zo
   trigger.created_by_id = 1
 end.save!
 
-Trigger.find_or_initialize_by(name: 'ops - preposielanie upravených podnetov PRO zodpovedným subjektom').tap do |trigger|
+Trigger.find_or_initialize_by(name: '200 - ops - preposielanie upravených podnetov PRO zodpovedným subjektom').tap do |trigger|
   trigger.condition = {
     "operator" => "AND", "conditions" => [
       { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
@@ -55,7 +55,7 @@ Trigger.find_or_initialize_by(name: 'ops - preposielanie upravených podnetov PR
   trigger.created_by_id = 1
 end.save!
 
-Trigger.find_or_initialize_by(name: 'ops - preposielanie nových komentárov PRO zodpovedným subjektom').tap do |trigger|
+Trigger.find_or_initialize_by(name: '200 - ops - preposielanie nových komentárov PRO zodpovedným subjektom').tap do |trigger|
   trigger.condition = {
     "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
     "ticket.responsible_subject" => { "operator" => "is", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
