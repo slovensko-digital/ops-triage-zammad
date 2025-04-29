@@ -648,7 +648,7 @@ namespace :ops do
           maxlength: 120,
           linktemplate: File.join(
             ENV.fetch('OPS_PORTAL_PUBLIC_URL', ENV.fetch('OPS_PORTAL_URL', 'http://host.docker.internal:3000')),
-            'dopyty?pin=#{ticket.address_lat}%2C#{ticket.address_lon}&tab=list'
+            'dopyty?dopyt[]=Podnet&kategoria[]=#{ticket.category}&pin=#{ticket.address_lat},#{ticket.address_lon}&tab=list'
           ),
           null: true,
           options: {},
