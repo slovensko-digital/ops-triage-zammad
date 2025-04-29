@@ -8,7 +8,7 @@ class AddPortalDuplicatesUrl < ActiveRecord::Migration[7.1]
       display: 'Podobné podnety v okolí',
       data_type: 'input',
       data_option: {
-        default: 'Okdaz na podobné podnety',
+        default: 'Odkaz na podobné podnety',
         type: 'text',
         maxlength: 120,
         linktemplate: File.join(
@@ -37,7 +37,7 @@ class AddPortalDuplicatesUrl < ActiveRecord::Migration[7.1]
 
     ObjectManager::Attribute.migration_execute
 
-    Ticket.update_all(portal_duplicates_url: 'Okdaz na podobné podnety')
+    Ticket.update_all(portal_duplicates_url: 'Odkaz na podobné podnety')
   end
 
   def down

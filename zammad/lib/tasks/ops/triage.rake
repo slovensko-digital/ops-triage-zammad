@@ -643,7 +643,7 @@ namespace :ops do
         display: 'Podobné podnety v okolí',
         data_type: 'input',
         data_option: {
-          default: 'Okdaz na podobné podnety',
+          default: 'Odkaz na podobné podnety',
           type: 'text',
           maxlength: 120,
           linktemplate: File.join(
