@@ -637,6 +637,39 @@ namespace :ops do
       a.data_option['options'] = load_municipalities
       a.save!
 
+      ObjectManager::Attribute.add(
+        object: 'Ticket',
+        name: 'portal_duplicates_url',
+        display: 'Podobné podnety v okolí',
+        data_type: 'input',
+        data_option: {
+          default: 'Odkaz na podobné podnety',
+          type: 'text',
+          maxlength: 120,
+          linktemplate: File.join(
+            ENV.fetch('OPS_PORTAL_PUBLIC_URL', ENV.fetch('OPS_PORTAL_URL', 'http://host.docker.internal:3000')),
+            'dopyty?dopyt[]=Podnet&kategoria[]=#{ticket.category}&pin=#{ticket.address_lat},#{ticket.address_lon}'
+          ),
+          null: true,
+          options: {},
+          relation: ''
+        },
+        active: true,
+        screens: {
+          create_middle: {
+            'ticket.customer' => { shown: false },
+            'ticket.agent' => { shown: false }
+          },
+          edit: {
+            'ticket.customer' => { shown: false },
+            'ticket.agent' => { shown: false }
+          }
+        },
+        position: 102,
+        created_by_id: 1,
+        updated_by_id: 1
+      )
+
       ObjectManager::Attribute.migration_execute
 
       # add ops flows
@@ -718,6 +751,25 @@ namespace :ops do
         flow.created_by_id = 1
       end.save!
 
+      CoreWorkflow.find_or_initialize_by(name: 'ops - ticket - show portal duplicates url if issue_type issue').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved = {
+          "ticket.origin" => { "operator" => "is", "value" => [ "portal" ] },
+          "ticket.issue_type" => { "operator" => "is", "value" => [ "issue" ] }
+        }
+        flow.condition_selected = {}
+        flow.perform = {
+          "ticket.portal_duplicates_url" => { "operator" => "show", "show" => "true" }
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true # TODO consider hiding from end users
+        flow.priority = 150
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
       CoreWorkflow.find_or_initialize_by(name: 'ops - read-only ticket attributes').tap do |flow|
         flow.object = "Ticket"
         flow.preferences = { "screen" => [ "edit" ] }
@@ -729,6 +781,7 @@ namespace :ops do
           "ticket.origin" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.responsible_subject_changed_at" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.portal_url" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.portal_duplicates_url" => { "operator" => "set_readonly", "set_readonly" => "true" },
         }
         flow.active = true
         flow.stop_after_match = false
