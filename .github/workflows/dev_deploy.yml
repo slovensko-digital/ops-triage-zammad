@@ -50,6 +50,7 @@ jobs:
           Z_LOCALES: ${{ vars.Z_LOCALES }}
           OPS_PORTAL_URL: ${{ vars.OPS_PORTAL_URL }}
           ZAMMAD_ELASTICSEARCH_USER: ${{ vars.ZAMMAD_ELASTICSEARCH_USER }}
+          S3_URL: ${{ secrets.S3_URL }}
 
         run: |
           kamal deploy -d staging
