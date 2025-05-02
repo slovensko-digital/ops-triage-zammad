@@ -31,3 +31,10 @@ E.g. set personal registry secrets in your `~/.bash_profile`:
 export KAMAL_REGISTRY_PASSWORD=...
 export KAMAL_REGISTRY_USERNAME=...
 ```
+
+## S3 config
+
+Set `S3_URL` env if S3 should be used for storage. Otherwise, database is used by default.
+```
+S3_URL=https://<access_key_id>:<access_key_secret>@s3.<region>.amazonaws.com/<bucket_name>?region=<region>&force_path_style=true
+```
