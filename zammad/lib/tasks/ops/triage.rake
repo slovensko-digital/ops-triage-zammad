@@ -1228,7 +1228,7 @@ namespace :ops do
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
             { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
             { "name" => "ticket.responsible_subject", "operator" => "has changed", "value" => [] },
-            { "name" => "ticket.responsible_subject", "operator" => "is", "value" => [ { "label" => "Iný subjekt", "value" => 410 } ] },
+            { "name" => "ticket.responsible_subject", "operator" => "is", "value" => [ { "label" => "Iný subjekt", "value" => ENV["OTHER_RESPONSIBLE_SUBJECT_ID"] } ] },
             { "name" => "ticket.updated_by_id", "operator" => "is", "pre_condition" => "specific", "value" => [ tech_user.id ] },
           ]
         }
@@ -1254,7 +1254,7 @@ namespace :ops do
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
             { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
             { "name" => "ticket.responsible_subject", "operator" => "has changed", "value" => [] },
-            { "name" => "ticket.responsible_subject", "operator" => "is not", "value" => [ { "label" => "Iný subjekt", "value" => 410 } ] },
+            { "name" => "ticket.responsible_subject", "operator" => "is not", "value" => [ { "label" => "Iný subjekt", "value" => ENV["OTHER_RESPONSIBLE_SUBJECT_ID"] } ] },
             { "name" => "ticket.updated_by_id", "operator" => "is", "pre_condition" => "specific", "value" => [ tech_user.id ] },
           ]
         }

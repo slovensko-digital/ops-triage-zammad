@@ -12,6 +12,10 @@ x-load-env:
 proxy:
   host: triage.ops.dev.slovensko.digital
 
+env:
+  clear:
+    OTHER_RESPONSIBLE_SUBJECT_ID: 410
+
 accessories:
   kibana:
     proxy:
