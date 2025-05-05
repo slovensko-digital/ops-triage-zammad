@@ -5,8 +5,7 @@
 ```
 # Elasticsearch setup and deploy
 kamal accessory boot elastic -d staging
-kamal elastic_generate_kibanapass -d staging
-# set KIBANA_PASSWORD env
+kamal elastic_init_users -d staging
 kamal accessory boot kibana -d staging
 
 # Zammad deploy
@@ -38,3 +37,11 @@ Set `S3_URL` env if S3 should be used for storage. Otherwise, database is used b
 ```
 S3_URL=https://<access_key_id>:<access_key_secret>@s3.<region>.amazonaws.com/<bucket_name>?region=<region>&force_path_style=true
 ```
+
+## Add Backoffice to Elasticsearch
+
+```
+kamal elastic_add_backoffice -d staging
+```
+
+You will be prompted for username and password. The script will then create user `username` with given password, and role `username` with access to `username-index*` indicies.
