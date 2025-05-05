@@ -5,7 +5,7 @@
 ```
 # Elasticsearch setup and deploy
 kamal accessory boot elastic -d staging
-kamal elastic_init -d staging
+kamal elastic_init_users -d staging
 kamal accessory boot kibana -d staging
 
 # Zammad deploy
