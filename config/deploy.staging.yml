@@ -21,6 +21,7 @@ env: &env_staging
     ADMIN_EMAIL: <%= ENV.fetch('ADMIN_EMAIL', 'example@example.org') %>
     ADMIN_FIRSTNAME: Superadmin
     ADMIN_LASTNAME: User
+    OTHER_RESPONSIBLE_SUBJECT_ID: 410
 
 accessories:
   railsserver:

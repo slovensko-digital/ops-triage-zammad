@@ -1222,12 +1222,39 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
+      Trigger.find_or_initialize_by(name: '800 - ops - zmena zodpovedného subjektu na "Iný subjekt" - notifikácia').tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND", "conditions" => [
+            { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
+            { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+            { "name" => "ticket.responsible_subject", "operator" => "has changed", "value" => [] },
+            { "name" => "ticket.responsible_subject", "operator" => "is", "value" => [ { "label" => "Iný subjekt", "value" => ENV["OTHER_RESPONSIBLE_SUBJECT_ID"] } ] },
+            { "name" => "ticket.updated_by_id", "operator" => "is", "pre_condition" => "specific", "value" => [ tech_user.id ] },
+          ]
+        }
+        trigger.perform = {
+          "article.note" => {
+            "body" => "Zodpovedný subjekt bol úradníkom zmenený na \"Iný subjekt\".",
+            "internal" => "false",
+            "subject" => "Zmena zodpovednosti na Iný subjekt",
+            "sender" => "Customer"
+          }
+        }
+        trigger.note = "NEMENIŤ - spúšťač používa špeciálne parametre, ktoré budú zmazané pri úprave spúšťača."
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
       Trigger.find_or_initialize_by(name: '800 - ops - zmena zodpovedného subjektu - notifikácia').tap do |trigger|
         trigger.condition = {
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
             { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
             { "name" => "ticket.responsible_subject", "operator" => "has changed", "value" => [] },
+            { "name" => "ticket.responsible_subject", "operator" => "is not", "value" => [ { "label" => "Iný subjekt", "value" => ENV["OTHER_RESPONSIBLE_SUBJECT_ID"] } ] },
             { "name" => "ticket.updated_by_id", "operator" => "is", "pre_condition" => "specific", "value" => [ tech_user.id ] },
           ]
         }
