@@ -41,7 +41,7 @@ jobs:
           ELASTIC_PASSWORD: ${{ secrets.ELASTIC_PASSWORD }}
           KIBANA_PASSWORD: ${{ secrets.KIBANA_PASSWORD }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
-          ZAMMAD_ELASTICSEARCH_PASSWORD: ${{ secrets.ZAMMAD_ELASTICSEARCH_PASSWORD }}
+          ELASTICSEARCH_PASS: ${{ secrets.ELASTICSEARCH_PASS }}
           ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
           FQDN: ${{ vars.FQDN }}
           PRODUCT_NAME: ${{ vars.PRODUCT_NAME }}
@@ -49,7 +49,7 @@ jobs:
           RAILS_LOG_LEVEL: ${{ vars.RAILS_LOG_LEVEL }}
           Z_LOCALES: ${{ vars.Z_LOCALES }}
           OPS_PORTAL_URL: ${{ vars.OPS_PORTAL_URL }}
-          ZAMMAD_ELASTICSEARCH_USER: ${{ vars.ZAMMAD_ELASTICSEARCH_USER }}
+          ELASTICSEARCH_USER: ${{ vars.ELASTICSEARCH_USER }}
           S3_URL: ${{ secrets.S3_URL }}
 
         run: |

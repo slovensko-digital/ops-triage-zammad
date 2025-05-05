@@ -12,7 +12,23 @@ x-load-env:
 proxy:
   host: triage.ops.dev.slovensko.digital
 
+env: &env_staging
+  clear:
+    OPS_PORTAL_URL: ops.dev.slovensko.digital
+    FQDN: triage.ops.dev.slovensko.digital
+    PRODUCT_NAME: Triáž - Odkaz pre starostu
+    ORGANIZATION: Triáž - Odkaz pre starostu
+    ADMIN_EMAIL: <%= ENV.fetch('ADMIN_EMAIL', 'example@example.org') %>
+    ADMIN_FIRSTNAME: Superadmin
+    ADMIN_LASTNAME: User
+
 accessories:
+  railsserver:
+    env:
+      <<: *env_staging
+  websocket:
+    env:
+      <<: *env_staging
   kibana:
     proxy:
       host: kibana.ops.dev.slovensko.digital

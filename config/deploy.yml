@@ -52,16 +52,7 @@ env: &env
 
     POSTGRESQL_DB_CREATE: false
 
-    OPS_PORTAL_URL: <%= ENV.fetch('OPS_PORTAL_URL') %>
-
-    ADMIN_EMAIL: <%= ENV['ADMIN_EMAIL'] %>
-    ADMIN_FIRSTNAME: Superadmin
-    ADMIN_LASTNAME: User
     DEFAULT_LOCALE: sk
-
-    FQDN: <%= ENV.fetch('FQDN') %>
-    PRODUCT_NAME: <%= ENV.fetch('PRODUCT_NAME') %>
-    ORGANIZATION: <%= ENV.fetch('ORGANIZATION') %>
 
     RAILS_LOG_LEVEL: <%= ENV.fetch('RAILS_LOG_LEVEL', 'info') %>
     Z_LOCALES: <%= ENV.fetch('Z_LOCALES', 'sk:en-us') %>
@@ -74,8 +65,8 @@ env: &env
     - RAILS_MASTER_KEY
     - POSTGRESQL_PASS
     - WEBHOOK_SECRET
-    - ZAMMAD_ELASTICSEARCH_USER
-    - ZAMMAD_ELASTICSEARCH_PASSWORD
+    - ELASTICSEARCH_USER
+    - ELASTICSEARCH_PASS
     - S3_URL
 
 aliases:
@@ -85,8 +76,9 @@ aliases:
   dbc: app exec --interactive --reuse "/docker-entrypoint.sh bin/rails dbconsole"
   zammad_init: accessory exec railsserver -i --reuse "zammad-init"
   elastic_shell: accessory exec elastic -i --reuse "bash"
-  elastic_generate_kibanapass: accessory exec elastic -i --reuse "bin/elasticsearch-reset-password auto -u kibana_system"
-  reindex_elastic: app exec -r worker -p -i --reuse "/docker-entrypoint.sh bin/rake zammad:searchindex:rebuild"
+  elastic_init: accessory exec elastic -i --reuse sh -c /tmp/ops_scripts/init_kibana_and_triage_users.sh
+  elastic_reindex: app exec -r worker -p -i --reuse "/docker-entrypoint.sh bin/rake zammad:searchindex:rebuild"
+  elastic_add_backoffice: accessory exec elastic -i --reuse sh -c /tmp/ops_scripts/add_backoffice_user.sh
 
 registry: &registry
   server: registry.dev.slovensko.digital
@@ -134,8 +126,14 @@ accessories:
       clear:
         discovery.type: single-node
         xpack.security.enabled: true
+        ES_JAVA_OPTS: "-Xms1024m -Xmx1024m"
       secret:
         - ELASTIC_PASSWORD
+        - KIBANA_PASSWORD
+        - ELASTICSEARCH_USER
+        - ELASTICSEARCH_PASS
+    options:
+      memory: 4g
 
   kibana:
     image: kibana:8.17.3
@@ -156,7 +154,7 @@ accessories:
         ELASTICSEARCH_HOSTS: http://ops-triage-zammad-elastic:9200
         ELASTICSEARCH_USERNAME: kibana_system
       secret:
-        - ELASTICSEARCH_PASSWORD
+        - KIBANA_PASSWORD
 
 builder:
   arch: amd64

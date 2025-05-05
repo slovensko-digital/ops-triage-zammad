@@ -15,19 +15,12 @@ x-shared:
       BACKUP_DIR: "${BACKUP_DIR:-/var/tmp/zammad}"
       BACKUP_TIME: "${BACKUP_TIME:-03:00}"
       HOLD_DAYS: "${HOLD_DAYS:-10}"
-      TZ: "${TZ:-Europe/Berlin}"
+      TZ: "${TZ:-Europe/Bratislava}"
       # Allow passing in these variables via .env:
       AUTOWIZARD_JSON:
       AUTOWIZARD_RELATIVE_PATH:
-      ELASTICSEARCH_ENABLED: false
-      ELASTICSEARCH_SCHEMA:
-      ELASTICSEARCH_HOST:
-      ELASTICSEARCH_PORT:
-      ELASTICSEARCH_USER: ${ELASTICSEARCH_USER:-elastic}
-      ELASTICSEARCH_PASS: ${ELASTICSEARCH_PASS:-zammad}
-      ELASTICSEARCH_NAMESPACE:
-      ELASTICSEARCH_REINDEX:
-      ELASTICSEARCH_SSL_VERIFY:
+      ELASTICSEARCH_USER: ${ELASTICSEARCH_USER:-ops-triage-zammad}
+      ELASTICSEARCH_PASS: ${ELASTICSEARCH_PASS:-zammadpass}
       NGINX_PORT:
       NGINX_CLIENT_MAX_BODY_SIZE: "100M"
       NGINX_SERVER_NAME:
@@ -76,27 +69,52 @@ services:
 #      - zammad-storage:/opt/zammad/storage:ro
 #    user: 0:0
 
-#  zammad-elasticsearch:
-#    image: bitnami/elasticsearch:${ELASTICSEARCH_VERSION:-8.17.3}
-#    restart: ${RESTART:-always}
-#    volumes:
-#      - zammad-backup:/var/tmp/zammad
-#      - zammad-storage:/opt/zammad/storage:ro
-#    user: 0:0
+  # zammad-elasticsearch:
+  #   build:
+  #     context: elasticsearch
+  #     dockerfile: Dockerfile
+  #   restart: always
+  #   volumes:
+  #     - elasticsearch-data:/usr/share/elasticsearch/data
+  #   environment:
+  #     discovery.type: single-node
+  #     xpack.security.enabled: true
+  #     ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+  #     ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-elasticpass}
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 4g
 
-#  zammad-elasticsearch:
-#    image: bitnami/elasticsearch:${ELASTICSEARCH_VERSION:-8.17.3}
-#    restart: ${RESTART:-always}
-#    volumes:
-#      - elasticsearch-data:/bitnami/elasticsearch/data
-#    environment:
-#      # Enable authorization without HTTPS. For external access with
-#      #   SSL termination, use solutions like nginx-proxy-manager.
-#      ELASTICSEARCH_ENABLE_SECURITY: 'true'
-#      ELASTICSEARCH_SKIP_TRANSPORT_TLS: 'true'
-#      ELASTICSEARCH_ENABLE_REST_TLS: 'false'
-#      # ELASTICSEARCH_USER is hardcoded to 'elastic' in the container.
-#      ELASTICSEARCH_PASSWORD: ${ELASTICSEARCH_PASS:-zammad}
+  # zammad-init-elastic-users:
+  #   build:
+  #     context: elasticsearch
+  #     dockerfile: Dockerfile
+  #   depends_on:
+  #     - zammad-elasticsearch
+  #   entrypoint: sh /tmp/ops_scripts/init_kibana_and_triage_users.sh
+  #   environment:
+  #     ELASTICSEARCH_SCHEMA: ${ELASTICSEARCH_SCHEMA:-http}
+  #     ELASTICSEARCH_HOST: ${ELASTICSEARCH_HOST:-zammad-elasticsearch}
+  #     ELASTICSEARCH_PORT: ${ELASTICSEARCH_PORT:-9200}
+  #     ELASTICSEARCH_USER: ${ELASTICSEARCH_USER:-ops-triage-zammad}
+  #     ELASTICSEARCH_PASS: ${ELASTICSEARCH_PASS:-zammadpass}
+  #     ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-elasticpass}
+  #     KIBANA_PASSWORD: ${KIBANA_PASSWORD:-kibanapass}
+
+  # zammad-kibana:
+  #   image: kibana:8.17.3
+  #   restart: always
+  #   volumes:
+  #     - kibana-data:/usr/share/kibana/data
+  #   environment:
+  #     ELASTICSEARCH_HOSTS: http://zammad-elasticsearch:9200
+  #     ELASTICSEARCH_USERNAME: kibana_system
+  #     ELASTICSEARCH_PASSWORD: ${KIBANA_PASSWORD:-kibanapass}
+  #   depends_on:
+  #     - zammad-elasticsearch
+  #   ports:
+  #     - "5601:5601"
 
   zammad-init:
     <<: *zammad-service
@@ -151,6 +169,8 @@ services:
 
 volumes:
   elasticsearch-data:
+    driver: local
+  kibana-data:
     driver: local
   postgresql-data:
     driver: local

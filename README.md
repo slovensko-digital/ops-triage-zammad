@@ -5,8 +5,7 @@
 ```
 # Elasticsearch setup and deploy
 kamal accessory boot elastic -d staging
-kamal elastic_generate_kibanapass -d staging
-# set KIBANA_PASSWORD env
+kamal elastic_init -d staging
 kamal accessory boot kibana -d staging
 
 # Zammad deploy
