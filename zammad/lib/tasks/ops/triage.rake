@@ -269,6 +269,8 @@ namespace :ops do
 
       Setting.set('customer_ticket_create', false) # disable WEB interface ticket creation
 
+      Setting.set('ui_ticket_zoom_sidebar_article_attachments', 'true')
+
       setup_elastic if ENV['ELASTICSEARCH_ENABLED'] == 'true'
 
       # create role for Portal users
@@ -343,7 +345,7 @@ namespace :ops do
       token.action = 'api'
       token.persistent = true
       token.user_id = tech_user.id
-      token.preferences = {"permission"=>["admin.user", "admin.group", "report", "ticket.agent"]}
+      token.preferences = {"permission"=>["admin.user", "admin.group", "report", "ticket.agent", "admin.ticket"]}
       token.token = ENV.fetch('API_TOKEN', SecureRandom.urlsafe_base64(48))
       token.save!
 
