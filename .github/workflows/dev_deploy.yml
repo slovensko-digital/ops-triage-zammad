@@ -46,7 +46,6 @@ jobs:
           ORGANIZATION: ${{ vars.ORGANIZATION }}
           RAILS_LOG_LEVEL: ${{ vars.RAILS_LOG_LEVEL }}
           Z_LOCALES: ${{ vars.Z_LOCALES }}
-          OPS_PORTAL_URL: ${{ vars.OPS_PORTAL_URL }}
           ELASTICSEARCH_USER: ${{ vars.ELASTICSEARCH_USER }}
           S3_URL: ${{ secrets.S3_URL }}
 
