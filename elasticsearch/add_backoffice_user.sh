@@ -12,7 +12,7 @@ ROLE=$USER
 INDEX_PREFIX=$ROLE-index
 
 echo 'Creating user role...'
-curl -u $AUTHORIZATION -X POST $URL/_security/role/$USER -H 'Content-Type: application/json' -d "{\"cluster\": [\"monitor\", \"manage_ingest_pipelines\"], \"indices\": [{\"names\": [\"$USER-index*\"], \"privileges\": [\"all\"]}]}"
+curl -u $AUTHORIZATION -X POST $URL/_security/role/$USER -H 'Content-Type: application/json' -d "{\"cluster\": [\"monitor\", \"manage_ingest_pipelines\"], \"indices\": [{\"names\": [\"$USER*\"], \"privileges\": [\"all\"]}]}"
 echo 'Done'
 
 echo 'Creating zammad user...'
