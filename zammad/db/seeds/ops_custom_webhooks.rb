@@ -61,12 +61,14 @@ end.save!
 
 # add user.updated webhook
 Webhook.find_or_initialize_by(name: 'OPS - Upravený používateľ').tap do |webhook|
-  webhook.endpoint = File.join(ENV.fetch('OPS_PORTAL_URL', 'http://host.docker.internal:3000'), 'triage/webhooks/portal')
+  webhook.endpoint = File.join(ENV.fetch('OPS_PORTAL_URL', 'http://host.docker.internal:3000'), 'triage/webhooks/common')
   webhook.signature_token = ENV.fetch('WEBHOOK_SECRET', Random.hex(32))
   webhook.ssl_verify = ENV.fetch('OPS_PORTAL_URL', 'http').start_with?('https')
   webhook.note = "Slúži na preposielanie úprav používateľov z triáže"
   webhook.customized_payload = true
-  webhook.custom_payload = {}.to_json
+  webhook.custom_payload = {
+    "message" => "NEMENIŤ - reálny payload je v user_updated_webhook_job.rb",
+  }.to_json
   webhook.preferences = {}
   webhook.active = true
   webhook.updated_by_id = 1
@@ -87,6 +89,22 @@ Webhook.find_or_initialize_by(name: 'OPS - Nový komentár pre OPS portál').tap
       "ticket_id" => "\#{ticket.id}",
       "article_id" => "\#{article.id}"
     }
+  }.to_json
+  webhook.preferences = {}
+  webhook.active = true
+  webhook.updated_by_id = 1
+  webhook.created_by_id = 1
+end.save!
+
+# add article.updated portal webhook
+Webhook.find_or_initialize_by(name: 'OPS - Upravený komentár').tap do |webhook|
+  webhook.endpoint = File.join(ENV.fetch('OPS_PORTAL_URL', 'http://host.docker.internal:3000'), 'triage/webhooks/common')
+  webhook.signature_token = ENV.fetch('WEBHOOK_SECRET', Random.hex(32))
+  webhook.ssl_verify = ENV.fetch('OPS_PORTAL_URL', 'http').start_with?('https')
+  webhook.note = "Slúži na preposielanie úprav komentárov z triáže na portál Odkazu pre starostu"
+  webhook.customized_payload = true
+  webhook.custom_payload = {
+    "message" => "NEMENIŤ - reálny payload je v article_updated_webhook_job.rb",
   }.to_json
   webhook.preferences = {}
   webhook.active = true
