@@ -12,17 +12,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Docker registry login
-        env:
-          KAMAL_REGISTRY_USERNAME: ${{ secrets.KAMAL_REGISTRY_USERNAME }}
-          KAMAL_REGISTRY_PASSWORD: ${{ secrets.KAMAL_REGISTRY_PASSWORD }}
-        run: |
-          echo "${KAMAL_REGISTRY_PASSWORD}" | docker login -u "${KAMAL_REGISTRY_USERNAME}" --password-stdin
+      - name: Login to Dev Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.dev.slovensko.digital
+          username: ${{ secrets.KAMAL_REGISTRY_USERNAME }}
+          password: ${{ secrets.KAMAL_REGISTRY_PASSWORD }}
 
       - name: Build custom ElasticSearch image
         run: |
-          docker build -t ${{ secrets.KAMAL_REGISTRY_USERNAME }}/custom-elasticsearch:latest elasticsearch/
-          docker push ${{ secrets.KAMAL_REGISTRY_USERNAME }}/custom-elasticsearch:latest
+          docker build -t registry.dev.slovensko.digital/custom-elasticsearch:latest elasticsearch/
+          docker push registry.dev.slovensko.digital/custom-elasticsearch:latest
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
