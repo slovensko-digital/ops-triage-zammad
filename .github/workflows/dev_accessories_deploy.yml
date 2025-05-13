@@ -51,7 +51,5 @@ jobs:
         run: |
           kamal accessory reboot redis -d staging
           kamal accessory reboot elastic -d staging
-          echo "Sleeping for 10 seconds to allow ElasticSearch to restart..."
-          sleep 10
           kamal elastic_init_users -d staging
           kamal accessory reboot kibana -d staging
