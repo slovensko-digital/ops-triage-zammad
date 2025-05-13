@@ -116,7 +116,7 @@ accessories:
       - data:/data
 
   elastic:
-    image: custom-elasticsearch:latest
+    image: registry.dev.slovensko.digital/custom-elasticsearch:latest
     roles:
       - web
       - worker
