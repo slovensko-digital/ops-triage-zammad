@@ -76,9 +76,9 @@ aliases:
   dbc: app exec --interactive --reuse "/docker-entrypoint.sh bin/rails dbconsole"
   zammad_init: accessory exec railsserver -i --reuse "zammad-init"
   elastic_shell: accessory exec elastic -i --reuse "bash"
-  elastic_init_users: accessory exec elastic -i --reuse sh -c /tmp/ops_scripts/init_kibana_and_triage_users.sh
+  elastic_init_users: accessory exec elastic --reuse /tmp/ops_scripts/init_kibana_and_triage_users.sh
   elastic_reindex: app exec -r worker -p -i --reuse "/docker-entrypoint.sh bin/rake zammad:searchindex:rebuild[8]"
-  elastic_add_backoffice: accessory exec elastic -i --reuse sh -c /tmp/ops_scripts/add_backoffice_user.sh
+  elastic_add_backoffice: accessory exec elastic -i --reuse /tmp/ops_scripts/add_backoffice_user.sh
 
 registry: &registry
   server: registry.dev.slovensko.digital
@@ -116,7 +116,7 @@ accessories:
       - data:/data
 
   elastic:
-    image: elasticsearch:8.17.3
+    image: registry.dev.slovensko.digital/custom-elasticsearch:latest
     roles:
       - web
       - worker
@@ -154,7 +154,7 @@ accessories:
         ELASTICSEARCH_HOSTS: http://ops-triage-zammad-elastic:9200
         ELASTICSEARCH_USERNAME: kibana_system
       secret:
-        - KIBANA_PASSWORD
+        - ELASTICSEARCH_PASSWORD:KIBANA_PASSWORD
 
 builder:
   arch: amd64
