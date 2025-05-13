@@ -154,7 +154,7 @@ accessories:
         ELASTICSEARCH_HOSTS: http://ops-triage-zammad-elastic:9200
         ELASTICSEARCH_USERNAME: kibana_system
       secret:
-        - KIBANA_PASSWORD
+        - ELASTICSEARCH_PASSWORD:KIBANA_PASSWORD
 
 builder:
   arch: amd64
