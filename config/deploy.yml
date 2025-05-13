@@ -116,7 +116,7 @@ accessories:
       - data:/data
 
   elastic:
-    image: elasticsearch:8.17.3
+    image: custom-elasticsearch:latest
     roles:
       - web
       - worker
