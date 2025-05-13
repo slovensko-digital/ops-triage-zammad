@@ -14,7 +14,7 @@ proxy:
 
 env: &env_staging
   clear:
-    OPS_PORTAL_URL: ops.dev.slovensko.digital
+    OPS_PORTAL_URL: https://ops.dev.slovensko.digital
     OPS_PORTAL_PUBLIC_URL: https://ops.dev.slovensko.digital
     FQDN: triage.ops.dev.slovensko.digital
     PRODUCT_NAME: Triáž - Odkaz pre starostu
