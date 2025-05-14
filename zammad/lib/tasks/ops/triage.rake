@@ -321,6 +321,7 @@ namespace :ops do
       end
       portal_tech_account.permission_grant('admin.user')
       portal_tech_account.permission_grant('admin.group')
+      portal_tech_account.permission_grant('admin.ticket')
       portal_tech_account.permission_grant('ticket.agent')
       portal_tech_account.permission_grant('user_preferences.access_token')
       portal_tech_account.groups << incoming_group
