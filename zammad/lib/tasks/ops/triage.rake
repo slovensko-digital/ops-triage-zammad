@@ -1084,7 +1084,7 @@ namespace :ops do
         trigger.condition = {
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
-            { "name" => "ticket.responsible_subject", "operator" => "is", "value" => [ { "label" => "MÚ Staré Mesto", "value" => 2 } ] },
+            { "name" => "ticket.responsible_subject", "operator" => "is", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
             { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "sent_to_responsible" ] },
             { "operator" => "OR", "conditions" => [
               { "name" => "ticket.action", "operator" => "is", "value" => "create" },
@@ -1100,7 +1100,7 @@ namespace :ops do
         trigger.active = true
         trigger.updated_by_id = 1
         trigger.created_by_id = 1
-      end.save!
+      end.save! unless Trigger.exists?(name: '200 - ops - preposielanie nových podnetov PRO zodpovedným subjektom')
 
       Trigger.find_or_initialize_by(name: '200 - ops - preposielanie upravených podnetov PRO zodpovedným subjektom').tap do |trigger|
         trigger.condition = {
@@ -1135,7 +1135,7 @@ namespace :ops do
         trigger.active = true
         trigger.updated_by_id = 1
         trigger.created_by_id = 1
-      end.save!
+      end.save! unless Trigger.exists?(name: '200 - ops - preposielanie upravených podnetov PRO zodpovedným subjektom')
 
       Trigger.find_or_initialize_by(name: '200 - ops - preposielanie nových komentárov PRO zodpovedným subjektom').tap do |trigger|
         trigger.condition = {
@@ -1152,7 +1152,7 @@ namespace :ops do
         trigger.active = true
         trigger.updated_by_id = 1
         trigger.created_by_id = 1
-      end.save!
+      end.save! unless Trigger.exists?(name: '200 - ops - preposielanie nových komentárov PRO zodpovedným subjektom')
 
       Trigger.find_or_initialize_by(name: '900 - ops - nastavenie času poslednej zmeny zodpovedného subjektu').tap do |trigger|
         trigger.condition = { "ticket.responsible_subject" => { "operator" => "has changed", "value_completion" => "", "value" => [] } }
