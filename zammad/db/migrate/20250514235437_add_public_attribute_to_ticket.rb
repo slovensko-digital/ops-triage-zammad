@@ -33,7 +33,7 @@ class AddPublicAttributeToTicket < ActiveRecord::Migration[7.1]
   def down
     ObjectManager::Attribute.remove(
       object: 'Ticket',
-      name: 'public'
+      name: 'portal_public'
     )
   end
 end
