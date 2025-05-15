@@ -1,13 +1,15 @@
-name: Deploy to DEV
+name: Deploy to PROD
 
 on:
   workflow_call:
   workflow_dispatch:
 
 jobs:
-  dev-deploy:
+  prod-deploy:
     runs-on: ubuntu-latest
-    environment: DEV
+    environment: PROD
+
+    if: ${{ github.ref == 'refs/heads/main' }}
 
     steps:
       - name: Checkout code
@@ -26,7 +28,7 @@ jobs:
   
       - uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.DEV_DEPLOY_KEY }}
+          ssh-private-key: ${{ secrets.OPS_PROD_DEPLOY_KEY }}
 
       - name: Run deploy command
         env:
@@ -45,6 +47,6 @@ jobs:
           S3_URL: ${{ secrets.S3_URL }}
 
         run: |
-          kamal deploy -d staging
-          kamal accessory reboot railsserver -d staging
-          kamal accessory reboot websocket -d staging
+          kamal deploy -d production
+          kamal accessory reboot railsserver -d production
+          kamal accessory reboot websocket -d production

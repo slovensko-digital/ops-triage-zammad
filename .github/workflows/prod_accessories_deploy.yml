@@ -1,12 +1,12 @@
-name: Deploy accessories to DEV
+name: Deploy accessories to PROD
 
 on:
   workflow_dispatch:
 
 jobs:
-  dev-deploy:
+  prod-deploy:
     runs-on: ubuntu-latest
-    environment: DEV
+    environment: PROD
 
     steps:
       - name: Checkout code
@@ -37,7 +37,7 @@ jobs:
   
       - uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.DEV_DEPLOY_KEY }}
+          ssh-private-key: ${{ secrets.OPS_PROD_DEPLOY_KEY }}
 
       - name: Deploy accessories
         env:
@@ -48,7 +48,7 @@ jobs:
           ELASTICSEARCH_PASS: ${{ secrets.ELASTICSEARCH_PASS }}
 
         run: |
-          kamal accessory reboot redis -d staging
-          kamal accessory reboot elastic -d staging
-          kamal elastic_init_users -d staging
-          kamal accessory reboot kibana -d staging
+          kamal accessory reboot redis -d production
+          kamal accessory reboot elastic -d production
+          kamal elastic_init_users -d production
+

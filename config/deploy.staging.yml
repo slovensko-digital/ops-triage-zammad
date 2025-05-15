@@ -23,17 +23,50 @@ env: &env_staging
     ADMIN_FIRSTNAME: Superadmin
     ADMIN_LASTNAME: User
     OTHER_RESPONSIBLE_SUBJECT_ID: 410
+    Z_LOCALES: "sk:en-us"
+
+    POSTGRESQL_DB: ops_triage_zammad_staging
+    POSTGRESQL_HOST: host.docker.internal
+    POSTGRESQL_USER: ops_triage_zammad
+    POSTGRESQL_OPTIONS: "?pool=50"
 
 accessories:
   railsserver:
     env:
       <<: *env_staging
+
   websocket:
     env:
       <<: *env_staging
+
+  elastic:
+    env:
+      clear:
+        ES_JAVA_OPTS: "-Xms1024m -Xmx1024m"
+    options:
+      memory: 4g
+
   kibana:
+    image: kibana:8.17.3
+    roles:
+      - web
+      - worker
     proxy:
       host: kibana.ops.dev.slovensko.digital
+      app_port: 5601
+      ssl: true
+      healthcheck:
+        path: /
+        interval: 10
+        timeout: 90
+    directories:
+      - kibana-data:/usr/share/kibana/data
+    env:
+      clear:
+        ELASTICSEARCH_HOSTS: http://ops-triage-zammad-elastic:9200
+        ELASTICSEARCH_USERNAME: kibana_system
+      secret:
+        - ELASTICSEARCH_PASSWORD:KIBANA_PASSWORD
 
 ssh:
   user: kamal
