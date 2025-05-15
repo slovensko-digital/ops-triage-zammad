@@ -273,6 +273,8 @@ namespace :ops do
 
       setup_elastic if ENV['ELASTICSEARCH_ENABLED'] == 'true'
 
+      setup_google_oauth
+
       # create role for Portal users
       Role.find_or_initialize_by(name: 'Portal User').tap do |role|
         role.note = __('OPS Portal users.')
