@@ -1005,7 +1005,6 @@ namespace :ops do
           "ticket.owner_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.title" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.priority_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
-          "ticket.state_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.issue_type" => { "operator" => "set_readonly", "set_readonly" => "true" }
         }
         flow.active = true
@@ -1280,6 +1279,8 @@ namespace :ops do
           "ticket.responsible_subject" => { "operator" => "is", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
           "ticket.ops_state" => { "operator" => "is", "value" => [ "unresolved", "referred", "marked_as_resolved", "closed", "in_progress", "resolved", "rejected", "sent_to_responsible" ] },
           "article.internal" => { "operator" => "is", "value" => false },
+          "article.action" => { "operator" => "is", "value" => "create" },
+          "ticket.action" => { "operator" => "is not", "value" => "create" },
         }
         trigger.perform = {
           "notification.webhook" => { "webhook_id" => Webhook.find_by(name: "OPS - Nový komentár pre zodpovedný subjekt").id }
