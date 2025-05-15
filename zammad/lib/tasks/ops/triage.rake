@@ -687,7 +687,11 @@ namespace :ops do
         flow.condition_selected = {}
         flow.perform = {
           "ticket.process_type" => { "operator" => "show", "show" => "true" },
-          "ticket.issue_type" => { "operator" => "show", "show" => "true" },
+          "ticket.issue_type" => {
+            "operator" => [ "show", "set_fixed_to" ],
+            "show" => "true",
+            "set_fixed_to" => [ "issue", "question" ]
+          },
           "ticket.origin" => { "operator" => "show", "show" => "true" },
           "ticket.body" => { "operator" => "show", "show" => "true" },
           "ticket.category" => { "operator" => "show", "show" => "true" },
@@ -783,7 +787,11 @@ namespace :ops do
         flow.condition_selected = {}
         flow.perform = {
           "ticket.process_type" => { "operator" => "show", "show" => "true" },
-          "ticket.issue_type" => { "operator" => "show", "show" => "true" },
+          "ticket.issue_type" => {
+            "operator" => [ "show", "set_fixed_to" ],
+            "show" => "true",
+            "set_fixed_to" => [ "issue", "question" ]
+          },
           "ticket.likes_count" => { "operator" => "show", "show" => "true" },
           "ticket.origin" => { "operator" => "show", "show" => "true" },
           "ticket.responsible_subject_changed_at" => { "operator" => "show", "show" => "true" },
