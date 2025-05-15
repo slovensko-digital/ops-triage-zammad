@@ -1399,7 +1399,7 @@ namespace :ops do
         }
         trigger.perform = {
           "article.note" => {
-            "body" => "<div>Pochvalu nie je možné komentovať. Ak je potrebné upraviť text pochvaly, upravte text vpravo vo \"Finálny text podnetu\".</div><div>Zadávateľ povolil zverejnenie pochvaly na portáli Odkaz pre starostu.</div><br><div>Ak chcete pochvalu zverejniť a odoslať zodpovednému subjektu, vyvberte stav \"Vyriešený\".</div><div>Ak chcete pochvalu chcete iba odoslať zodpovednému ale nezverejniť ju, vyberte stav \"Neriešený\".</div><div>Ak chcete pochvalu zamietnuť, vyberte stav \"Zamietnutý\".",
+            "body" => "<div>Pochvalu nie je možné komentovať. Ak je potrebné upraviť text pochvaly, upravte text vpravo vo \"Finálny text podnetu\".</div><div>Zadávateľ povolil zverejnenie pochvaly na portáli Odkaz pre starostu.</div><br><div>Ak chcete pochvalu zverejniť a odoslať zodpovednému subjektu, nastavte zodpovedný subjekt a vyberte stav \"Vyriešený\".</div><div>Ak chcete pochvalu chcete iba odoslať zodpovednému ale nezverejniť ju, vyberte stav \"Neriešený\".</div><div>Ak chcete pochvalu zamietnuť, vyberte stav \"Zamietnutý\".",
             "internal" => "true",
             "subject" => "Komentár k procesom pochvaly",
           }
@@ -1420,7 +1420,7 @@ namespace :ops do
         }
         trigger.perform = {
           "article.note" => {
-            "body" => "<div>Pochvalu nie je možné komentovať. Ak je potrebné upraviť text pochvaly, upravte text vpravo vo \"Finálny text podnetu\".</div><div>Zadávateľ nepovolil zverejnenie pochvaly na portáli Odkaz pre starostu.</div><br><div>Ak chcete pochvalu odoslať zodpovednému, vyberte stav \"Neriešený\".</div><div>Ak chcete pochvalu zamietnuť, vyberte stav \"Zamietnutý\".</div>",
+            "body" => "<div>Pochvalu nie je možné komentovať. Ak je potrebné upraviť text pochvaly, upravte text vpravo vo \"Finálny text podnetu\".</div><div>Zadávateľ nepovolil zverejnenie pochvaly na portáli Odkaz pre starostu.</div><br><div>Ak chcete pochvalu odoslať zodpovednému, nastavte zodpovedný subjekt a vyberte stav \"Neriešený\".</div><div>Ak chcete pochvalu zamietnuť, vyberte stav \"Zamietnutý\".</div>",
             "internal" => "true",
             "subject" => "Komentár k procesom pochvaly",
           }
