@@ -11,8 +11,8 @@ proxy:
 
 env: &env_production
   clear:
-    OPS_PORTAL_URL: https://ops.dev.slovensko.digital
-    OPS_PORTAL_PUBLIC_URL: https://ops.dev.slovensko.digital
+    OPS_PORTAL_URL: https://novy.odkazprestarostu.sk
+    OPS_PORTAL_PUBLIC_URL: https://novy.odkazprestarostu.sk
     FQDN: triaz.odkazprestarostu.sk
     PRODUCT_NAME: Triáž
     ORGANIZATION: Odkaz pre starostu
