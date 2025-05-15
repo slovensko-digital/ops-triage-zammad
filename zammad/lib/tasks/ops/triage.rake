@@ -1292,7 +1292,15 @@ namespace :ops do
       end.save! unless Trigger.exists?(name: '200 - ops - preposielanie nových komentárov PRO zodpovedným subjektom')
 
       Trigger.find_or_initialize_by(name: '900 - ops - nastavenie času poslednej zmeny zodpovedného subjektu').tap do |trigger|
-        trigger.condition = { "ticket.responsible_subject" => { "operator" => "has changed", "value_completion" => "", "value" => [] } }
+        trigger.condition = {
+          "operator" => "OR", "conditions" => [
+            { "name" => "ticket.responsible_subject", "operator" => "has changed", "value" => [] },
+            { "operator" => "AND", "conditions" => [
+              { "name" => "ticket.action", "operator" => "is", "value" => "create" },
+              { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] }
+            ] }
+          ]
+        }
         trigger.perform = { "ticket.responsible_subject_changed_at" => { "operator" => "relative", "value" => "1", "range" => "minute" } }
         trigger.activator = "action"
         trigger.execution_condition_mode = "selective"
