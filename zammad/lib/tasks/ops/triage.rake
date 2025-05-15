@@ -1572,6 +1572,50 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
+      Job.find_or_initialize_by(name: "Neriešený po 15 dňoch od preposlania").tap do |job|
+        job.timeplan = {
+          "days"=>{
+            "Mon"=>true, "Tue"=>true, "Wed"=>true, "Thu"=>true, "Fri"=>true, "Sat"=>false, "Sun"=>false
+          },
+          "hours"=>{
+            "0"=>false, "1"=>false, "2"=>false, "3"=>false, "4"=>false, "5"=>false, "6"=>false, "7"=>false, "8"=>false, "9"=>true, "10"=>false, "11"=>false, "12"=>false, "13"=>false, "14"=>false, "15"=>false, "16"=>false, "17"=>false, "18"=>false, "19"=>false, "20"=>false, "21"=>false, "22"=>false, "23"=>false
+          },
+          "minutes"=>{
+            "0"=>true, "10"=>false, "20"=>false, "30"=>false, "40"=>false, "50"=>false
+          }
+        }
+        job.object = "Ticket"
+        job.condition = {
+          "ticket.ops_state"=>{"operator"=>"is", "value"=>["sent_to_responsible"]},
+          "ticket.state_id"=>{
+            "operator"=>"is",
+            "value"=>[
+              Ticket::State.find_by(name: "open").id,
+              Ticket::State.find_by(name: "pending close").id,
+              Ticket::State.find_by(name: "pending reminder").id,
+            ]
+          },
+          "ticket.process_type"=>{"operator"=>"is", "value"=>["portal_issue_resolution"]},
+          "ticket.responsible_subject_changed_at"=>{"operator"=>"before (relative)", "value"=>"15", "range"=>"day"}
+        }
+        job.perform = {
+          "article.note"=>{
+            "body"=>"Zodpovedný subjekt nereagoval na podnet do 15 dní. Podnet je označený ako neriešený.",
+            "internal"=>"true",
+            "subject"=>"Neriešený podnet"
+          },
+          "ticket.state_id"=>{"value"=> Ticket::State.find_by(name: "closed").id},
+          "ticket.ops_state"=>{"value"=> "unresolved"}
+        }
+        job.disable_notification = false
+        job.localization = "system"
+        job.timezone = "system"
+        job.note = "Ak zodpovedný subjekt neodpovie na nový podnet do 15 dní, podnet sa označí ako neriešený."
+        job.active = true
+        job.updated_by_id = 1
+        job.created_by_id = 1
+      end.save!
+
       TextModule.create_or_update(
         name: "Správa pre zodpovedný subjekt",
         keywords: "zodpovedny",
