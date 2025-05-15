@@ -768,7 +768,7 @@ namespace :ops do
         flow.active = true
         flow.stop_after_match = false
         flow.changeable = true # TODO consider hiding from end users
-        flow.priority = 150
+        flow.priority = 149
         flow.updated_by_id = 1
         flow.created_by_id = 1
       end.save!
