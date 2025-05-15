@@ -46,7 +46,6 @@ jobs:
           ELASTIC_PASSWORD: ${{ secrets.ELASTIC_PASSWORD }}
           KIBANA_PASSWORD: ${{ secrets.KIBANA_PASSWORD }}
           ELASTICSEARCH_PASS: ${{ secrets.ELASTICSEARCH_PASS }}
-          ELASTICSEARCH_USER: ${{ vars.ELASTICSEARCH_USER }}
 
         run: |
           kamal accessory reboot redis -d staging

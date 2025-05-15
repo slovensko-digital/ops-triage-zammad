@@ -41,12 +41,7 @@ jobs:
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
           ELASTICSEARCH_PASS: ${{ secrets.ELASTICSEARCH_PASS }}
           ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
-          FQDN: ${{ vars.FQDN }}
-          PRODUCT_NAME: ${{ vars.PRODUCT_NAME }}
-          ORGANIZATION: ${{ vars.ORGANIZATION }}
           RAILS_LOG_LEVEL: ${{ vars.RAILS_LOG_LEVEL }}
-          Z_LOCALES: ${{ vars.Z_LOCALES }}
-          ELASTICSEARCH_USER: ${{ vars.ELASTICSEARCH_USER }}
           S3_URL: ${{ secrets.S3_URL }}
 
         run: |

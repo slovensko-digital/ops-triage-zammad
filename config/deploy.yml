@@ -33,10 +33,6 @@ env: &env
     NGINX_PORT: 8080
 
     BACKGROUND_SERVICES_LOG_TO_STDOUT: 1
-    POSTGRESQL_DB: ops_triage_zammad_staging
-    POSTGRESQL_HOST: host.docker.internal
-    POSTGRESQL_USER: ops_triage_zammad
-    POSTGRESQL_OPTIONS: "?pool=50"
     RAILS_LOG_TO_STDOUT: true
     RAILS_SERVE_STATIC_FILES: true
     REDIS_URL: redis://ops-triage-zammad-redis:6379/1
@@ -47,15 +43,13 @@ env: &env
     ELASTICSEARCH_HOST: ops-triage-zammad-elastic
     ELASTICSEARCH_PORT: 9200
     ELASTICSEARCH_SCHEMA: http
+    ELASTICSEARCH_USER: ops-triage-zammad
     ELASTICSEARCH_NAMESPACE: ops-triage-zammad-index
     ELASTICSEARCH_REINDEX: false
 
     POSTGRESQL_DB_CREATE: false
-
     DEFAULT_LOCALE: sk
-
     RAILS_LOG_LEVEL: <%= ENV.fetch('RAILS_LOG_LEVEL', 'info') %>
-    Z_LOCALES: <%= ENV.fetch('Z_LOCALES', 'sk:en-us') %>
 
   secret:
     - ADMIN_PASSWORD
@@ -65,7 +59,6 @@ env: &env
     - RAILS_MASTER_KEY
     - POSTGRESQL_PASS
     - WEBHOOK_SECRET
-    - ELASTICSEARCH_USER
     - ELASTICSEARCH_PASS
     - S3_URL
 
@@ -126,35 +119,11 @@ accessories:
       clear:
         discovery.type: single-node
         xpack.security.enabled: true
-        ES_JAVA_OPTS: "-Xms1024m -Xmx1024m"
+        ELASTICSEARCH_USER: ops-triage-zammad
       secret:
         - ELASTIC_PASSWORD
         - KIBANA_PASSWORD
-        - ELASTICSEARCH_USER
         - ELASTICSEARCH_PASS
-    options:
-      memory: 4g
-
-  kibana:
-    image: kibana:8.17.3
-    roles:
-      - web
-      - worker
-    proxy:
-      app_port: 5601
-      ssl: true
-      healthcheck:
-        path: /
-        interval: 10
-        timeout: 90
-    directories:
-      - kibana-data:/usr/share/kibana/data
-    env:
-      clear:
-        ELASTICSEARCH_HOSTS: http://ops-triage-zammad-elastic:9200
-        ELASTICSEARCH_USERNAME: kibana_system
-      secret:
-        - ELASTICSEARCH_PASSWORD:KIBANA_PASSWORD
 
 builder:
   arch: amd64
