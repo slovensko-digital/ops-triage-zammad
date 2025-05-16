@@ -801,7 +801,11 @@ namespace :ops do
           "ticket.subcategory" => { "operator" => "show", "show" => "true" },
           "ticket.subtype" => { "operator" => "show", "show" => "true" },
           "ticket.responsible_subject" => { "operator" => "show", "show" => "true" },
-          "ticket.ops_state" => { "operator" => "show", "show" => "true" },
+          "ticket.ops_state" => {
+            "operator" => [ "show", "set_fixed_to"],
+            "show" => "true",
+            "set_fixed_to" => [ "rejected", "sent_to_responsible", "in_progress", "marked_as_resolved", "resolved", "unresolved", "closed", "referred" ]
+          },
           "ticket.address_municipality" => { "operator" => "show", "show" => "true" },
           "ticket.address_state" => { "operator" => "show", "show" => "true" },
           "ticket.address_county" => { "operator" => "show", "show" => "true" },
