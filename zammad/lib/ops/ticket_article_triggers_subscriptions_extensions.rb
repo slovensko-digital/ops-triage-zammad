@@ -1,4 +1,4 @@
-module Ops::TicketArticleTriggersSubscriptionsExtension
+module Ops::TicketArticleTriggersSubscriptionsExtensions
   def trigger_update_subscriptions
     ArticleUpdatedWebhookJob.perform_later(self)
     super
