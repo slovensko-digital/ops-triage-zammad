@@ -7,6 +7,8 @@ class UserWebhookJob < ApplicationJob
   }
 
   def perform(user)
+    return if Setting.get('import_mode')
+
     webhook = Webhook.find_by(name: USER_WEBHOOK_NAME)
     return if !webhook
 
