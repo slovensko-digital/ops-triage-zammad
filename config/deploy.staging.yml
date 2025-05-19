@@ -14,6 +14,9 @@ proxy:
 
 env: &env_staging
   clear:
+    WEB_CONCURRENCY: 4
+    MAX_THREADS: 15
+
     OPS_PORTAL_URL: https://ops.dev.slovensko.digital
     OPS_PORTAL_PUBLIC_URL: https://ops.dev.slovensko.digital
     FQDN: triage.ops.dev.slovensko.digital
@@ -28,7 +31,7 @@ env: &env_staging
     POSTGRESQL_DB: ops_triage_zammad_staging
     POSTGRESQL_HOST: host.docker.internal
     POSTGRESQL_USER: ops_triage_zammad
-    POSTGRESQL_OPTIONS: "?pool=50"
+    POSTGRESQL_OPTIONS: "?pool=100"
 
 accessories:
   railsserver:
