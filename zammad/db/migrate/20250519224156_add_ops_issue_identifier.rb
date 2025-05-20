@@ -31,10 +31,6 @@ class AddOpsIssueIdentifier < ActiveRecord::Migration[7.1]
     )
 
     ObjectManager::Attribute.migration_execute
-
-    Ticket.find_each do |ticket|
-      ticket.update(ops_issue_identifier: ticket.portal_url&.split('/')&.last)
-    end
   end
 
   def down
