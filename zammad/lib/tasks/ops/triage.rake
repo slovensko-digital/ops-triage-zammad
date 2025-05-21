@@ -1068,6 +1068,29 @@ namespace :ops do
         flow.created_by_id = 1
       end.save!
 
+      CoreWorkflow.find_or_initialize_by(name: 'OPS - Zobraz odkaz na kataster ak existujú koordináty').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved = {
+          "ticket.address_lat" => { "operator" => "is set", "value" => "" },
+          "ticket.address_lon" => { "operator" => "is set", "value" => "" }
+        }
+        flow.condition_selected = {}
+        flow.perform = {
+          "ticket.zbgis_link" => {
+            "operator" => ["show", "set_readonly"],
+            "show" => "true",
+            "set_readonly" => "true"
+          }
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true
+        flow.priority = 250
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
       # deactivate predefined triggers
       Trigger.find_by(name: 'auto reply (on new tickets)')&.update!(active: false)
 
