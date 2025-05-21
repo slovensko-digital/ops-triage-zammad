@@ -207,7 +207,7 @@ ObjectManager::Attribute.add(
       'ticket.agent' => { shown: false }
     }
   },
-  position: 61,
+  position: 99,
   created_by_id: 1,
   updated_by_id: 1
 )
