@@ -11,6 +11,9 @@ proxy:
 
 env: &env_production
   clear:
+    WEB_CONCURRENCY: 4
+    MAX_THREADS: 15
+
     OPS_PORTAL_URL: https://novy.odkazprestarostu.sk
     OPS_PORTAL_PUBLIC_URL: https://novy.odkazprestarostu.sk
     FQDN: triaz.odkazprestarostu.sk
@@ -25,7 +28,7 @@ env: &env_production
     POSTGRESQL_DB: ops_triage_zammad_production
     POSTGRESQL_HOST: host.docker.internal
     POSTGRESQL_USER: ops_triage_zammad
-    POSTGRESQL_OPTIONS: "?pool=50"
+    POSTGRESQL_OPTIONS: "?pool=100"
 
 accessories:
   railsserver:
