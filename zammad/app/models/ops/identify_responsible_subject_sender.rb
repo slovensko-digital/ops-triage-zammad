@@ -10,7 +10,9 @@ class Ops::IdentifyResponsibleSubjectSender
     return unless match
 
     ticket = Ticket.find_by(number: "R-#{match[1]}")
+    ticket = Ticket.find_by(ops_issue_identifier: match[1]) unless ticket
     return unless ticket
+    return unless ticket.responsible_subject
 
     label = ticket.responsible_subject["label"]
     value = ticket.responsible_subject["value"]
