@@ -11,7 +11,7 @@ proxy:
 
 env: &env_production
   clear:
-    WEB_CONCURRENCY: 4
+    WEB_CONCURRENCY: 8
     MAX_THREADS: 15
 
     OPS_PORTAL_URL: https://novy.odkazprestarostu.sk
