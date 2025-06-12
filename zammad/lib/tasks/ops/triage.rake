@@ -1601,27 +1601,26 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Job.find_or_initialize_by(name: "Neriešený po 15 dňoch od preposlania").tap do |job|
+      Job.find_or_initialize_by(name: "NEMENIŤ - Neriešený po 15 dňoch od preposlania").tap do |job|
         job.timeplan = {
           "days"=>{
             "Mon"=>true, "Tue"=>true, "Wed"=>true, "Thu"=>true, "Fri"=>true, "Sat"=>false, "Sun"=>false
           },
           "hours"=>{
-            "0"=>false, "1"=>false, "2"=>false, "3"=>false, "4"=>false, "5"=>false, "6"=>false, "7"=>false, "8"=>false, "9"=>true, "10"=>false, "11"=>false, "12"=>false, "13"=>false, "14"=>false, "15"=>false, "16"=>false, "17"=>false, "18"=>false, "19"=>false, "20"=>false, "21"=>false, "22"=>false, "23"=>false
+            "0"=>true, "1"=>true, "2"=>true, "3"=>true, "4"=>true, "5"=>true, "6"=>true, "7"=>true, "8"=>true, "9"=>true, "10"=>true, "11"=>true, "12"=>true, "13"=>true, "14"=>true, "15"=>true, "16"=>true, "17"=>true, "18"=>true, "19"=>true, "20"=>true, "21"=>false, "22"=>false, "23"=>false
           },
           "minutes"=>{
-            "0"=>true, "10"=>false, "20"=>false, "30"=>false, "40"=>false, "50"=>false
+            "0"=>true, "10"=>true, "20"=>true, "30"=>true, "40"=>true, "50"=>true
           }
         }
         job.object = "Ticket"
         job.condition = {
           "ticket.ops_state"=>{"operator"=>"is", "value"=>["sent_to_responsible"]},
           "ticket.state_id"=>{
-            "operator"=>"is",
+            "operator"=>"is not",
             "value"=>[
-              Ticket::State.find_by(name: "open").id,
-              Ticket::State.find_by(name: "pending close").id,
-              Ticket::State.find_by(name: "pending reminder").id,
+              Ticket::State.find_by(name: "closed").id,
+              Ticket::State.find_by(name: "merged").id,
             ]
           },
           "ticket.process_type"=>{"operator"=>"is", "value"=>["portal_issue_resolution"]},
@@ -1629,9 +1628,10 @@ namespace :ops do
         }
         job.perform = {
           "article.note"=>{
-            "body"=>"Zodpovedný subjekt nereagoval na podnet do 15 dní. Podnet je označený ako neriešený.",
-            "internal"=>"true",
-            "subject"=>"Neriešený podnet"
+            "body"=>"[[ops portal]][[pre zodpovedny subjekt]]Zodpovedný subjekt nereagoval na podnet do 15 dní. Podnet je označený ako neriešený.",
+            "internal"=>"false",
+            "subject"=>"Neriešený podnet",
+            "sender" => "Agent"
           },
           "ticket.state_id"=>{"value"=> Ticket::State.find_by(name: "closed").id},
           "ticket.ops_state"=>{"value"=> "unresolved"}
@@ -1639,7 +1639,7 @@ namespace :ops do
         job.disable_notification = false
         job.localization = "system"
         job.timezone = "system"
-        job.note = "Ak zodpovedný subjekt neodpovie na nový podnet do 15 dní, podnet sa označí ako neriešený."
+        job.note = "NEMENIŤ! Ak zodpovedný subjekt neodpovie na nový podnet do 15 dní, podnet sa označí ako neriešený a odošle sa notifikácia zodpovednému subjektu aj portálu.",
         job.active = true
         job.updated_by_id = 1
         job.created_by_id = 1
