@@ -1628,7 +1628,7 @@ namespace :ops do
         }
         job.perform = {
           "article.note"=>{
-            "body"=>"[[ops portal]][[pre zodpovedny subjekt]]Zodpovedný subjekt nereagoval na podnet do 15 dní. Podnet je označený ako neriešený.",
+            "body"=>"[[ops portal]][[pre zodpovedny subjekt]]Zodpovedný subjekt nereagoval na podnet do 15 dní. Podnet bol označený ako neriešený.",
             "internal"=>"false",
             "subject"=>"Neriešený podnet",
             "sender" => "Agent"
