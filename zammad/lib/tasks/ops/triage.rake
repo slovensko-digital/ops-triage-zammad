@@ -1601,7 +1601,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Job.find_or_initialize_by(name: "Neriešený po 15 dňoch od preposlania").tap do |job|
+      Job.find_or_initialize_by(name: "NEMENIŤ - Neriešený po 15 dňoch od preposlania").tap do |job|
         job.timeplan = {
           "days"=>{
             "Mon"=>true, "Tue"=>true, "Wed"=>true, "Thu"=>true, "Fri"=>true, "Sat"=>false, "Sun"=>false
@@ -1617,11 +1617,10 @@ namespace :ops do
         job.condition = {
           "ticket.ops_state"=>{"operator"=>"is", "value"=>["sent_to_responsible"]},
           "ticket.state_id"=>{
-            "operator"=>"is",
+            "operator"=>"is not",
             "value"=>[
-              Ticket::State.find_by(name: "open").id,
-              Ticket::State.find_by(name: "pending close").id,
-              Ticket::State.find_by(name: "pending reminder").id,
+              Ticket::State.find_by(name: "closed").id,
+              Ticket::State.find_by(name: "merged").id,
             ]
           },
           "ticket.process_type"=>{"operator"=>"is", "value"=>["portal_issue_resolution"]},
@@ -1629,9 +1628,10 @@ namespace :ops do
         }
         job.perform = {
           "article.note"=>{
-            "body"=>"Zodpovedný subjekt nereagoval na podnet do 15 dní. Podnet je označený ako neriešený.",
-            "internal"=>"true",
-            "subject"=>"Neriešený podnet"
+            "body"=>"[[ops portal]][[pre zodpovedny subjekt]]Zodpovedný subjekt nereagoval na podnet do 15 dní. Podnet bol označený ako neriešený.",
+            "internal"=>"false",
+            "subject"=>"Neriešený podnet",
+            "sender" => "Agent"
           },
           "ticket.state_id"=>{"value"=> Ticket::State.find_by(name: "closed").id},
           "ticket.ops_state"=>{"value"=> "unresolved"}
@@ -1639,7 +1639,7 @@ namespace :ops do
         job.disable_notification = false
         job.localization = "system"
         job.timezone = "system"
-        job.note = "Ak zodpovedný subjekt neodpovie na nový podnet do 15 dní, podnet sa označí ako neriešený."
+        job.note = "NEMENIŤ! Ak zodpovedný subjekt neodpovie na nový podnet do 15 dní, podnet sa označí ako neriešený a odošle sa notifikácia zodpovednému subjektu aj portálu.",
         job.active = true
         job.updated_by_id = 1
         job.created_by_id = 1

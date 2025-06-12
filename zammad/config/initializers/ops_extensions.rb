@@ -4,4 +4,5 @@ ActiveSupport.on_load(:after_initialize) do
   Ticket::Article::TriggersSubscriptions.prepend Ops::TicketArticleTriggersSubscriptionsExtensions
   User.prepend Ops::UserExtensions
   Ticket::PerformChanges::Action::NotificationEmail.prepend Ops::TicketPerformChangesActionNotificationEmailExtensions
+  Ticket::Article.prepend Ops::TicketArticleExtensions
 end
