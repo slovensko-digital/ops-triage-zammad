@@ -10,7 +10,13 @@ module Ops::TicketPerformChangesActionNotificationEmailExtensions
       org = Organization.find_by(name: label, active: true)
       return nil unless org
 
-      return org.members.where(active: true).pluck(:email).compact
+      role = Role.find_by(name: "Externý zodpovedný subjekt")
+      unless role
+        Rails.logger.error("Role 'Externý zodpovedný subjekt' not found, cannot send email to responsible subject")
+        return nil
+      end
+
+      return role.users.where(active: true, organization: org).pluck(:email).compact
     end
 
     super
