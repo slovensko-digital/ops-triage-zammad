@@ -333,7 +333,7 @@ namespace :ops do
         "firstname":"Aplikácia",
         "lastname":"Odkaz pre starostu",
         "note":"",
-        "role_ids": [ portal_tech_account.id ],
+        "role_ids": [ portal_tech_account.id, Role.find_by(name: "Admin").id ],
         "active":true,
         "vip":false,
         "updated_by_id": "1",
