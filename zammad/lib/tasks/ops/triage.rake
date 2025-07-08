@@ -530,6 +530,7 @@ namespace :ops do
             "unresolved" => "Neriešený",
             "closed" => "Uzavretý",
             "referred" => "Odstúpený",
+            "accepted" => "Prijatý",
           },
           default: 'waiting',
           nulloption: true,
@@ -816,6 +817,31 @@ namespace :ops do
           "ticket.address_lon" => { "operator" => "show", "show" => "true" },
           "ticket.portal_url" => { "operator" => "show", "show" => "true" },
           "ticket.investment" => { "operator" => "show", "show" => "true" },
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true # TODO consider hiding from end users
+        flow.priority = 150
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
+      CoreWorkflow.find_or_initialize_by(name: 'ops - ticket - portal issue verification process - setup attributes').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved = {
+          "ticket.origin" => { "operator" => "is", "value" => [ "portal" ] },
+          "ticket.process_type" => { "operator" => "is", "value" => [ "portal_issue_verification" ] }
+        }
+        flow.condition_selected = {}
+        flow.perform = {
+          "ticket.process_type" => { "operator" => "show", "show" => "true" },
+          "ticket.ops_state" => {
+            "operator" => [ "show", "set_fixed_to"],
+            "show" => "true",
+            "set_fixed_to" => [ "waiting", "rejected", "accepted" ]
+          },
+          "ticket.portal_url" => { "operator" => "show", "show" => "true" },
         }
         flow.active = true
         flow.stop_after_match = false
