@@ -1384,23 +1384,26 @@ namespace :ops do
 
       Trigger.find_or_initialize_by(name: '200 - ops - preposielanie nových komentárov na portál').tap do |trigger|
         trigger.condition = {
-          "operator" => "OR", "conditions" => [
-            { "operator" => "AND", "conditions" => [
-              { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
-              { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "issue", "question" ] },
-              { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
-              { "name" => "article.internal", "operator" => "is", "value" => "false" },
-              { "name" => "article.body", "operator" => "contains", "value" => "[[ops portal]]" },
-              { "name" => "article.action", "operator" => "is", "value" => "create" },
-            ] },
-            { "operator" => "AND", "conditions" => [
-              { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_triage" ] },
-              { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "issue", "question" ] },
-              { "name" => "ticket.state_id", "operator" => "is not", "value" => [ Ticket::State.find_by(name: "closed").id ] },
-              { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
-              { "name" => "article.internal", "operator" => "is", "value" => "false" },
-              { "name" => "article.sender_id", "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Agent").id ] },
-              { "name" => "article.action", "operator" => "is", "value" => "create" },
+          "operator" => "AND", "conditions" => [
+            { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+            { "operator" => "OR", "conditions" => [
+              { "operator" => "AND", "conditions" => [
+                { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
+                { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "issue", "question" ] },
+                { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+                { "name" => "article.internal", "operator" => "is", "value" => "false" },
+                { "name" => "article.body", "operator" => "contains", "value" => "[[ops portal]]" },
+                { "name" => "article.action", "operator" => "is", "value" => "create" },
+              ] },
+              { "operator" => "AND", "conditions" => [
+                { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_triage" ] },
+                { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "issue", "question" ] },
+                { "name" => "ticket.state_id", "operator" => "is not", "value" => [ Ticket::State.find_by(name: "closed").id ] },
+                { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+                { "name" => "article.internal", "operator" => "is", "value" => "false" },
+                { "name" => "article.sender_id", "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Agent").id ] },
+                { "name" => "article.action", "operator" => "is", "value" => "create" },
+              ] }
             ] }
           ]
         }
