@@ -6,6 +6,16 @@ service: ops-triage-zammad
 image: sd/ops-triage-zammad
 
 servers:
+  web:
+    cmd: "/opt/zammad_init_and_railsserver.sh"
+    options:
+      add-host: host.docker.internal:host-gateway
+    proxy:
+      ssl: true
+      app_port: 3000
+      healthcheck:
+        path: /
+
   websocket:
     cmd: "zammad-websocket"
     options:
@@ -17,22 +27,12 @@ servers:
       healthcheck:
         path: /healthcheck
 
-  web:
-    cmd: "zammad-railsserver"
-    options:
-      add-host: host.docker.internal:host-gateway
-    proxy:
-      ssl: true
-      app_port: 3000
-      healthcheck:
-        path: /
-
   worker:
     cmd: "zammad-scheduler"
     options:
       add-host: host.docker.internal:host-gateway
 
-deploy_timeout: 60
+deploy_timeout: 180
 
 env:
   clear:
