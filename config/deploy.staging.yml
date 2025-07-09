@@ -2,6 +2,15 @@ servers:
   web:
     hosts:
       - dev.slovensko.digital
+    proxy:
+      host: triage.ops.dev.slovensko.digital
+    options:
+      memory: 4g
+
+  websocket:
+    hosts:
+      - dev.slovensko.digital
+
   worker:
     hosts:
       - dev.slovensko.digital
@@ -12,7 +21,7 @@ x-load-env:
 proxy:
   host: triage.ops.dev.slovensko.digital
 
-env: &env_staging
+env:
   clear:
     WEB_CONCURRENCY: 4
     MAX_THREADS: 15
@@ -34,14 +43,6 @@ env: &env_staging
     POSTGRESQL_OPTIONS: "?pool=100"
 
 accessories:
-  railsserver:
-    env:
-      <<: *env_staging
-
-  websocket:
-    env:
-      <<: *env_staging
-
   elastic:
     env:
       clear:
