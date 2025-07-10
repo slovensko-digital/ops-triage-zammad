@@ -46,7 +46,4 @@ jobs:
           RAILS_LOG_LEVEL: ${{ vars.RAILS_LOG_LEVEL }}
           S3_URL: ${{ secrets.S3_URL }}
 
-        run: |
-          kamal deploy -d production
-          kamal accessory reboot railsserver -d production
-          kamal accessory reboot websocket -d production
+        run: kamal deploy -d production

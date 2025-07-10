@@ -1,3 +1,3 @@
 source "https://rubygems.org"
 
-gem "kamal", "~> 2.6"
+gem "kamal", "~> 2.7"

@@ -2,6 +2,15 @@ servers:
   web:
     hosts:
       - 88.99.99.215
+    proxy:
+      host: triaz.odkazprestarostu.sk
+    options:
+      memory: 4g
+
+  websocket:
+    hosts:
+      - 88.99.99.215
+
   worker:
     hosts:
       - 88.99.99.215
@@ -9,7 +18,7 @@ servers:
 proxy:
   host: triaz.odkazprestarostu.sk
 
-env: &env_production
+env:
   clear:
     WEB_CONCURRENCY: 8
     MAX_THREADS: 15
@@ -31,14 +40,6 @@ env: &env_production
     POSTGRESQL_OPTIONS: "?pool=100"
 
 accessories:
-  railsserver:
-    env:
-      <<: *env_production
-
-  websocket:
-    env:
-      <<: *env_production
-
   elastic:
     env:
       clear:

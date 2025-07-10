@@ -7,27 +7,34 @@ image: sd/ops-triage-zammad
 
 servers:
   web:
-    cmd: "/opt/zammad_init_and_nginx.sh"
-    # TODO might ditch the whole nginx when https://github.com/basecamp/kamal-proxy/issues/48 is implemented
+    cmd: "/opt/zammad_init_and_railsserver.sh"
     options:
-      "add-host": host.docker.internal:host-gateway
+      add-host: host.docker.internal:host-gateway
+    proxy:
+      ssl: true
+      app_port: 3000
+      healthcheck:
+        path: /
+
+  websocket:
+    cmd: "zammad-websocket"
+    options:
+      add-host: host.docker.internal:host-gateway
+    proxy:
+      path_prefix: /ws
+      strip_path_prefix: true
+      app_port: 6042
+      healthcheck:
+        path: /healthcheck
 
   worker:
     cmd: "zammad-scheduler"
     options:
-      "add-host": host.docker.internal:host-gateway
+      add-host: host.docker.internal:host-gateway
 
 deploy_timeout: 180
 
-proxy:
-  ssl: true
-  app_port: 8080
-  healthcheck:
-    path: /
-    interval: 10
-    timeout: 90
-
-env: &env
+env:
   clear:
     NGINX_EXPOSE_PORT: 8080
     NGINX_PORT: 8080
@@ -72,7 +79,7 @@ aliases:
   elastic_reindex: app exec -r worker -p -i --reuse "/docker-entrypoint.sh bin/rake zammad:searchindex:rebuild[8]"
   elastic_add_backoffice: accessory exec elastic -i --reuse /tmp/ops_scripts/add_backoffice_user.sh
 
-registry: &registry
+registry:
   server: registry.dev.slovensko.digital
   username:
     - KAMAL_REGISTRY_USERNAME
@@ -80,25 +87,6 @@ registry: &registry
     - KAMAL_REGISTRY_PASSWORD
 
 accessories:
-  railsserver: &accessory-hack
-    registry:
-      <<: *registry
-    image: "sd/ops-triage-zammad:<%= `git rev-parse HEAD`.strip %>"
-    roles:
-      - web
-      - worker
-    volumes:
-      - ops_triage_zammad_storage:/opt/zammad/storage
-    options:
-      "add-host": host.docker.internal:host-gateway
-    env:
-      <<: *env
-    cmd: "zammad-railsserver"
-
-  websocket:
-    <<: *accessory-hack
-    cmd: "zammad-websocket"
-
   redis:
     image: redis:7.0
     roles:
