@@ -950,14 +950,14 @@ namespace :ops do
       OPS_CATEGORIES_MAP.each do |cat, subcats|
         cat_name = cat.is_a?(Array) ? cat.last : cat
         cat_value = cat.is_a?(Array) ? cat.first : cat
-        CoreWorkflow.find_or_initialize_by(name: "ops - category - #{cat_name} - visible options").tap do |flow|
+        cwf = CoreWorkflow.find_or_initialize_by(name: "ops - category - #{cat_name} - #{cat_value} - visible options").tap do |flow|
           flow.object = "Ticket"
           flow.preferences = { "screen" => [ "create_middle", "edit" ] }
           flow.condition_saved = {}
           flow.condition_selected = { "ticket.category" => { "operator" => "is", "value" => [ cat_value.to_s ] } }
           flow.perform = { "ticket.subcategory" =>
                              { "operator" => [ "set_fixed_to", "set_mandatory" ],
-                               "set_fixed_to" => [ "" ] + subcats.keys.map(&:to_s),
+                               "set_fixed_to" => subcats.keys.map(&:to_s),
                                "set_mandatory" => "true" } }
           flow.active = true
           flow.stop_after_match = false
@@ -965,20 +965,22 @@ namespace :ops do
           flow.updated_by_id = 1
           flow.created_by_id = 1
           flow.changeable = false
-        end.save!
+        end
+        cwf.save!
 
         subcats.each do |subcat, subtypes|
           perform = if subtypes.any?
             { "ticket.subtype" =>
                 { "operator" => [ "set_fixed_to", "set_mandatory" ],
-                  "set_fixed_to" => [ "" ] + subtypes
+                  "set_fixed_to" => subtypes,
+                  "set_mandatory" => "true"
                 }
             }
           else
-            { "ticket.subtype" => { "operator" => "set_fixed_to", "set_fixed_to" => [ "" ] } }
+            { "ticket.subtype" => { "operator" => [ "set_fixed_to", "set_readonly" ], "set_fixed_to" => [ "" ], "set_readonly" => "true" } }
           end
 
-          CoreWorkflow.find_or_initialize_by(name: "ops - subcategory - #{subcat} - visible options").tap do |flow|
+          CoreWorkflow.find_or_initialize_by(name: "ops - subcategory - #{cwf.id} - #{subcat} - visible options").tap do |flow|
             flow.object = "Ticket"
             flow.preferences = { "screen" => [ "create_middle", "edit" ] }
             flow.condition_saved = {}
