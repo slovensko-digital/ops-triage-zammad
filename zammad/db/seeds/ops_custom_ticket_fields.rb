@@ -144,7 +144,7 @@ ObjectManager::Attribute.add(
     default: '',
     type: 'text',
     maxlength: 20,
-    linktemplate: "https://www.openstreetmap.org/?mlat=\#{ticket.address_lat}&mlon=\#{ticket.address_lon}#map=18/\#{ticket.address_lat}/\#{ticket.address_lon}",
+    linktemplate: "https://www.google.com/maps/search/?api=1&query=\#{ticket.address_lat},\#{ticket.address_lon}",
     null: true,
     options: {},
     relation: ''
@@ -169,7 +169,7 @@ ObjectManager::Attribute.add(
     default: '',
     type: 'text',
     maxlength: 20,
-    linktemplate: "https://www.openstreetmap.org/?mlat=\#{ticket.address_lat}&mlon=\#{ticket.address_lon}#map=18/\#{ticket.address_lat}/\#{ticket.address_lon}",
+    linktemplate: "https://www.google.com/maps/search/?api=1&query=\#{ticket.address_lat},\#{ticket.address_lon}",
     null: true,
     options: {},
     relation: ''
