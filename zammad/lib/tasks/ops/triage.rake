@@ -531,6 +531,7 @@ namespace :ops do
             "closed" => "Uzavretý",
             "referred" => "Odstúpený",
             "accepted" => "Prijatý",
+            "duplicate" => "Duplikát",
           },
           default: 'waiting',
           nulloption: true,
@@ -704,7 +705,7 @@ namespace :ops do
           "ticket.ops_state" => {
             "operator" => [ "show", "set_fixed_to"],
             "show" => "true",
-            "set_fixed_to" => [ "waiting", "sent_to_responsible" , "rejected" ]
+            "set_fixed_to" => [ "waiting", "sent_to_responsible" , "rejected", "duplicate" ]
           },
           "ticket.address_municipality" => { "operator" => "show", "show" => "true" },
           "ticket.address_state" => { "operator" => "show", "show" => "true" },
@@ -805,7 +806,7 @@ namespace :ops do
           "ticket.ops_state" => {
             "operator" => [ "show", "set_fixed_to"],
             "show" => "true",
-            "set_fixed_to" => [ "rejected", "sent_to_responsible", "in_progress", "marked_as_resolved", "resolved", "unresolved", "closed", "referred" ]
+            "set_fixed_to" => [ "rejected", "sent_to_responsible", "in_progress", "marked_as_resolved", "resolved", "unresolved", "closed", "referred", "duplicate" ]
           },
           "ticket.address_municipality" => { "operator" => "show", "show" => "true" },
           "ticket.address_state" => { "operator" => "show", "show" => "true" },
@@ -1115,6 +1116,45 @@ namespace :ops do
         flow.stop_after_match = false
         flow.changeable = true
         flow.priority = 250
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
+      CoreWorkflow.find_or_initialize_by(name: 'ops - ticket - duplicate - set attributes').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved = {
+        }
+        flow.condition_selected = {
+          "ticket.ops_state" => { "operator" => "is", "value" => "duplicate" }
+        }
+        flow.perform = {
+          "ticket.title" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.body" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_municipality" => { "operator" => "hide", "hide" => "true" },
+          "ticket.address_state" => { "operator" => "hide", "hide" => "true" },
+          "ticket.address_county" => { "operator" => "hide", "hide" => "true" },
+          "ticket.address_street" => { "operator" => "hide", "hide" => "true" },
+          "ticket.address_house_number" => { "operator" => "hide", "hide" => "true" },
+          "ticket.address_postcode" => { "operator" => "hide", "hide" => "true" },
+          "ticket.investment" => { "operator" => "hide", "hide" => "true" },
+          "ticket.likes_count" => { "operator" => "hide", "hide" => "true" },
+          "ticket.priority_id" => { "operator" => "hide", "hide" => "true" },
+          "ticket.portal_url" => { "operator" => "hide", "hide" => "true" },
+          "ticket.responsible_subject_changed_at" => { "operator" => "hide", "hide" => "true" },
+          "ticket.responsible_subject" => { "operator" => "hide", "hide" => "true" },
+          "ticket.zbgis_link" => { "operator" => "hide", "hide" => "true" },
+          "ticket.address_lat" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_lon" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.issue_type" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.category" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.subcategory" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.subtype" => { "operator" => "set_readonly", "set_readonly" => "true" }
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true
+        flow.priority = 300
         flow.updated_by_id = 1
         flow.created_by_id = 1
       end.save!
@@ -1509,17 +1549,17 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '100 - ops - upozornenie na komentovanie uzavretých zamietnutých triážnych tiketov').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '100 - ops - upozornenie na komentovanie uzavretých triážnych tiketov').tap do |trigger|
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_triage" },
           "ticket.state_id" => { "operator" => "is", "value" => [ Ticket::State.find_by(name: "closed").id ] },
-          "ticket.ops_state" => { "operator" => "is", "value" => [ "rejected" ] },
+          "ticket.ops_state" => { "operator" => "is", "value" => [ "rejected", "duplicate" ] },
           "article.action" => { "operator" => "is", "value" => "create" },
           "article.internal" => { "operator" => "is", "value" => "false" }
         }
         trigger.perform = {
           "article.note" => {
-            "body" => "Tento tiket je už uzavretý a zamietnutý.",
+            "body" => "Tento tiket je už uzavretý.",
             "internal" => "true",
             "subject" => "Komentár k uzavretému podnetu",
           }
@@ -1664,7 +1704,6 @@ namespace :ops do
             "subject"=>"Neriešený podnet",
             "sender" => "Agent"
           },
-          "ticket.state_id"=>{"value"=> Ticket::State.find_by(name: "closed").id},
           "ticket.ops_state"=>{"value"=> "unresolved"}
         }
         job.disable_notification = false
