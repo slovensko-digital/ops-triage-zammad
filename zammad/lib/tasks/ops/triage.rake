@@ -531,6 +531,7 @@ namespace :ops do
             "closed" => "Uzavretý",
             "referred" => "Odstúpený",
             "accepted" => "Prijatý",
+            "archived" => "Archivovaný"
           },
           default: 'waiting',
           nulloption: true,
