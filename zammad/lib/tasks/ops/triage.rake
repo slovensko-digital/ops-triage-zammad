@@ -531,7 +531,8 @@ namespace :ops do
             "closed" => "Uzavretý",
             "referred" => "Odstúpený",
             "accepted" => "Prijatý",
-            "duplicate" => "Duplikát",
+            "duplicate" => "Duplicitný",
+            "archived" => "Archivovaný"
           },
           default: 'waiting',
           nulloption: true,
@@ -705,7 +706,7 @@ namespace :ops do
           "ticket.ops_state" => {
             "operator" => [ "show", "set_fixed_to"],
             "show" => "true",
-            "set_fixed_to" => [ "waiting", "sent_to_responsible" , "rejected", "duplicate" ]
+            "set_fixed_to" => [ "waiting", "sent_to_responsible" , "rejected", "duplicate", "archived" ]
           },
           "ticket.address_municipality" => { "operator" => "show", "show" => "true" },
           "ticket.address_state" => { "operator" => "show", "show" => "true" },
@@ -806,7 +807,7 @@ namespace :ops do
           "ticket.ops_state" => {
             "operator" => [ "show", "set_fixed_to"],
             "show" => "true",
-            "set_fixed_to" => [ "rejected", "sent_to_responsible", "in_progress", "marked_as_resolved", "resolved", "unresolved", "closed", "referred", "duplicate" ]
+            "set_fixed_to" => [ "rejected", "sent_to_responsible", "in_progress", "marked_as_resolved", "resolved", "unresolved", "closed", "referred", "duplicate", "archived" ]
           },
           "ticket.address_municipality" => { "operator" => "show", "show" => "true" },
           "ticket.address_state" => { "operator" => "show", "show" => "true" },
@@ -1093,6 +1094,46 @@ namespace :ops do
         flow.stop_after_match = false
         flow.changeable = true
         flow.priority = 190
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
+      CoreWorkflow.find_or_initialize_by(name: 'ops - make everything readonly if ticket is archived').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved = {
+          "ticket.ops_state" => { "operator" => "is", "value" => [ "archived" ] }
+        }
+        flow.condition_selected = {}
+        flow.perform = {
+          "ticket.body" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.responsible_subject" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.ops_state" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.state_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.process_type" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.responsible_subject_changed_at" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.category" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.subcategory" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.subtype" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_municipality" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_state" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_county" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_street" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_house_number" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_postcode" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_lat" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.address_lon" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.group_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.owner_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.title" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.priority_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.issue_type" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.investment" => { "operator" => "set_readonly", "set_readonly" => "true" },
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true
+        flow.priority = 160
         flow.updated_by_id = 1
         flow.created_by_id = 1
       end.save!
