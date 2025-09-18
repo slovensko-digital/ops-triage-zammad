@@ -1204,6 +1204,74 @@ namespace :ops do
       Trigger.find_by(name: 'auto reply (on new tickets)')&.update!(active: false)
 
       # create triggers
+      Trigger.find_or_initialize_by(name: "150 - Zmena stavu na v riešení pri odpovedi").tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND",
+          "conditions" => [
+            { "name" => "article.action", "operator" => "is", "value" => "create" },
+            { "name" => "ticket.action", "operator" => "is not", "value" => "create" },
+            { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
+            { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "unresolved", "sent_to_responsible" ] },
+            { "name" => "article.internal", "operator" => "is", "value" => [ "false" ] },
+            { "name" => "article.sender_id", "operator" => "is", "value" => [ "2" ] },
+            { "name" => "article.type_id", "operator" => "is", "value" => [ Ticket::Article::Type.find_by(name: 'note').id.to_s, Ticket::Article::Type.find_by(name: 'email').id.to_s ] }
+          ]
+        }
+        trigger.perform = {
+          "ticket.ops_state" => { "value" => "in_progress" },
+          "ticket.state_id" => { "value" => Ticket::State.find_by(name: 'open').id.to_s }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: "151 - Zmena stavu na v riešení pri odpovedi - webhook zodpovedný subjekt").tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND",
+          "conditions" => [
+            { "name" => "article.action", "operator" => "is", "value" => "create" },
+            { "name" => "ticket.action", "operator" => "is not", "value" => "create" },
+            { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
+            { "name" => "article.internal", "operator" => "is", "value" => [ "false" ] },
+            { "name" => "article.sender_id", "operator" => "is", "value" => [ "2" ] },
+            { "name" => "article.type_id", "operator" => "is", "value" => [ Ticket::Article::Type.find_by(name: 'note').id.to_s, Ticket::Article::Type.find_by(name: 'email').id.to_s ] }
+          ]
+        }
+        trigger.perform = {
+          "notification.webhook" => { "webhook_id" => Webhook.find_by(name: "OPS - Upravený podnet pre zodpovedný subjekt").id }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: "151 - Zmena stavu na v riešení pri odpovedi - webhook portál").tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND",
+          "conditions" => [
+            { "name" => "article.action", "operator" => "is", "value" => "create" },
+            { "name" => "ticket.action", "operator" => "is not", "value" => "create" },
+            { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
+            { "name" => "article.internal", "operator" => "is", "value" => [ "false" ] },
+            { "name" => "article.sender_id", "operator" => "is", "value" => [ "2" ] },
+            { "name" => "article.type_id", "operator" => "is", "value" => [ Ticket::Article::Type.find_by(name: 'note').id.to_s, Ticket::Article::Type.find_by(name: 'email').id.to_s ] }
+          ]
+        }
+        trigger.perform = {
+          "notification.webhook" => { "webhook_id" => Webhook.find_by(name: "OPS - Upravený podnet pre OPS portál").id }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
       Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - VZOR - <subjekt> - nový podnet').tap do |trigger|
         trigger.condition = {
           "operator" => "AND",
