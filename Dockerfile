@@ -10,6 +10,10 @@ RUN sed -i "s/Ticket::Article::Sender.find_by(name: 'System')/Ticket::Article::S
 
 COPY --chown=zammad:zammad ./zammad_init_and_railsserver.sh /opt/zammad_init_and_railsserver.sh
 
+RUN mkdir hacks
+COPY ./hacks/* ./hacks/.
+RUN hacks/hacks.rb
+
 COPY zammad ./
 
 EXPOSE 3000

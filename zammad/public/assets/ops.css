@@ -1,0 +1,9 @@
+/* Make attachment icon bigger */
+.attachment-icon img {
+    width: 80px;
+    height: 80px;
+}
+
+.attachment--preview .attachment-text {
+    margin: 0 50px;
+}
