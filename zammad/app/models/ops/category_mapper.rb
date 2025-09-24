@@ -166,7 +166,7 @@ class Ops::CategoryMapper
   }
 
   def self.map_legacy_categories_to_new(legacy_category, legacy_subcategory, legacy_subtype)
-    legacy_key = [ legacy_category, legacy_subcategory, legacy_subtype ]
+    legacy_key = [ legacy_category.presence, legacy_subcategory.presence, legacy_subtype.presence ]
     CATEGORY_MAPPING[legacy_key].presence || EVERYTHING_ELSE_CATEGORY
   end
 end
