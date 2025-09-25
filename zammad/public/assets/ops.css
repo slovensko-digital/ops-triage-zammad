@@ -6,11 +6,13 @@
     padding: 1rem;
     transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
 }
+
 .imagePreview .imagePreview-nav.is-invisible {
     visibility: hidden;
     opacity: 0;
     cursor: default;
 }
+
 .imagePreview .imagePreview-image {
     margin: 0 1rem;
 }

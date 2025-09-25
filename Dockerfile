@@ -15,16 +15,17 @@ RUN sed -i "s/Ticket::Article::Sender.find_by(name: 'System')/Ticket::Article::S
 
 COPY --chown=zammad:zammad ./zammad_init_and_railsserver.sh /opt/zammad_init_and_railsserver.sh
 
+RUN mkdir hacks
+COPY ./hacks/* ./hacks/.
+RUN hacks/hacks.rb
+
 COPY zammad ./
 
-WORKDIR /opt/zammad
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=node /usr/local/bin /usr/local/bin
 USER root
-RUN cd /opt/zammad && \
-    bundle install && \
-    ZAMMAD_SAFE_MODE=1 DATABASE_URL=postgresql://zammad:/zammad bundle exec rake assets:precompile && \
-    chown -R zammad:zammad public/assets
+RUN bundle install && \
+    ZAMMAD_SAFE_MODE=1 DATABASE_URL=postgresql://zammad:/zammad bundle exec rake assets:precompile
 
 EXPOSE 3000
 EXPOSE 6042
