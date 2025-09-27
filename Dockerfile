@@ -21,11 +21,12 @@ RUN hacks/hacks.rb
 
 COPY zammad ./
 
+# precompile assets
+USER root
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=node /usr/local/bin /usr/local/bin
-USER root
-RUN bundle install && \
-    ZAMMAD_SAFE_MODE=1 DATABASE_URL=postgresql://zammad:/zammad bundle exec rake assets:precompile
+RUN bundle install
+RUN ZAMMAD_SAFE_MODE=1 DATABASE_URL=postgresql://zammad:/zammad bundle exec rake assets:precompile
 
 EXPOSE 3000
 EXPOSE 6042
