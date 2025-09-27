@@ -155,7 +155,8 @@ OPS_CATEGORIES_MAP = {
   "Verejný poriadok": {
     "reklama": [ "nelegálna reklama", "nevhodne umiestnená", "nebezpečná (na spadnutie a pod)" ],
     "neporiadok vo verejnom priestranstve": [ "neodpratané lístie", "neporiadok vo verejnom priestore" ],
-    "vandalizmus": [ "rušenie nočného pokoja", "pitie alkoholu na verejnom priestore" ]
+    "vandalizmus": [ "rušenie nočného pokoja", "pitie alkoholu na verejnom priestore" ],
+    "iné": []
   },
   "Dopravné riešenie": {
     "nebezpečné": [ "návrh na riešenie" ],
@@ -184,7 +185,8 @@ OPS_CATEGORIES_MAP = {
     "zver v meste": [ "premnožené hlodavce" ],
     "výbehy pre zvieratá": [ "lesná zver", "túlavé mačky/psy", "hmyz" ],
     "domáce zvieratá": [ "výbehy pre zvieratá", "majitelia - neplnenie povinností" ],
-    "mŕtvy živočích": []
+    "mŕtvy živočích": [],
+    "iné": []
   },
   "Skládky a vraky": {
     "nelegálne skládky": [],
@@ -197,7 +199,13 @@ OPS_CATEGORIES_MAP = {
     "mobilná aplikácia mesta": [ "chýbajúca informácia", "neaktuálne informácie", "nefunkčná aplikácia" ],
     "verejný rozhlas": [ "chýbajúci", "pokazený" ]
   },
+  "Verejné služby": {
+    "iné": []
+  },
   "Iné": {
+    "iné": []
+  },
+  "Ostatné": {
     "iné": []
   }
 }
