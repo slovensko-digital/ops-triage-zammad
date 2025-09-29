@@ -1851,6 +1851,17 @@ namespace :ops do
         updated_by_id: 1,
         created_by_id: 1,
       )
+
+      Scheduler.create_or_update(
+        name:          'OPS - add all groups to tech role.',
+        method:        'Ops::AssignTechRoleToAllGroupsJob.perform_now',
+        period:        15.minutes,
+        last_run:      Time.zone.now,
+        prio:          2,
+        active:        true,
+        updated_by_id: 1,
+        created_by_id: 1,
+      )
     end
   end
 end
