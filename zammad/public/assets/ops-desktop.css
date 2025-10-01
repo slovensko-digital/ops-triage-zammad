@@ -1,0 +1,10 @@
+/* Make file preview icon bigger */
+.group\/file-preview button {
+    width: 160px !important;
+    height: 160px !important;
+}
+
+.group\/file-preview button img {
+    width: 160px !important;
+    height: 160px !important;
+}
