@@ -1,6 +1,6 @@
 module Ops::StoreExtensions
   def set_store_file
-    if should_convert_to_jpg?
+    if convert_to_jpg?
       self.data = convert_to_jpg(data)
       self.filename = "#{::File.basename(filename, '.*')}.jpg"
       update_content_type_to_jpg
@@ -9,7 +9,7 @@ module Ops::StoreExtensions
     super
   end
 
-  def should_convert_to_jpg?
+  def convert_to_jpg?
     mime_type = preferences['Mime-Type'] || preferences['Content-Type'] || preferences['mime_type'] || preferences['content_type']
     mime_type&.match?(%r{image/(heic|heif)}i)
   end
