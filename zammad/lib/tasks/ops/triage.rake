@@ -1602,6 +1602,31 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
+      Trigger.find_or_initialize_by(name: '200 - ops - zmena stavu na označený za vyriešený pri značke z emailu').tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND", "conditions" => [
+            { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+            { "operator" => "AND", "conditions" => [
+              { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
+              { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "issue", "question" ] },
+              { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+              { "name" => "article.internal", "operator" => "is", "value" => "false" },
+              { "name" => "article.body", "operator" => "contains", "value" => "[[vyriesene]]" },
+              { "name" => "article.action", "operator" => "is", "value" => "create" },
+            ] }
+          ]
+        }
+        trigger.perform = {
+          "ticket.ops_state" => { "operator" => "set", "value" => "marked_as_resolved" },
+          "notification.webhook" => { "webhook_id" => Webhook.find_by(name: "OPS - Upravený podnet pre OPS portál").id }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
       Trigger.find_or_initialize_by(name: '100 - ops - upozornenie na komentovanie uzavretých prijatých triážnych tiketov').tap do |trigger|
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_triage" },
