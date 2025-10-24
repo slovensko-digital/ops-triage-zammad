@@ -3,7 +3,7 @@ class AddIssueResolvedToTicket < ActiveRecord::Migration[7.1]
     ObjectManager::Attribute.add(
       object: 'Ticket',
       name: 'issue_resolved',
-      display: __('Vyriešený podnet'),
+      display: __('Aktualizácia zatvára podnet'),
       data_type: 'select',
       data_option: {
         options: {
