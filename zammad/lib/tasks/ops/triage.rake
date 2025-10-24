@@ -861,6 +861,26 @@ namespace :ops do
         flow.created_by_id = 1
       end.save!
 
+      CoreWorkflow.find_or_initialize_by(name: 'ops - ticket - portal issue verification process - setup issue_resolved').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved = {
+          "ticket.origin" => { "operator" => "is", "value" => [ "portal" ] },
+          "ticket.process_type" => { "operator" => "is", "value" => [ "portal_issue_resolved_verification" ] },
+          "ticket.issue_resolved" => { "operator" => "is", "value" => [ "true", "false" ] }
+        }
+        flow.condition_selected = {}
+        flow.perform = {
+          "ticket.issue_resolved" => { "operator" => [ "show"], "show" => "true" },
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = false
+        flow.priority = 150
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
       CoreWorkflow.find_or_initialize_by(name: 'ops - ticket - show portal duplicates url if issue_type issue').tap do |flow|
         flow.object = "Ticket"
         flow.preferences = { "screen" => [ "edit" ] }
