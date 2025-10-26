@@ -846,6 +846,7 @@ namespace :ops do
         flow.condition_selected = {}
         flow.perform = {
           "ticket.process_type" => { "operator" => "show", "show" => "true" },
+          "ticket.issue_resolved" => { "operator" => "show", "show" => "true" },
           "ticket.ops_state" => {
             "operator" => [ "show", "set_fixed_to"],
             "show" => "true",
@@ -1560,6 +1561,7 @@ namespace :ops do
               { "name" => "ticket.title", "operator" => "has changed" },
               { "name" => "ticket.body", "operator" => "has changed" },
               { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.issue_resolved", "operator" => "has changed", "value" => [] },
               { "name" => "ticket.issue_type", "operator" => "has changed", "value" => [] },
               { "name" => "ticket.responsible_subject", "operator" => "has changed" },
               { "name" => "ticket.category", "operator" => "has changed", "value" => [] },
