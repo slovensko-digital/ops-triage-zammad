@@ -846,6 +846,7 @@ namespace :ops do
         flow.condition_selected = {}
         flow.perform = {
           "ticket.process_type" => { "operator" => "show", "show" => "true" },
+          "ticket.issue_resolved" => { "operator" => "show", "show" => "true" },
           "ticket.ops_state" => {
             "operator" => [ "show", "set_fixed_to"],
             "show" => "true",
@@ -1043,6 +1044,34 @@ namespace :ops do
         flow.stop_after_match = false
         flow.changeable = true
         flow.priority = 159
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
+      CoreWorkflow.find_or_initialize_by(name: 'ops - ticket - verification process closed set readonly attributes').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved =  {
+          "ticket.ops_state" => { "operator" => "is", "value" => [ "accepted", "rejected" ] },
+          "ticket.process_type" => { "operator" => "is", "value" => ["portal_issue_verification"]},
+          "ticket.origin" => { "operator" => "is", "value" => ["portal"]}
+        }
+        flow.condition_selected = {}
+        flow.perform = {
+          "ticket.issue_resolved" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.ops_state" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.process_type" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.group_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.owner_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.title" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.priority_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.issue_type" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.state_id" => { "operator" => "set_readonly", "set_readonly" => "true" }
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true
+        flow.priority = 160
         flow.updated_by_id = 1
         flow.created_by_id = 1
       end.save!
@@ -1560,6 +1589,7 @@ namespace :ops do
               { "name" => "ticket.title", "operator" => "has changed" },
               { "name" => "ticket.body", "operator" => "has changed" },
               { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
+              { "name" => "ticket.issue_resolved", "operator" => "has changed", "value" => [] },
               { "name" => "ticket.issue_type", "operator" => "has changed", "value" => [] },
               { "name" => "ticket.responsible_subject", "operator" => "has changed" },
               { "name" => "ticket.category", "operator" => "has changed", "value" => [] },
