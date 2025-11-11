@@ -1048,6 +1048,34 @@ namespace :ops do
         flow.created_by_id = 1
       end.save!
 
+      CoreWorkflow.find_or_initialize_by(name: 'ops - ticket - verification process closed set readonly attributes').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved =  {
+          "ticket.ops_state" => { "operator" => "is", "value" => [ "accepted", "rejected" ] },
+          "ticket.process_type" => { "operator" => "is", "value" => ["portal_issue_verification"]},
+          "ticket.origin" => { "operator" => "is", "value" => ["portal"]}
+        }
+        flow.condition_selected = {}
+        flow.perform = {
+          "ticket.issue_resolved" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.ops_state" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.process_type" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.group_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.owner_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.title" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.priority_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.issue_type" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.state_id" => { "operator" => "set_readonly", "set_readonly" => "true" }
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true
+        flow.priority = 160
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
       CoreWorkflow.find_or_initialize_by(name: 'ops - ticket - triage process closed set readonly attributes').tap do |flow|
         flow.object = "Ticket"
         flow.preferences = { "screen" => [ "edit" ] }
