@@ -1450,7 +1450,7 @@ namespace :ops do
         }
         trigger.perform = {
           "notification.email" => {
-            "body" => "<div>Správca podnetu na portáli Odkaz pre starostu vám posiela novú správu.</div><div><br></div><div><b>Obsah správy:</b></div>\#{article.body_as_html}<br><br><div></div><div><i>Reagovať na túto správu môžete odpoveďou na tento email.</i></div>",
+            "body" => "<div>Správca podnetu na portáli Odkaz pre starostu vám posiela novú správu.</div><div><br></div><div><b>Obsah správy:</b></div><div>\#{article.body_as_html}<br><br>Odkaz na portál:&nbsp;\#{ticket.portal_url} <br><br><div></div><div><i>Reagovať na túto správu môžete odpoveďou na tento email.</i></div></div>",
             "internal" => "true",
             "recipient" => [ "userid_#{template_external_responsible_subject_user.id}" ],
             "subject" => "Odkaz pre starostu - \#{ticket.title}",
