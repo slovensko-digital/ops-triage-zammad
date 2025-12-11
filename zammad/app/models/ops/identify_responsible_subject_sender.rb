@@ -1,9 +1,5 @@
 class Ops::IdentifyResponsibleSubjectSender
   def self.run(_channel, mail, _transaction_params)
-    return if mail[:'x-xammad-customer_id'].present?
-    return if mail[:'x-zammad-ticket-number'].present?
-    return if mail[:'x-zammad-ticket-id'].present?
-
     subject = mail[:subject]
 
     match = subject.match(%r{#R?-?(\d{5,6})})
