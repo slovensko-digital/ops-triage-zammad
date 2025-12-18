@@ -714,7 +714,7 @@ namespace :ops do
           "ticket.ops_state" => {
             "operator" => [ "show", "set_fixed_to"],
             "show" => "true",
-            "set_fixed_to" => [ "waiting", "sent_to_responsible" , "rejected", "duplicate", "archived" ]
+            "set_fixed_to" => [ "waiting", "sent_to_responsible" , "rejected", "duplicate" ]
           },
           "ticket.address_municipality" => { "operator" => "show", "show" => "true" },
           "ticket.address_state" => { "operator" => "show", "show" => "true" },
@@ -815,7 +815,7 @@ namespace :ops do
           "ticket.ops_state" => {
             "operator" => [ "show", "set_fixed_to"],
             "show" => "true",
-            "set_fixed_to" => [ "rejected", "sent_to_responsible", "in_progress", "marked_as_resolved", "resolved", "unresolved", "closed", "referred", "duplicate", "archived" ]
+            "set_fixed_to" => [ "rejected", "sent_to_responsible", "in_progress", "marked_as_resolved", "resolved", "unresolved", "closed", "referred", "duplicate" ]
           },
           "ticket.address_municipality" => { "operator" => "show", "show" => "true" },
           "ticket.address_state" => { "operator" => "show", "show" => "true" },
