@@ -1,7 +1,7 @@
 servers:
   web:
     hosts:
-      - 88.99.99.215
+      - 195.201.202.110
     proxy:
       host: triaz.odkazprestarostu.sk
     options:
@@ -9,11 +9,11 @@ servers:
 
   websocket:
     hosts:
-      - 88.99.99.215
+      - 195.201.202.110
 
   worker:
     hosts:
-      - 88.99.99.215
+      - 195.201.202.110
 
 proxy:
   host: triaz.odkazprestarostu.sk
