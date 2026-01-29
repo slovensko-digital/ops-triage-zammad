@@ -1,5 +1,7 @@
 class AddIssueResolvedToTicket < ActiveRecord::Migration[7.1]
   def up
+    return unless Setting.exists?(name: 'system_init_done')
+
     ObjectManager::Attribute.add(
       object: 'Ticket',
       name: 'issue_resolved',
