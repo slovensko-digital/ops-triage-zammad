@@ -1567,10 +1567,18 @@ namespace :ops do
         trigger.condition = {
           "operator" => "OR", "conditions" => [
             { "name" => "ticket.responsible_subject", "operator" => "has changed", "value" => [] },
-            { "operator" => "AND", "conditions" => [
-              { "name" => "ticket.action", "operator" => "is", "value" => "create" },
-              { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] }
-            ] }
+            {
+              "operator" => "AND", "conditions" => [
+                { "name" => "ticket.action", "operator" => "is", "value" => "create" },
+                { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] }
+              ]
+            },
+            {
+              "operator" => "AND", "conditions" => [
+                { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
+                { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "sent_to_responsible" ] }
+              ]
+            }
           ]
         }
         trigger.perform = { "ticket.responsible_subject_changed_at" => { "operator" => "relative", "value" => "1", "range" => "minute" } }
