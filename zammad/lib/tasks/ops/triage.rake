@@ -1344,7 +1344,13 @@ namespace :ops do
         }
         trigger.perform = {
           "notification.email" => {
-            "body" => "<div>Správca podnetu na portáli Odkaz pre starostu vám priradil podnet.</div><div><br></div><div><b>Názov podnetu:</b>&nbsp;\#{ticket.title}<br><br><div></div><div><b>Adresa:</b>&nbsp;\#{ticket.address_municipality} - \#{ticket.address_street}</div><div><b>Text podnetu:</b></div><div>\#{ticket.body}<br><br>Odkaz na portál:&nbsp;\#{ticket.portal_url} <br><br><div></div><div><i>Reagovať na túto správu môžete odpoveďou na tento email.</i></div></div>",
+            "body" => "<div>Správca podnetu na portáli Odkaz pre starostu vám priradil podnet.</div><div><br></div>" \
+              "<div><b>Názov podnetu:</b>&nbsp;\#{ticket.title}<br><br><div></div>" \
+              "<div><b>Adresa:</b>&nbsp;\#{ticket.address_municipality} - \#{ticket.address_street}</div>" \
+              "<div><b>Text podnetu:</b></div><div>\#{ticket.body}<br><br>" \
+              "Odkaz na portál:&nbsp;\#{ticket.portal_url}?force_rs_login <br><br>" \
+              "<div>Na podnet môžete reagovať priamo na portáli:</div><div><br></div>" \
+              "<div><a href=\"\#{ticket.portal_url}?force_rs_login\" style=\"background-color: #1c3054; color: white; padding: 10px 18px; text-decoration: none; border-radius: 100px; display: inline-block; font-weight: bold;\">Odpovedať</a></div></div>",
             "internal" => "true",
             "recipient" => [ "userid_#{template_external_responsible_subject_user.id}" ],
             "subject" => "Odkaz pre starostu - \#{ticket.title}",
@@ -1424,7 +1430,11 @@ namespace :ops do
         }
         trigger.perform = {
           "notification.email" => {
-            "body" => "<div>K podnetu na portáli <b>Odkaz pre starostu</b> bol pridaný komentár od používateľa. Môžete na neho reagovať odpovedaním na tento email.</div><div><br></div><div><b>Obsah komentára:</b></div><div>\#{article.body_as_html}<br><br>Odkaz na portál:&nbsp;\#{ticket.portal_url} <br><br><div></div><div><i>Reagovať na túto správu môžete odpoveďou na tento email.</i></div></div>",
+            "body" => "<div>K podnetu na portáli <b>Odkaz pre starostu</b> bol pridaný komentár od používateľa.</div><div><br></div>" \
+              "<div><b>Obsah komentára:</b></div><div>\#{article.body_as_html}<br><br>" \
+              "Odkaz na portál:&nbsp;\#{ticket.portal_url}?force_rs_login <br><br>" \
+              "<div>Na komentár môžete reagovať priamo na portáli:</div><div><br></div>" \
+              "<div><a href=\"\#{ticket.portal_url}?force_rs_login\" style=\"background-color: #1c3054; color: white; padding: 10px 18px; text-decoration: none; border-radius: 100px; display: inline-block; font-weight: bold;\">Odpovedať</a></div></div>",
             "internal" => "true",
             "recipient" => [ "userid_#{template_external_responsible_subject_user.id}" ],
             "subject" => "Odkaz pre starostu - \#{ticket.title}",
@@ -1450,7 +1460,11 @@ namespace :ops do
         }
         trigger.perform = {
           "notification.email" => {
-            "body" => "<div>Správca podnetu na portáli Odkaz pre starostu vám posiela novú správu.</div><div><br></div><div><b>Obsah správy:</b></div><div>\#{article.body_as_html}<br><br>Odkaz na portál:&nbsp;\#{ticket.portal_url} <br><br><div></div><div><i>Reagovať na túto správu môžete odpoveďou na tento email.</i></div></div>",
+            "body" => "<div>Správca podnetu na portáli Odkaz pre starostu vám posiela novú správu.</div><div><br></div>" \
+              "<div><b>Obsah správy:</b></div><div>\#{article.body_as_html}<br><br>" \
+              "Odkaz na portál:&nbsp;\#{ticket.portal_url}?force_rs_login <br><br>" \
+              "<div>Na správu môžete reagovať priamo na portáli:</div><div><br></div>" \
+              "<div><a href=\"\#{ticket.portal_url}?force_rs_login\" style=\"background-color: #1c3054; color: white; padding: 10px 18px; text-decoration: none; border-radius: 100px; display: inline-block; font-weight: bold;\">Odpovedať</a></div></div>",
             "internal" => "true",
             "recipient" => [ "userid_#{template_external_responsible_subject_user.id}" ],
             "subject" => "Odkaz pre starostu - \#{ticket.title}",
