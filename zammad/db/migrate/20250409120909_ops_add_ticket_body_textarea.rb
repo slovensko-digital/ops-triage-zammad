@@ -9,7 +9,7 @@ class OpsAddTicketBodyTextarea < ActiveRecord::Migration[7.1]
       data_type: 'textarea',
       data_option: {
         default: '',
-        maxlength: 8192,
+        maxlength: 3500,
         rows: 10,
         null: true,
       },
