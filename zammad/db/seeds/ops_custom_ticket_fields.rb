@@ -280,7 +280,7 @@ ObjectManager::Attribute.add(
   data_type: 'textarea',
   data_option: {
     default: '',
-    maxlength: 8192,
+    maxlength: 3500,
     rows: 10,
     null: true,
   },
