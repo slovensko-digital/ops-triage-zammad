@@ -55,7 +55,7 @@ env:
 
     POSTGRESQL_DB_CREATE: false
     DEFAULT_LOCALE: sk
-    RAILS_LOG_LEVEL: <%= ENV.fetch('RAILS_LOG_LEVEL', 'warn') %>
+    RAILS_LOG_LEVEL: <%= ENV['RAILS_LOG_LEVEL'].presence || 'warn' %>
 
   secret:
     - ADMIN_PASSWORD
