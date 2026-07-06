@@ -540,7 +540,8 @@ namespace :ops do
             "referred" => "Odstúpený",
             "accepted" => "Prijatý",
             "duplicate" => "Duplicitný",
-            "archived" => "Archivovaný"
+            "archived" => "Archivovaný",
+            "waiting_for_author" => "Čaká na autora"
           },
           default: 'waiting',
           nulloption: true,
@@ -714,7 +715,7 @@ namespace :ops do
           "ticket.ops_state" => {
             "operator" => [ "show", "set_fixed_to"],
             "show" => "true",
-            "set_fixed_to" => [ "waiting", "sent_to_responsible" , "rejected", "duplicate" ]
+            "set_fixed_to" => [ "waiting", "sent_to_responsible" , "rejected", "duplicate", "waiting_for_author" ]
           },
           "ticket.address_municipality" => { "operator" => "show", "show" => "true" },
           "ticket.address_state" => { "operator" => "show", "show" => "true" },
@@ -815,7 +816,7 @@ namespace :ops do
           "ticket.ops_state" => {
             "operator" => [ "show", "set_fixed_to"],
             "show" => "true",
-            "set_fixed_to" => [ "rejected", "sent_to_responsible", "in_progress", "marked_as_resolved", "resolved", "unresolved", "closed", "referred", "duplicate" ]
+            "set_fixed_to" => [ "rejected", "sent_to_responsible", "in_progress", "marked_as_resolved", "resolved", "unresolved", "closed", "referred", "duplicate", "waiting_for_author" ]
           },
           "ticket.address_municipality" => { "operator" => "show", "show" => "true" },
           "ticket.address_state" => { "operator" => "show", "show" => "true" },
@@ -1261,6 +1262,52 @@ namespace :ops do
       Trigger.find_by(name: 'auto reply (on new tickets)')&.update!(active: false)
 
       # create triggers
+      Trigger.find_or_initialize_by(name: "148 - Zmena stavu z čaká na autora pri odpovedi počas triáže").tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND",
+          "conditions" => [
+            { "name" => "article.action", "operator" => "is", "value" => "create" },
+            { "name" => "ticket.action", "operator" => "is not", "value" => "create" },
+            { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_triage" ] },
+            { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "waiting_for_author" ] },
+            { "name" => "article.internal", "operator" => "is", "value" => [ "false" ] },
+            { "name" => "article.sender_id", "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id.to_s ] }
+          ]
+        }
+        trigger.perform = {
+          "ticket.ops_state" => { "value" => "waiting" },
+          "notification.webhook" => { "webhook_id" => Webhook.find_by(name: "OPS - Upravený podnet pre OPS portál").id }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: "149 - Zmena stavu z čaká na autora pri odpovedi počas riešenia").tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND",
+          "conditions" => [
+            { "name" => "article.action", "operator" => "is", "value" => "create" },
+            { "name" => "ticket.action", "operator" => "is not", "value" => "create" },
+            { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
+            { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "waiting_for_author" ] },
+            { "name" => "article.internal", "operator" => "is", "value" => [ "false" ] },
+            { "name" => "article.sender_id", "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id.to_s ] }
+          ]
+        }
+        trigger.perform = {
+          "ticket.ops_state" => { "value" => "in_progress" },
+          "notification.webhook" => { "webhook_id" => Webhook.find_by(name: "OPS - Upravený podnet pre OPS portál").id }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
       Trigger.find_or_initialize_by(name: "150 - Zmena stavu na v riešení pri odpovedi").tap do |trigger|
         trigger.condition = {
           "operator" => "AND",
@@ -1567,7 +1614,7 @@ namespace :ops do
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.issue_type" => { "operator" => "is", "value" => [ "issue", "question" ] },
           "ticket.responsible_subject" => { "operator" => "is", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
-          "ticket.ops_state" => { "operator" => "is", "value" => [ "unresolved", "referred", "marked_as_resolved", "closed", "in_progress", "resolved", "rejected", "sent_to_responsible" ] },
+          "ticket.ops_state" => { "operator" => "is", "value" => [ "unresolved", "referred", "marked_as_resolved", "closed", "in_progress", "resolved", "rejected", "sent_to_responsible", "waiting_for_author" ] },
           "article.internal" => { "operator" => "is", "value" => false },
           "article.action" => { "operator" => "is", "value" => "create" },
           "ticket.action" => { "operator" => "is not", "value" => "create" },
@@ -1999,6 +2046,134 @@ namespace :ops do
         updated_by_id: 1,
         created_by_id: 1,
       )
+
+      ObjectManager::Attribute.add(
+        object: 'Ticket',
+        name: 'waiting_reminder_step',
+        display: 'Krok pripomienky (Čaká na autora)',
+        data_type: 'integer',
+        data_option: { "default" => 0, "min" => 0, "max" => 2, "null" => false, "options" => {}, "relation" => "" },
+        active: true,
+        screens: {
+          edit: { 'ticket.agent' => { shown: false }, 'ticket.customer' => { shown: false } },
+          create_middle: { 'ticket.agent' => { shown: false }, 'ticket.customer' => { shown: false } }
+        },
+        position: 300,
+        created_by_id: 1,
+        updated_by_id: 1,
+      )
+
+      ObjectManager::Attribute.migration_execute
+
+      Job.find_or_initialize_by(name: "NEMENIŤ - čaká na autora - 1. pripomienka autorovi (7 dní)").tap do |job|
+        job.timeplan = {
+          "days"=>{
+            "Mon"=>true, "Tue"=>true, "Wed"=>true, "Thu"=>true, "Fri"=>true, "Sat"=>true, "Sun"=>true
+          },
+          "hours"=>{
+            "0"=>false, "1"=>false, "2"=>false, "3"=>false, "4"=>false, "5"=>false, "6"=>false, "7"=>false, "8"=>false, "9"=>true, "10"=>false, "11"=>false, "12"=>false, "13"=>false, "14"=>false, "15"=>false, "16"=>false, "17"=>false, "18"=>false, "19"=>false, "20"=>false, "21"=>false, "22"=>false, "23"=>false
+          },
+          "minutes"=>{
+            "0"=>true, "10"=>false, "20"=>false, "30"=>false, "40"=>false, "50"=>false
+          }
+        }
+        job.object = "Ticket"
+        job.condition = {
+          "ticket.ops_state"=>{"operator"=>"is", "value"=>["waiting_for_author"]},
+          "ticket.waiting_reminder_step"=>{"operator"=>"is", "value"=>"0"},
+          "ticket.updated_at"=>{"operator"=>"before (relative)", "value"=>"7", "range"=>"day"}
+        }
+        job.perform = {
+          "article.note"=>{
+            "body"=>"[[ops portal]]Dobrý deň, Váš podnet si vyžaduje doplnenie informácií. Prosím upravte podnet podľa predchádzajúcej požiadavky administrátora. Ďakujeme.",
+            "internal"=>"false",
+            "subject"=>"1. Pripomienka k podnetu",
+            "sender" => "Agent"
+          },
+          "ticket.waiting_reminder_step"=>{"value"=>"1"}
+        }
+        job.disable_notification = false
+        job.localization = "system"
+        job.timezone = "system"
+        job.note = "NEMENIŤ! Ak autor nedoplní informácie po vyžiadaní do 7 dní, odošle sa mu pripomienka a nastaví sa krok pripomienky na 1.",
+        job.active = true
+        job.updated_by_id = 1
+        job.created_by_id = 1
+      end.save!
+
+      Job.find_or_initialize_by(name: "NEMENIŤ - čaká na autora - 2. pripomienka autorovi (14 dní)").tap do |job|
+        job.timeplan = {
+          "days"=>{
+            "Mon"=>true, "Tue"=>true, "Wed"=>true, "Thu"=>true, "Fri"=>true, "Sat"=>true, "Sun"=>true
+          },
+          "hours"=>{
+            "0"=>false, "1"=>false, "2"=>false, "3"=>false, "4"=>false, "5"=>false, "6"=>false, "7"=>false, "8"=>false, "9"=>true, "10"=>false, "11"=>false, "12"=>false, "13"=>false, "14"=>false, "15"=>false, "16"=>false, "17"=>false, "18"=>false, "19"=>false, "20"=>false, "21"=>false, "22"=>false, "23"=>false
+          },
+          "minutes"=>{
+            "0"=>true, "10"=>false, "20"=>false, "30"=>false, "40"=>false, "50"=>false
+          }
+        }
+        job.object = "Ticket"
+        job.condition = {
+          "ticket.ops_state"=>{"operator"=>"is", "value"=>["waiting_for_author"]},
+          "ticket.waiting_reminder_step"=>{"operator"=>"is", "value"=>"1"},
+          "ticket.updated_at"=>{"operator"=>"before (relative)", "value"=>"7", "range"=>"day"}
+        }
+        job.perform = {
+          "article.note"=>{
+            "body"=>"[[ops portal]]Dobrý deň, Váš podnet stále čaká na doplnenie informácií. V prípade, že podnet nebude upravený do 7 kalendárnych dní, bude automaticky zamietnutý. Ďakujeme za pochopenie.",
+            "internal"=>"false",
+            "subject"=>"2. Pripomienka k podnetu",
+            "sender" => "Agent"
+          },
+          "ticket.waiting_reminder_step"=>{"value"=>"2"}
+        }
+        job.disable_notification = false
+        job.localization = "system"
+        job.timezone = "system"
+        job.note = "NEMENIŤ! Ak autor nedoplní informácie po vyžiadaní do 14 dní, odošle sa mu druhá pripomienka a nastaví sa krok pripomienky na 2.",
+        job.active = true
+        job.updated_by_id = 1
+        job.created_by_id = 1
+      end.save!
+
+      Job.find_or_initialize_by(name: "NEMENIŤ - čaká na autora - Zamietnutie podnetu od autora po 21 dňoch").tap do |job|
+        job.timeplan = {
+          "days"=>{
+            "Mon"=>true, "Tue"=>true, "Wed"=>true, "Thu"=>true, "Fri"=>true, "Sat"=>true, "Sun"=>true
+          },
+          "hours"=>{
+            "0"=>false, "1"=>false, "2"=>false, "3"=>false, "4"=>false, "5"=>false, "6"=>false, "7"=>false, "8"=>false, "9"=>true, "10"=>false, "11"=>false, "12"=>false, "13"=>false, "14"=>false, "15"=>false, "16"=>false, "17"=>false, "18"=>false, "19"=>false, "20"=>false, "21"=>false, "22"=>false, "23"=>false
+          },
+          "minutes"=>{
+            "0"=>true, "10"=>false, "20"=>false, "30"=>false, "40"=>false, "50"=>false
+          }
+        }
+        job.object = "Ticket"
+        job.condition = {
+          "ticket.ops_state"=>{"operator"=>"is", "value"=>["waiting_for_author"]},
+          "ticket.waiting_reminder_step"=>{"operator"=>"is", "value"=>"2"},
+          "ticket.updated_at"=>{"operator"=>"before (relative)", "value"=>"7", "range"=>"day"}
+        }
+        job.perform = {
+          "article.note"=>{
+            "body"=>"[[ops portal]]Dobrý deň, váš podnet sme boli nútení uzavrieť, nakoľko sme k požiadavke na úpravu neobdržali spätnú väzbu. Ďakujeme za pochopenie a prajeme vám veľa úspešne vyriešených podnetov.",
+            "internal"=>"false",
+            "subject"=>"Automatické zamietnutie podnetu",
+            "sender" => "Agent"
+          },
+          "ticket.waiting_reminder_step"=>{"value"=>"0"},
+          "ticket.ops_state"=>{"value"=>"rejected"},
+          "ticket.state_id"=>{"value"=> Ticket::State.find_by(name: "closed").id.to_s}
+        }
+        job.disable_notification = false
+        job.localization = "system"
+        job.timezone = "system"
+        job.note = "NEMENIŤ! Ak autor nedoplní informácie po vyžiadaní do 21 dní, podnet sa automaticky zamietne a odošle sa mu notifikácia.",
+        job.active = true
+        job.updated_by_id = 1
+        job.created_by_id = 1
+      end.save!
     end
   end
 end
