@@ -1423,21 +1423,24 @@ namespace :ops do
       end.save!
 
       Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - Zodpovedný subjekt - komentáre z portálu').tap do |trigger|
-        existing_rs_condition = nil
+        existing_rs_condition = {}
+
         if trigger.persisted? && trigger.condition.is_a?(Hash)
-          if trigger.condition["operator"] == "AND" && trigger.condition["conditions"].is_a?(Array)
-            c = trigger.condition["conditions"].find { |cond| cond["name"] == "ticket.responsible_subject" }
-            existing_rs_condition = c.reject { |k, v| k == "name" } if c
-          else
-            existing_rs_condition = trigger.condition["ticket.responsible_subject"]
-          end
+          existing_rs_condition =
+            if trigger.condition["operator"] == "AND" && trigger.condition["conditions"].is_a?(Array)
+              trigger.condition["conditions"]
+                .find { |cond| cond["name"] == "ticket.responsible_subject" }
+                &.except("name")
+            else
+              trigger.condition["ticket.responsible_subject"]
+            end
         end
 
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.issue_type" => { "operator" => "is", "value" => [ "issue", "question" ] },
           "ticket.responsible_subject" => {
-            "operator" => "is",
+            "operator" => existing_rs_condition["operator"] || "is",
             "value_completion" => existing_rs_condition["value_completion"].to_s,
             "value" => existing_rs_condition&["value"] || [],
           },
