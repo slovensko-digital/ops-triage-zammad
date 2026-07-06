@@ -1335,7 +1335,6 @@ namespace :ops do
           "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => "portal_issue_resolution" },
             { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "issue", "question" ] },
-            { "name" => "ticket.responsible_subject", "operator" => "is set", "value" => [] },
             { "operator" => "OR", "conditions" => [
               { "name" => "ticket.action", "operator" => "is", "value" => "create" },
               { "name" => "ticket.responsible_subject", "operator" => "has changed", "value" => [] }
@@ -1369,7 +1368,6 @@ namespace :ops do
           "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => "portal_issue_triage" },
             { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "praise" ] },
-            { "name" => "ticket.responsible_subject", "operator" => "is set", "value" => [] },
             { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "resolved" ] },
             { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
           ]
@@ -1400,7 +1398,6 @@ namespace :ops do
           "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => "portal_issue_triage" },
             { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "praise" ] },
-            { "name" => "ticket.responsible_subject", "operator" => "is set", "value" => [] },
             { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "unresolved" ] },
             { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
           ]
@@ -1431,20 +1428,18 @@ namespace :ops do
           if trigger.condition["operator"] == "AND" && trigger.condition["conditions"].is_a?(Array)
             c = trigger.condition["conditions"].find { |cond| cond["name"] == "ticket.responsible_subject" }
             existing_rs_condition = c.reject { |k, v| k == "name" } if c
-          else+
+          else
             existing_rs_condition = trigger.condition["ticket.responsible_subject"]
           end
         end
-
-        responsible_subject_values = existing_rs_condition ? existing_rs_condition["value"] : []
 
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.issue_type" => { "operator" => "is", "value" => [ "issue", "question" ] },
           "ticket.responsible_subject" => {
             "operator" => "is",
-            "value_completion" => responsible_subject_condition["value_completion"].to_s,
-            "value" => responsible_subject_values,
+            "value_completion" => existing_rs_condition["value_completion"].to_s,
+            "value" => existing_rs_condition&["value"] || [],
           },
           "article.action" => { "operator" => "is", "value" => "create" },
           "article.internal" => { "operator" => "is", "value" => [ "false" ] },
@@ -1504,7 +1499,6 @@ namespace :ops do
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
             { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "issue", "question" ] },
-            { "name" => "ticket.responsible_subject", "operator" => "is set", "value" => [] },
             { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "sent_to_responsible" ] },
             { "operator" => "OR", "conditions" => [
               { "name" => "ticket.action", "operator" => "is", "value" => "create" },
@@ -1527,7 +1521,6 @@ namespace :ops do
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_triage" ] },
             { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "praise" ] },
-            { "name" => "ticket.responsible_subject", "operator" => "is set", "value" => [] },
             { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "resolved", "unresolved" ] },
             { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
           ]
@@ -1547,7 +1540,6 @@ namespace :ops do
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
             { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "issue", "question" ] },
-            { "name" => "ticket.responsible_subject", "operator" => "is set", "value" => [] },
             { "operator" => "OR", "conditions" => [
               { "name" => "ticket.title", "operator" => "has changed" },
               { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
