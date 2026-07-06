@@ -1271,7 +1271,7 @@ namespace :ops do
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_triage" ] },
             { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "waiting_for_author" ] },
             { "name" => "article.internal", "operator" => "is", "value" => [ "false" ] },
-            { "name" => "article.sender_id", "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id.to_s ] }
+            { "name" => "article.sender_id", "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id ] }
           ]
         }
         trigger.perform = {
@@ -1294,7 +1294,7 @@ namespace :ops do
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
             { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "waiting_for_author" ] },
             { "name" => "article.internal", "operator" => "is", "value" => [ "false" ] },
-            { "name" => "article.sender_id", "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id.to_s ] }
+            { "name" => "article.sender_id", "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id ] }
           ]
         }
         trigger.perform = {
@@ -2164,7 +2164,7 @@ namespace :ops do
           },
           "ticket.waiting_reminder_step"=>{"value"=>"0"},
           "ticket.ops_state"=>{"value"=>"rejected"},
-          "ticket.state_id"=>{"value"=> Ticket::State.find_by(name: "closed").id.to_s}
+          "ticket.state_id"=>{"value"=> Ticket::State.find_by(name: "closed").id}
         }
         job.disable_notification = false
         job.localization = "system"
