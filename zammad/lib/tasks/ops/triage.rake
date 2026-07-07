@@ -1267,7 +1267,6 @@ namespace :ops do
           "operator" => "AND",
           "conditions" => [
             { "name" => "article.action", "operator" => "is", "value" => "create" },
-            { "name" => "ticket.action", "operator" => "is not", "value" => "create" },
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_triage" ] },
             { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "waiting_for_author" ] },
             { "name" => "article.internal", "operator" => "is", "value" => [ "false" ] },
@@ -1291,7 +1290,6 @@ namespace :ops do
           "operator" => "AND",
           "conditions" => [
             { "name" => "article.action", "operator" => "is", "value" => "create" },
-            { "name" => "ticket.action", "operator" => "is not", "value" => "create" },
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
             { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "waiting_for_author" ] },
             { "name" => "article.internal", "operator" => "is", "value" => [ "false" ] },
