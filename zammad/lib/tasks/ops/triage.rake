@@ -1472,7 +1472,6 @@ namespace :ops do
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.issue_type" => { "operator" => "is", "value" => [ "issue", "question" ] },
-          "ticket.responsible_subject" => { "operator" => "is set", "value" => [] },
           "article.action" => { "operator" => "is", "value" => "create" },
           "article.internal" => { "operator" => "is", "value" => [ "false" ] },
           "article.sender_id" => { "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Agent").id ] },
