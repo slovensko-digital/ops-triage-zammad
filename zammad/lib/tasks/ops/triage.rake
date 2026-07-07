@@ -1422,7 +1422,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - Zodpovedný subjekt - komentáre z portálu').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - Zodpovedný Subjekt - komentáre z portálu').tap do |trigger|
         existing_rs_condition = {}
 
         if trigger.persisted? && trigger.condition.is_a?(Hash)
