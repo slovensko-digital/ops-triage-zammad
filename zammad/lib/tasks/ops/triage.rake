@@ -1276,6 +1276,7 @@ namespace :ops do
         }
         trigger.perform = {
           "ticket.ops_state" => { "value" => "waiting" },
+          "ticket.waiting_reminder_step"=>{"value"=>"0"},
           "notification.webhook" => { "webhook_id" => Webhook.find_by(name: "OPS - Upravený podnet pre OPS portál").id }
         }
         trigger.activator = "action"
@@ -1299,6 +1300,7 @@ namespace :ops do
         }
         trigger.perform = {
           "ticket.ops_state" => { "value" => "in_progress" },
+          "ticket.waiting_reminder_step"=>{"value"=>"0"},
           "notification.webhook" => { "webhook_id" => Webhook.find_by(name: "OPS - Upravený podnet pre OPS portál").id }
         }
         trigger.activator = "action"
