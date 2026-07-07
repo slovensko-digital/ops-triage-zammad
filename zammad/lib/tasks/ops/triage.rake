@@ -1576,7 +1576,6 @@ namespace :ops do
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.issue_type" => { "operator" => "is", "value" => [ "issue", "question" ] },
-          "ticket.responsible_subject" => { "operator" => "is set", "value" => [] },
           "ticket.ops_state" => { "operator" => "is", "value" => [ "unresolved", "referred", "marked_as_resolved", "closed", "in_progress", "resolved", "rejected", "sent_to_responsible" ] },
           "article.internal" => { "operator" => "is", "value" => false },
           "article.action" => { "operator" => "is", "value" => "create" },
