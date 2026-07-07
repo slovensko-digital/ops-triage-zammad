@@ -1329,13 +1329,12 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - VZOR - <subjekt> - nový podnet').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - Zodpovedný subjekt - nový podnet').tap do |trigger|
         trigger.condition = {
           "operator" => "AND",
           "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => "portal_issue_resolution" },
             { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "issue", "question" ] },
-            { "name" => "ticket.responsible_subject", "operator" => "is", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
             { "operator" => "OR", "conditions" => [
               { "name" => "ticket.action", "operator" => "is", "value" => "create" },
               { "name" => "ticket.responsible_subject", "operator" => "has changed", "value" => [] }
@@ -1358,18 +1357,17 @@ namespace :ops do
         }
         trigger.activator = "action"
         trigger.execution_condition_mode = "selective"
-        trigger.active = false
+        trigger.active = true
         trigger.updated_by_id = 1
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - VZOR - <subjekt> - nová verejná pochvala').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - Zodpovedný subjekt - nová verejná pochvala').tap do |trigger|
         trigger.condition = {
           "operator" => "AND",
           "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => "portal_issue_triage" },
             { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "praise" ] },
-            { "name" => "ticket.responsible_subject", "operator" => "is", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
             { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "resolved" ] },
             { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
           ]
@@ -1389,18 +1387,17 @@ namespace :ops do
         }
         trigger.activator = "action"
         trigger.execution_condition_mode = "selective"
-        trigger.active = false
+        trigger.active = true
         trigger.updated_by_id = 1
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - VZOR - <subjekt> - nová neverejná pochvala').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - Zodpovedný subjekt - nová neverejná pochvala').tap do |trigger|
         trigger.condition = {
           "operator" => "AND",
           "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => "portal_issue_triage" },
             { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "praise" ] },
-            { "name" => "ticket.responsible_subject", "operator" => "is", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
             { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "unresolved" ] },
             { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
           ]
@@ -1420,16 +1417,33 @@ namespace :ops do
         }
         trigger.activator = "action"
         trigger.execution_condition_mode = "selective"
-        trigger.active = false
+        trigger.active = true
         trigger.updated_by_id = 1
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - VZOR - <subjekt> - komentáre z portálu').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - Zodpovedný subjekt - komentáre z portálu').tap do |trigger|
+        existing_rs_condition = {}
+
+        if trigger.persisted? && trigger.condition.is_a?(Hash)
+          existing_rs_condition =
+            if trigger.condition["operator"] == "AND" && trigger.condition["conditions"].is_a?(Array)
+              trigger.condition["conditions"]
+                .find { |cond| cond["name"] == "ticket.responsible_subject" }
+                &.except("name")
+            else
+              trigger.condition["ticket.responsible_subject"]
+            end
+        end
+
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.issue_type" => { "operator" => "is", "value" => [ "issue", "question" ] },
-          "ticket.responsible_subject" => { "operator" => "is", "value_completion" => "", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
+          "ticket.responsible_subject" => {
+            "operator" => existing_rs_condition["operator"] || "is",
+            "value_completion" => existing_rs_condition["value_completion"].to_s,
+            "value" => existing_rs_condition&["value"] || [],
+          },
           "article.action" => { "operator" => "is", "value" => "create" },
           "article.internal" => { "operator" => "is", "value" => [ "false" ] },
           "article.sender_id" => { "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id ] },
@@ -1449,16 +1463,15 @@ namespace :ops do
         }
         trigger.activator = "action"
         trigger.execution_condition_mode = "selective"
-        trigger.active = false
+        trigger.active = true
         trigger.updated_by_id = 1
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - VZOR - <subjekt> - komentáre z triáže').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - Zodpovedný subjekt - komentáre z triáže').tap do |trigger|
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.issue_type" => { "operator" => "is", "value" => [ "issue", "question" ] },
-          "ticket.responsible_subject" => { "operator" => "is", "value_completion" => "", "value" => [ { "label" => "Test", "value" => 0 } ] },
           "article.action" => { "operator" => "is", "value" => "create" },
           "article.internal" => { "operator" => "is", "value" => [ "false" ] },
           "article.sender_id" => { "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Agent").id ] },
@@ -1478,7 +1491,7 @@ namespace :ops do
         }
         trigger.activator = "action"
         trigger.execution_condition_mode = "selective"
-        trigger.active = false
+        trigger.active = true
         trigger.updated_by_id = 1
         trigger.created_by_id = 1
       end.save!
@@ -1488,7 +1501,6 @@ namespace :ops do
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
             { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "issue", "question" ] },
-            { "name" => "ticket.responsible_subject", "operator" => "is", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
             { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "sent_to_responsible" ] },
             { "operator" => "OR", "conditions" => [
               { "name" => "ticket.action", "operator" => "is", "value" => "create" },
@@ -1504,14 +1516,13 @@ namespace :ops do
         trigger.active = true
         trigger.updated_by_id = 1
         trigger.created_by_id = 1
-      end.save! unless Trigger.exists?(name: '200 - ops - preposielanie nových podnetov PRO zodpovedným subjektom')
+      end.save!
 
       Trigger.find_or_initialize_by(name: '200 - ops - preposielanie novej pochvaly PRO zodpovedným subjektom').tap do |trigger|
         trigger.condition = {
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_triage" ] },
             { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "praise" ] },
-            { "name" => "ticket.responsible_subject", "operator" => "is", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
             { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "resolved", "unresolved" ] },
             { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
           ]
@@ -1524,14 +1535,13 @@ namespace :ops do
         trigger.active = true
         trigger.updated_by_id = 1
         trigger.created_by_id = 1
-      end.save! unless Trigger.exists?(name: '200 - ops - preposielanie novej pochvaly PRO zodpovedným subjektom')
+      end.save!
 
       Trigger.find_or_initialize_by(name: '200 - ops - preposielanie upravených podnetov PRO zodpovedným subjektom').tap do |trigger|
         trigger.condition = {
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_resolution" ] },
             { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "issue", "question" ] },
-            { "name" => "ticket.responsible_subject", "operator" => "is", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
             { "operator" => "OR", "conditions" => [
               { "name" => "ticket.title", "operator" => "has changed" },
               { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
@@ -1560,13 +1570,12 @@ namespace :ops do
         trigger.active = true
         trigger.updated_by_id = 1
         trigger.created_by_id = 1
-      end.save! unless Trigger.exists?(name: '200 - ops - preposielanie upravených podnetov PRO zodpovedným subjektom')
+      end.save!
 
       Trigger.find_or_initialize_by(name: '200 - ops - preposielanie nových komentárov PRO zodpovedným subjektom').tap do |trigger|
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.issue_type" => { "operator" => "is", "value" => [ "issue", "question" ] },
-          "ticket.responsible_subject" => { "operator" => "is", "value" => [ { "label" => "Vzor", "value" => 0 } ] },
           "ticket.ops_state" => { "operator" => "is", "value" => [ "unresolved", "referred", "marked_as_resolved", "closed", "in_progress", "resolved", "rejected", "sent_to_responsible" ] },
           "article.internal" => { "operator" => "is", "value" => false },
           "article.action" => { "operator" => "is", "value" => "create" },
@@ -1580,7 +1589,7 @@ namespace :ops do
         trigger.active = true
         trigger.updated_by_id = 1
         trigger.created_by_id = 1
-      end.save! unless Trigger.exists?(name: '200 - ops - preposielanie nových komentárov PRO zodpovedným subjektom')
+      end.save!
 
       Trigger.find_or_initialize_by(name: '900 - ops - nastavenie času poslednej zmeny zodpovedného subjektu').tap do |trigger|
         trigger.condition = {
