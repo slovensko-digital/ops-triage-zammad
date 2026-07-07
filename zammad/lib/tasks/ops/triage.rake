@@ -1442,7 +1442,7 @@ namespace :ops do
           "ticket.responsible_subject" => {
             "operator" => existing_rs_condition["operator"] || "is",
             "value_completion" => existing_rs_condition["value_completion"].to_s,
-            "value" => existing_rs_condition&["value"] || [],
+            "value" => existing_rs_condition["value"] || [],
           },
           "article.action" => { "operator" => "is", "value" => "create" },
           "article.internal" => { "operator" => "is", "value" => [ "false" ] },
