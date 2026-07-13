@@ -847,6 +847,7 @@ namespace :ops do
         flow.perform = {
           "ticket.process_type" => { "operator" => "show", "show" => "true" },
           "ticket.issue_resolved" => { "operator" => "show", "show" => "true" },
+          "ticket.body" => { "operator" => "show", "show" => "true" },
           "ticket.ops_state" => {
             "operator" => [ "show", "set_fixed_to"],
             "show" => "true",
