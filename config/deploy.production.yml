@@ -5,7 +5,7 @@ servers:
     proxy:
       host: triaz.odkazprestarostu.sk
     options:
-      memory: 4g
+      memory: 8g
 
   websocket:
     hosts:
@@ -14,6 +14,8 @@ servers:
   worker:
     hosts:
       - 195.201.202.110
+    options:
+      memory: 4g
 
 proxy:
   host: triaz.odkazprestarostu.sk
@@ -46,6 +48,29 @@ accessories:
         ES_JAVA_OPTS: "-Xms1024m -Xmx1024m"
     options:
       memory: 4g
+  metabase:
+    image: metabase/metabase:v0.62.4
+    roles:
+      - web
+      - worker
+    proxy:
+      host: metabase.odkazprestarostu.sk
+      ssl: true
+      app_port: 3000
+      healthcheck:
+        path: /api/health
+    env:
+      clear:
+        MB_DB_TYPE: postgres
+        MB_DB_PORT: 5432
+        MB_DB_HOST: host.docker.internal
+        MB_DB_DBNAME: metabaseappdb
+        MB_DB_USER: metabase
+      secret:
+        - MB_DB_PASS
+    options:
+      add-host: host.docker.internal:host-gateway
+      memory: 3g
 
 ssh:
   user: kamal
