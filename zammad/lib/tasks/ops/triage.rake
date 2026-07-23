@@ -540,7 +540,8 @@ namespace :ops do
             "referred" => "Odstúpený",
             "accepted" => "Prijatý",
             "duplicate" => "Duplicitný",
-            "archived" => "Archivovaný"
+            "archived" => "Archivovaný",
+            "waiting_for_author" => "Čaká na autora"
           },
           default: 'waiting',
           nulloption: true,
@@ -714,7 +715,7 @@ namespace :ops do
           "ticket.ops_state" => {
             "operator" => [ "show", "set_fixed_to"],
             "show" => "true",
-            "set_fixed_to" => [ "waiting", "sent_to_responsible" , "rejected", "duplicate" ]
+            "set_fixed_to" => [ "waiting", "sent_to_responsible" , "rejected", "duplicate", "waiting_for_author" ]
           },
           "ticket.address_municipality" => { "operator" => "show", "show" => "true" },
           "ticket.address_state" => { "operator" => "show", "show" => "true" },
@@ -1261,6 +1262,29 @@ namespace :ops do
       Trigger.find_by(name: 'auto reply (on new tickets)')&.update!(active: false)
 
       # create triggers
+      Trigger.find_or_initialize_by(name: "148 - Zmena stavu z čaká na autora pri odpovedi počas triáže").tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND",
+          "conditions" => [
+            { "name" => "article.action", "operator" => "is", "value" => "create" },
+            { "name" => "ticket.process_type", "operator" => "is", "value" => [ "portal_issue_triage" ] },
+            { "name" => "ticket.ops_state", "operator" => "is", "value" => [ "waiting_for_author" ] },
+            { "name" => "article.internal", "operator" => "is", "value" => [ "false" ] },
+            { "name" => "article.sender_id", "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id ] }
+          ]
+        }
+        trigger.perform = {
+          "ticket.ops_state" => { "value" => "waiting" },
+          "ticket.waiting_reminder_step"=>{"value"=>"0"},
+          "notification.webhook" => { "webhook_id" => Webhook.find_by(name: "OPS - Upravený podnet pre OPS portál").id }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
       Trigger.find_or_initialize_by(name: "150 - Zmena stavu na v riešení pri odpovedi").tap do |trigger|
         trigger.condition = {
           "operator" => "AND",
