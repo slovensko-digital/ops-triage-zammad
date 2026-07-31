@@ -1275,7 +1275,6 @@ namespace :ops do
         }
         trigger.perform = {
           "ticket.ops_state" => { "value" => "waiting" },
-          "ticket.waiting_reminder_step"=>{"value"=>"0"},
           "notification.webhook" => { "webhook_id" => Webhook.find_by(name: "OPS - Upravený podnet pre OPS portál").id }
         }
         trigger.activator = "action"
@@ -1446,7 +1445,7 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
-      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - Zodpovedný Subjekt - komentáre z portálu').tap do |trigger|
+      Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - Zodpovedný subjekt - komentáre z portálu').tap do |trigger|
         existing_rs_condition = {}
 
         if trigger.persisted? && trigger.condition.is_a?(Hash)
@@ -1634,6 +1633,26 @@ namespace :ops do
           ]
         }
         trigger.perform = { "ticket.responsible_subject_changed_at" => { "operator" => "relative", "value" => "1", "range" => "minute" } }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: '900 - ops - nastavenie času poslednej zmeny ops stavu').tap do |trigger|
+        trigger.condition = {
+          "operator" => "OR", "conditions" => [
+            { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
+            {
+              "operator" => "AND", "conditions" => [
+              { "name" => "ticket.action", "operator" => "is", "value" => "create" },
+              { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] }
+            ]
+            }
+          ]
+        }
+        trigger.perform = { "ticket.ops_state_changed_at" => { "operator" => "relative", "value" => "1", "range" => "minute" } }
         trigger.activator = "action"
         trigger.execution_condition_mode = "selective"
         trigger.active = true
@@ -2035,18 +2054,30 @@ namespace :ops do
 
       ObjectManager::Attribute.add(
         object: 'Ticket',
-        name: 'waiting_reminder_step',
-        display: 'Krok pripomienky (Čaká na autora)',
-        data_type: 'integer',
-        data_option: { "default" => 0, "min" => 0, "max" => 2, "null" => false, "options" => {}, "relation" => "" },
+        name: 'ops_state_changed_at',
+        display: 'Posledná zmena stavu (OPS)',
+        data_type: 'datetime',
+        data_option: {
+          future: true,
+          past: true,
+          diff: nil,
+          default: nil,
+          null: true,
+          options: {},
+          relation: ''
+        },
         active: true,
         screens: {
-          edit: { 'ticket.agent' => { shown: false }, 'ticket.customer' => { shown: false } },
-          create_middle: { 'ticket.agent' => { shown: false }, 'ticket.customer' => { shown: false } }
+          create_middle: {
+            'ticket.agent' => { shown: false }
+          },
+          edit: {
+            'ticket.agent' => { shown: true }
+          }
         },
         position: 300,
         created_by_id: 1,
-        updated_by_id: 1,
+        updated_by_id: 1
       )
 
       ObjectManager::Attribute.migration_execute
@@ -2065,9 +2096,12 @@ namespace :ops do
         }
         job.object = "Ticket"
         job.condition = {
-          "ticket.ops_state"=>{"operator"=>"is", "value"=>["waiting_for_author"]},
-          "ticket.waiting_reminder_step"=>{"operator"=>"is", "value"=>"0"},
-          "ticket.updated_at"=>{"operator"=>"before (relative)", "value"=>"7", "range"=>"day"}
+          "operator" => "AND",
+          "conditions" => [
+            { "name" => "ticket.ops_state", "operator" => "is", "value" => ["waiting_for_author"] },
+            { "name" => "ticket.ops_state_changed_at", "operator" => "before (relative)", "value" => "7", "range" => "day" },
+            { "name" => "ticket.ops_state_changed_at", "operator" => "after (relative)", "value" => "8", "range" => "day" }
+          ]
         }
         job.perform = {
           "article.note"=>{
@@ -2075,8 +2109,7 @@ namespace :ops do
             "internal"=>"false",
             "subject"=>"1. Pripomienka k podnetu",
             "sender" => "Agent"
-          },
-          "ticket.waiting_reminder_step"=>{"value"=>"1"}
+          }
         }
         job.disable_notification = false
         job.localization = "system"
@@ -2101,9 +2134,12 @@ namespace :ops do
         }
         job.object = "Ticket"
         job.condition = {
-          "ticket.ops_state"=>{"operator"=>"is", "value"=>["waiting_for_author"]},
-          "ticket.waiting_reminder_step"=>{"operator"=>"is", "value"=>"1"},
-          "ticket.updated_at"=>{"operator"=>"before (relative)", "value"=>"7", "range"=>"day"}
+          "operator" => "AND",
+          "conditions" => [
+            { "name" => "ticket.ops_state", "operator" => "is", "value" => ["waiting_for_author"] },
+            { "name" => "ticket.ops_state_changed_at", "operator" => "before (relative)", "value" => "14", "range" => "day" },
+            { "name" => "ticket.ops_state_changed_at", "operator" => "after (relative)", "value" => "15", "range" => "day" }
+          ]
         }
         job.perform = {
           "article.note"=>{
@@ -2111,8 +2147,7 @@ namespace :ops do
             "internal"=>"false",
             "subject"=>"2. Pripomienka k podnetu",
             "sender" => "Agent"
-          },
-          "ticket.waiting_reminder_step"=>{"value"=>"2"}
+          }
         }
         job.disable_notification = false
         job.localization = "system"
@@ -2137,9 +2172,11 @@ namespace :ops do
         }
         job.object = "Ticket"
         job.condition = {
-          "ticket.ops_state"=>{"operator"=>"is", "value"=>["waiting_for_author"]},
-          "ticket.waiting_reminder_step"=>{"operator"=>"is", "value"=>"2"},
-          "ticket.updated_at"=>{"operator"=>"before (relative)", "value"=>"7", "range"=>"day"}
+          "operator" => "AND",
+          "conditions" => [
+            { "name" => "ticket.ops_state", "operator" => "is", "value" => ["waiting_for_author"] },
+            { "name" => "ticket.ops_state_changed_at", "operator" => "before (relative)", "value" => "21", "range" => "day" }
+          ]
         }
         job.perform = {
           "article.note"=>{
@@ -2148,7 +2185,6 @@ namespace :ops do
             "subject"=>"Automatické zamietnutie podnetu",
             "sender" => "Agent"
           },
-          "ticket.waiting_reminder_step"=>{"value"=>"0"},
           "ticket.ops_state"=>{"value"=>"rejected"},
           "ticket.state_id"=>{"value"=> Ticket::State.find_by(name: "closed").id}
         }
