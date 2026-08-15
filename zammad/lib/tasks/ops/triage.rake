@@ -1947,7 +1947,7 @@ namespace :ops do
           "article.note" => {
             "body" => "Text podnetu bol upravený. Skontrolujte prosím nový text vpravo v časti \"Finálny text podnetu\".",
             "internal" => "true",
-            "subject" => "UPOZORNENIE: Zmena textu podnetu autorom"
+            "subject" => "Zmena textu podnetu autorom"
           }
         }
         trigger.note = "NEMENIŤ - spúšťač používa špeciálne parametre, ktoré budú zmazané pri úprave spúšťača."
