@@ -1935,6 +1935,29 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
+      Trigger.find_or_initialize_by(name: '800 - ops - zmena textu podnetu z portálu - notifikácia').tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND", "conditions" => [
+            { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
+            { "name" => "ticket.body", "operator" => "has changed", "value" => [] },
+            { "name" => "ticket.updated_by_id", "operator" => "is", "pre_condition" => "specific", "value" => [ tech_user.id ] }
+          ]
+        }
+        trigger.perform = {
+          "article.note" => {
+            "body" => "Text podnetu bol upravený. Skontrolujte prosím nový text vpravo v časti \"Finálny text podnetu\".",
+            "internal" => "true",
+            "subject" => "UPOZORNENIE: Zmena textu podnetu autorom"
+          }
+        }
+        trigger.note = "NEMENIŤ - spúšťač používa špeciálne parametre, ktoré budú zmazané pri úprave spúšťača."
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
       Job.find_or_initialize_by(name: "NEMENIŤ - Neriešený po 15 dňoch od preposlania").tap do |job|
         job.timeplan = {
           "days"=>{
