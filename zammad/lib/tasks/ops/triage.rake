@@ -707,7 +707,7 @@ namespace :ops do
             "set_fixed_to" => [ "issue", "question" ]
           },
           "ticket.origin" => { "operator" => "show", "show" => "true" },
-          "ticket.body" => { "operator" => "show", "show" => "true" },
+          "ticket.description" => { "operator" => "show", "show" => "true" },
           "ticket.category" => { "operator" => "show", "show" => "true" },
           "ticket.subcategory" => { "operator" => "show", "show" => "true" },
           "ticket.subtype" => { "operator" => "show", "show" => "true" },
@@ -749,7 +749,7 @@ namespace :ops do
           "ticket.issue_type" => { "operator" => [ "show", "set_readonly"],  "show" => "true", "set_readonly" => "true" },
           "ticket.portal_public" => { "operator" => [ "show", "set_readonly"], "show" => "true", "set_readonly" => "true" },
           "ticket.origin" => { "operator" => "show", "show" => "true" },
-          "ticket.body" => { "operator" => "show", "show" => "true" },
+          "ticket.description" => { "operator" => "show", "show" => "true" },
           "ticket.responsible_subject" => { "operator" => "show", "show" => "true" },
           "ticket.ops_state" => {
             "operator" => [ "show", "set_fixed_to"],
@@ -848,7 +848,7 @@ namespace :ops do
         flow.perform = {
           "ticket.process_type" => { "operator" => "show", "show" => "true" },
           "ticket.issue_resolved" => { "operator" => "show", "show" => "true" },
-          "ticket.body" => { "operator" => "show", "show" => "true" },
+          "ticket.description" => { "operator" => "show", "show" => "true" },
           "ticket.ops_state" => {
             "operator" => [ "show", "set_fixed_to"],
             "show" => "true",
@@ -1039,7 +1039,7 @@ namespace :ops do
           "ticket.ops_state" => { "operator" => "is", "value" => [ "sent_to_responsible" ] },
         }
         flow.perform = {
-          "ticket.body" => { "operator" => "set_mandatory", "set_mandatory" => "true" },
+          "ticket.description" => { "operator" => "set_mandatory", "set_mandatory" => "true" },
           "ticket.responsible_subject" => { "operator" => "set_mandatory", "set_mandatory" => "true" },
         }
         flow.active = true
@@ -1088,7 +1088,7 @@ namespace :ops do
         }
         flow.condition_selected = {}
         flow.perform = {
-          "ticket.body" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.description" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.responsible_subject" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.ops_state" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.process_type" => { "operator" => "set_readonly", "set_readonly" => "true" },
@@ -1165,7 +1165,7 @@ namespace :ops do
         }
         flow.condition_selected = {}
         flow.perform = {
-          "ticket.body" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.description" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.responsible_subject" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.ops_state" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.state_id" => { "operator" => "set_readonly", "set_readonly" => "true" },
@@ -1230,7 +1230,7 @@ namespace :ops do
         }
         flow.perform = {
           "ticket.title" => { "operator" => "set_readonly", "set_readonly" => "true" },
-          "ticket.body" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.description" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.address_municipality" => { "operator" => "hide", "hide" => "true" },
           "ticket.address_state" => { "operator" => "hide", "hide" => "true" },
           "ticket.address_county" => { "operator" => "hide", "hide" => "true" },
@@ -1370,7 +1370,7 @@ namespace :ops do
             "body" => "<div>Správca podnetu na portáli Odkaz pre starostu vám priradil podnet.</div><div><br></div>" \
               "<div><b>Názov podnetu:</b>&nbsp;\#{ticket.title}<br><br></div>" \
               "<div><b>Adresa:</b>&nbsp;\#{ticket.address_municipality} - \#{ticket.address_street}</div>" \
-              "<div><b>Text podnetu:</b></div><div>\#{ticket.body}<br><br></div>" \
+              "<div><b>Text podnetu:</b></div><div>\#{ticket.description}<br><br></div>" \
               "<div>Odkaz na portál:&nbsp;\#{ticket.portal_url}?force_rs_login <br><br></div>" \
               "<div>Na podnet môžete reagovať priamo na portáli: <a href=\"\#{ticket.portal_url}?force_rs_login\">Odpovedať</a> alebo odpoveďou na tento email.</div>",
             "internal" => "true",
@@ -1400,7 +1400,7 @@ namespace :ops do
           "notification.email" => {
             "body" => "<div>Na portáli Odkaz pre starostu vám bola adresovaná verejná pochvala.</div><div><br></div>" \
               "<div><b>Názov:</b>&nbsp;\#{ticket.title}<br><br></div>" \
-              "<div><b>Text pochvaly:</b></div><div>\#{ticket.body}<br><br></div>" \
+              "<div><b>Text pochvaly:</b></div><div>\#{ticket.description}<br><br></div>" \
               "<div>Odkaz na portál:&nbsp;\#{ticket.portal_url} <br><br></div>" \
               "<div><i>Na pochvalu nie je možné odpovedať.</i></div>",
             "internal" => "true",
@@ -1430,7 +1430,7 @@ namespace :ops do
           "notification.email" => {
             "body" => "<div>Na portáli Odkaz pre starostu vám bola adresovaná neverejná pochvala.</div><div><br></div>" \
               "<div><b>Názov:</b>&nbsp;\#{ticket.title}<br><br></div>" \
-              "<div><b>Text pochvaly:</b></div><div>\#{ticket.body}<br><br></div>" \
+              "<div><b>Text pochvaly:</b></div><div>\#{ticket.description}<br><br></div>" \
               "<div>Odkaz na portál:&nbsp;\#{ticket.portal_url} <br><br></div>" \
               "<div><i>Na pochvalu nie je možné odpovedať.</i></div>",
             "internal" => "true",
@@ -1667,7 +1667,7 @@ namespace :ops do
             { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
             { "operator" => "OR", "conditions" => [
               { "name" => "ticket.title", "operator" => "has changed" },
-              { "name" => "ticket.body", "operator" => "has changed" },
+              { "name" => "ticket.description", "operator" => "has changed" },
               { "name" => "ticket.ops_state", "operator" => "has changed", "value" => [] },
               { "name" => "ticket.issue_resolved", "operator" => "has changed", "value" => [] },
               { "name" => "ticket.issue_type", "operator" => "has changed", "value" => [] },
