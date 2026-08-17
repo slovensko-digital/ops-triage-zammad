@@ -1,11 +1,12 @@
-class OpsAddTicketBodyTextarea < ActiveRecord::Migration[7.1]
+class OpsAddTicketDescription < ActiveRecord::Migration[7.1]
   def up
     return unless Setting.exists?(name: 'system_init_done')
+    return if ObjectManager::Attribute.exists?(name: 'description')
 
     ObjectManager::Attribute.add(
       object: 'Ticket',
-      name: 'body',
-      display: __('Finálny text podnetu old'),
+      name: 'description',
+      display: __('Finálny text podnetu'),
       data_type: 'textarea',
       data_option: {
         default: '',
@@ -31,17 +32,13 @@ class OpsAddTicketBodyTextarea < ActiveRecord::Migration[7.1]
 
     ObjectManager::Attribute.migration_execute
 
-    Ticket.where(origin: "portal").each do |ticket|
-      first_article = ticket.articles.first
-      ticket.body = first_article.body if first_article
-      ticket.save
-    end
-
-    Ticket.where(body: nil).update_all(body: '')
+    # Copy the body to description for existing tickets fast using SQL
+    Ticket.where(origin: "portal").update_all("description = body")
+    Ticket.where(description: nil).update_all(description: '')
   end
 
   def down
-    ObjectManager::Attribute.remove(object: 'Ticket', name: 'body')
+    ObjectManager::Attribute.remove(object: 'Ticket', name: 'description')
 
     ObjectManager::Attribute.migration_execute
   end
