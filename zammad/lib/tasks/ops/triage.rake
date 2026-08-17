@@ -1983,7 +1983,7 @@ namespace :ops do
         trigger.condition = {
           "operator" => "AND", "conditions" => [
             { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
-            { "name" => "ticket.body", "operator" => "has changed", "value" => [] },
+            { "name" => "ticket.description", "operator" => "has changed", "value" => [] },
             { "name" => "ticket.updated_by_id", "operator" => "is", "pre_condition" => "specific", "value" => [ tech_user.id ] }
           ]
         }
