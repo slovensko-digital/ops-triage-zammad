@@ -1,7 +1,9 @@
 class OpsAddTicketDescription < ActiveRecord::Migration[7.1]
   def up
     return unless Setting.exists?(name: 'system_init_done')
-    return if ObjectManager::Attribute.exists?(name: 'description')
+    return if ObjectManager::Attribute.exists?(object_lookup_id: 1, name: 'description')
+
+    ObjectManager::Attribute.find_by(object_lookup_id: 1, name: "body")&.update(display: __('Finálny text podnetu old'))
 
     ObjectManager::Attribute.add(
       object: 'Ticket',
