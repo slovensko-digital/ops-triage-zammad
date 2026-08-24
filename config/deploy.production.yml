@@ -49,7 +49,7 @@ accessories:
     options:
       memory: 4g
   metabase:
-    image: metabase/metabase:v0.62.4
+    image: metabase/metabase:v0.63.14
     roles:
       - web
       - worker
