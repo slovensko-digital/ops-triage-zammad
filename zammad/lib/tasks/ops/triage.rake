@@ -1707,7 +1707,6 @@ namespace :ops do
                 { "name" => "ticket.issue_type", "operator" => "is", "value" => [ "issue", "question" ] },
                 { "name" => "ticket.origin", "operator" => "is", "value" => [ "portal" ] },
                 { "name" => "article.internal", "operator" => "is", "value" => "false" },
-                { "name" => "article.body", "operator" => "contains", "value" => "[[ops portal]]" },
                 { "name" => "article.action", "operator" => "is", "value" => "create" },
               ] },
               { "operator" => "AND", "conditions" => [
