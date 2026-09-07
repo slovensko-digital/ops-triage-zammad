@@ -1468,6 +1468,7 @@ namespace :ops do
             "value_completion" => existing_rs_condition["value_completion"].to_s,
             "value" => existing_rs_condition["value"] || [],
           },
+          "ticket.action" => { "operator" => "is not", "value" => "create" },
           "article.action" => { "operator" => "is", "value" => "create" },
           "article.internal" => { "operator" => "is", "value" => [ "false" ] },
           "article.sender_id" => { "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id ] },
