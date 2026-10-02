@@ -1447,7 +1447,7 @@ namespace :ops do
       end.save!
 
       Trigger.find_or_initialize_by(name: '200 - ops - preposielanie - Zodpovedný subjekt - komentáre z portálu').tap do |trigger|
-        existing_rs_condition = {}
+        existing_rs_condition = nil
 
         if trigger.persisted? && trigger.condition.is_a?(Hash)
           existing_rs_condition =
@@ -1463,17 +1463,17 @@ namespace :ops do
         trigger.condition = {
           "ticket.process_type" => { "operator" => "is", "value" => "portal_issue_resolution" },
           "ticket.issue_type" => { "operator" => "is", "value" => [ "issue", "question" ] },
-          "ticket.responsible_subject" => {
-            "operator" => existing_rs_condition["operator"] || "is",
-            "value_completion" => existing_rs_condition["value_completion"].to_s,
-            "value" => existing_rs_condition["value"] || [],
-          },
           "ticket.action" => { "operator" => "is not", "value" => "create" },
           "article.action" => { "operator" => "is", "value" => "create" },
           "article.internal" => { "operator" => "is", "value" => [ "false" ] },
           "article.sender_id" => { "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id ] },
           "article.type_id" => { "operator" => "is not", "value" => [ Ticket::Article::Type.find_by_name("email").id ] },
         }
+
+        if existing_rs_condition.present?
+          trigger.condition["ticket.responsible_subject"] = existing_rs_condition
+        end
+
         trigger.perform = {
           "notification.email" => {
             "body" => "<div>K podnetu na portáli <b>Odkaz pre starostu</b> bol pridaný komentár od používateľa.</div><div><br></div>" \
