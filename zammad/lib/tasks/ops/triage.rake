@@ -915,6 +915,8 @@ namespace :ops do
           "ticket.responsible_subject_changed_at" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.portal_url" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.portal_duplicates_url" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.citizen_last_contact_at" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.responsible_subject_last_contact_at" => { "operator" => "set_readonly", "set_readonly" => "true" },
         }
         flow.active = true
         flow.stop_after_match = false
@@ -1662,6 +1664,49 @@ namespace :ops do
         trigger.created_by_id = 1
       end.save!
 
+      Trigger.find_or_initialize_by(name: '900 - ops - nastavenie času posledného kontaktu občana').tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND",
+          "conditions" => [
+            { "name" => "article.action", "operator" => "is", "value" => "create" },
+            { "name" => "article.internal", "operator" => "is", "value" => "false" },
+            { "name" => "article.sender_id", "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id.to_s ] },
+          ]
+        }
+        trigger.perform = {
+          "ticket.citizen_last_contact_at" => { "operator" => "relative", "value" => "1", "range" => "minute" }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
+      Trigger.find_or_initialize_by(name: '900 - ops - nastavenie času posledného kontaktu zodpovedného subjektu').tap do |trigger|
+        trigger.condition = {
+          "operator" => "AND",
+          "conditions" => [
+            { "name" => "article.action", "operator" => "is", "value" => "create" },
+            { "name" => "article.internal", "operator" => "is", "value" => "false" },
+            { "name" => "article.sender_id", "operator" => "is", "value" => [ Ticket::Article::Sender.find_by_name("Customer").id.to_s ] },
+            { "name" => "article.type_id", "operator" => "is", "value" => [
+              Ticket::Article::Type.find_by_name("email").id.to_s,
+              Ticket::Article::Type.find_by_name("note").id.to_s
+            ]
+            }
+          ]
+        }
+        trigger.perform = {
+          "ticket.responsible_subject_last_contact_at" => { "operator" => "relative", "value" => "1", "range" => "minute" }
+        }
+        trigger.activator = "action"
+        trigger.execution_condition_mode = "selective"
+        trigger.active = true
+        trigger.updated_by_id = 1
+        trigger.created_by_id = 1
+      end.save!
+
       Trigger.find_or_initialize_by(name: '200 - ops - preposielanie upravených podnetov na portál').tap do |trigger|
         trigger.condition = {
           "operator" => "AND", "conditions" => [
@@ -2103,6 +2148,55 @@ namespace :ops do
         created_by_id: 1,
         updated_by_id: 1
       )
+
+      ObjectManager::Attribute.add(
+        object: 'Ticket',
+        name: 'citizen_last_contact_at',
+        display: __('Posledný kontakt občana'),
+        data_type: 'datetime',
+        data_option: {
+          future: false,
+          past: true,
+          diff: nil,
+          default: nil,
+          null: true,
+          options: {},
+          relation: ''
+        },
+        active: true,
+        screens: {
+          create_middle: { 'ticket.agent' => { shown: false } },
+          edit: { 'ticket.agent' => { shown: true } }
+        },
+        position: 306,
+        created_by_id: 1,
+        updated_by_id: 1
+      )
+
+      ObjectManager::Attribute.add(
+        object: 'Ticket',
+        name: 'responsible_subject_last_contact_at',
+        display: __('Posledný kontakt zodpovedného subjektu'),
+        data_type: 'datetime',
+        data_option: {
+          future: false,
+          past: true,
+          diff: nil,
+          default: nil,
+          null: true,
+          options: {},
+          relation: ''
+        },
+        active: true,
+        screens: {
+          create_middle: { 'ticket.agent' => { shown: false } },
+          edit: { 'ticket.agent' => { shown: true } }
+        },
+        position: 307,
+        created_by_id: 1,
+        updated_by_id: 1
+      )
+
 
       ObjectManager::Attribute.migration_execute
 
