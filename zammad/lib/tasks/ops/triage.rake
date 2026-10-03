@@ -2153,54 +2153,6 @@ namespace :ops do
         updated_by_id: 1
       )
 
-      ObjectManager::Attribute.add(
-        object: 'Ticket',
-        name: 'citizen_last_contact_at',
-        display: __('Posledný kontakt občana'),
-        data_type: 'datetime',
-        data_option: {
-          future: true,
-          past: true,
-          diff: nil,
-          default: nil,
-          null: true,
-          options: {},
-          relation: ''
-        },
-        active: true,
-        screens: {
-          create_middle: { 'ticket.agent' => { shown: false } },
-          edit: { 'ticket.agent' => { shown: true } }
-        },
-        position: 306,
-        created_by_id: 1,
-        updated_by_id: 1
-      )
-
-      ObjectManager::Attribute.add(
-        object: 'Ticket',
-        name: 'responsible_subject_last_contact_at',
-        display: __('Posledný kontakt zodpovedného subjektu'),
-        data_type: 'datetime',
-        data_option: {
-          future: true,
-          past: true,
-          diff: nil,
-          default: nil,
-          null: true,
-          options: {},
-          relation: ''
-        },
-        active: true,
-        screens: {
-          create_middle: { 'ticket.agent' => { shown: false } },
-          edit: { 'ticket.agent' => { shown: true } }
-        },
-        position: 307,
-        created_by_id: 1,
-        updated_by_id: 1
-      )
-
       ObjectManager::Attribute.migration_execute
 
       Job.find_or_initialize_by(name: "NEMENIŤ - čaká na autora - 1. pripomienka autorovi (7 dní)").tap do |job|
