@@ -2201,7 +2201,6 @@ namespace :ops do
         updated_by_id: 1
       )
 
-
       ObjectManager::Attribute.migration_execute
 
       Job.find_or_initialize_by(name: "NEMENIŤ - čaká na autora - 1. pripomienka autorovi (7 dní)").tap do |job|
