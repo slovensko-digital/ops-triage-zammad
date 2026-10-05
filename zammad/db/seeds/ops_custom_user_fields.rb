@@ -1,3 +1,7 @@
+# Models.all is memoized and may have been built before all tables existed (fresh install runs db:migrate + db:seed in one process)
+Models.instance_variable_set(:@all, nil)
+Auth::RequestCache.clear
+
 ObjectManager::Attribute.add(
   object: 'User',
   name: 'banned',
