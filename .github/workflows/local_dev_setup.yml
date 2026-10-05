@@ -1,12 +1,14 @@
-name: Fresh install
+name: Local dev setup
 
 on:
+  push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
 jobs:
-  fresh-install:
-    name: Verify fresh docker compose install
+  local-dev-setup:
+    name: Verify docker compose dev stack boots
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
