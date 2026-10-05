@@ -1,4 +1,4 @@
-name: Local dev setup
+name: Fresh install
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  local-dev-setup:
-    name: Verify docker compose dev stack boots
+  fresh-install:
+    name: Verify fresh docker compose install
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
