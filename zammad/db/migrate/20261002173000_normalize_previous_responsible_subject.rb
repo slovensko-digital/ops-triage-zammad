@@ -1,5 +1,9 @@
 class NormalizePreviousResponsibleSubject < ActiveRecord::Migration[7.2]
   def up
+    # On fresh installs the column is created later by db/seeds/ops_custom_ticket_fields.rb,
+    # so there is nothing to normalize yet.
+    return unless column_exists?(:tickets, :previous_responsible_subject)
+
     execute <<~SQL
       UPDATE tickets
       SET previous_responsible_subject = jsonb_build_object(
