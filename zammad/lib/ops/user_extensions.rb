@@ -10,7 +10,7 @@ module Ops::UserExtensions
       exists = User.find_by(login: login)
       return true if !exists || exists.id == id
 
-      raise Exceptions::UnprocessableEntity, "Invalid user login generation for login #{login}!"
+      raise Exceptions::UnprocessableContent, "Invalid user login generation for login #{login}!"
     end
 
     super
