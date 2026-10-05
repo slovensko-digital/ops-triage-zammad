@@ -235,7 +235,7 @@ def setup_admin_user
   }
 
   request = RequestMock.new('127.0.0.1', { 'HTTP_ACCEPT_LANGUAGE' => ENV.fetch('DEFAULT_LOCALE', 'sk') })
-  Service::User::AddFirstAdmin.new.execute(user_data: admin_user_data, request: request)
+  Service::User::AddFirstAdmin.new(user_data: admin_user_data, request: request).execute
 end
 
 def setup_google_oauth

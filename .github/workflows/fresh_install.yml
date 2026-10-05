@@ -1,0 +1,39 @@
+name: Fresh install
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  fresh-install:
+    name: Verify fresh docker compose install
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Fails if zammad-init exits non-zero or nginx doesn't become healthy.
+      - name: Build and start stack
+        run: docker compose up -d --build --wait --wait-timeout 900
+        env:
+          INIT_RESTART: "no"
+
+      - name: Verify admin user was created
+        run: |
+          docker compose exec -T zammad-railsserver bundle exec rails r '
+            user = User.find_by(email: ENV.fetch("ADMIN_EMAIL"))
+            raise "Admin user #{ENV["ADMIN_EMAIL"]} not found" unless user
+            raise "User #{user.email} is not an admin" unless user.role?("Admin")
+            raise "Setup not marked as done" unless Setting.get("system_init_done")
+            puts "OK: admin #{user.email} exists, roles: #{user.roles.map(&:name).join(", ")}"
+          '
+
+      - name: Dump logs
+        if: always()
+        run: docker compose logs --no-color
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
