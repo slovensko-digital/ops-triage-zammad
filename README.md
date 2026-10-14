@@ -8,6 +8,7 @@ docker compose up -d --build
 ```
 
 - Triage: http://localhost:8080 (`example@example.org` / `PASSword123`). The first start runs `zammad-init`, which takes a few minutes.
+- Mailpit: http://localhost:8025. Every email Triage sends lands here, never in a real inbox (`dev/mail_catcher.rb`, mounted by `docker-compose.yml` only).
 - The portal calls Triage with `API_TOKEN`. Triage calls the portal on the host at `http://host.docker.internal:3000` (webhooks signed with `WEBHOOK_SECRET`, responsible subject search). The ops-portal `.env.sample` has the same values.
 
 One stack runs with 1.5 GB of Docker Desktop memory, a second Zammad (e.g. a Backoffice) or Elasticsearch needs more (Settings → Resources). When memory runs out, Zammad containers exit with code 137.
