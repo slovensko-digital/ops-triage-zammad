@@ -1,6 +1,5 @@
-# Local development only. Run once after `docker compose up`:
-#
-#   docker compose exec zammad-railsserver bundle exec rails r /opt/ops-dev/setup_mail.rb
+# Local development only. The zammad-dev-setup service in docker-compose.yml runs it on every
+# `docker compose up`, after zammad-init.
 #
 # Zammad sends trigger emails (e.g. "preposielanie - Zodpovedný subjekt") only from the group's
 # email address, and only when that address has an email channel. A fresh install has neither,
