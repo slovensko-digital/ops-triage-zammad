@@ -138,6 +138,12 @@ services:
     restart: ${INIT_RESTART:-on-failure}
     user: 0:0
 
+  # local development only: email channel for trigger emails, see dev/setup_mail.rb
+  zammad-dev-setup:
+    <<: *zammad-service
+    command: ["bundle", "exec", "rails", "r", "/opt/ops-dev/setup_mail.rb"]
+    restart: on-failure
+
   zammad-mailpit:
     image: axllent/mailpit:${MAILPIT_VERSION:-v1.27}
     restart: ${RESTART:-always}
