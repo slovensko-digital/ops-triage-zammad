@@ -41,8 +41,6 @@ x-shared:
       LETSENCRYPT_HOST:
       LETSENCRYPT_EMAIL:
       # custom ENVS
-      # local development: all outgoing emails go to Mailpit (see dev/mail_catcher.rb)
-      MAIL_CATCHER_SMTP: ${MAIL_CATCHER_SMTP:-zammad-mailpit:1025}
 
     env_file:
       - path: .env.sample
@@ -57,13 +55,9 @@ x-shared:
 
     volumes:
       - zammad-storage:/opt/zammad/storage
-      - ./dev/mail_catcher.rb:/opt/zammad/config/initializers/zz_ops_dev_mail_catcher.rb:ro
-      - ./dev:/opt/ops-dev:ro
     depends_on:
       zammad-init:
         condition: service_completed_successfully
-      zammad-mailpit:
-        condition: service_started
       zammad-memcached:
         condition: service_started
       zammad-postgresql:
@@ -131,18 +125,11 @@ services:
     <<: *zammad-service
     command: ["zammad-init"]
     depends_on:
-      - zammad-mailpit
       - zammad-memcached
       - zammad-postgresql
       - zammad-redis
     restart: ${INIT_RESTART:-on-failure}
     user: 0:0
-
-  zammad-mailpit:
-    image: axllent/mailpit:${MAILPIT_VERSION:-v1.27}
-    restart: ${RESTART:-always}
-    ports:
-      - "${MAILPIT_EXPOSE_PORT:-8025}:8025"
 
   zammad-memcached:
     command: memcached -m 256M
