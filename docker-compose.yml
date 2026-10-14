@@ -58,6 +58,7 @@ x-shared:
     volumes:
       - zammad-storage:/opt/zammad/storage
       - ./dev/mail_catcher.rb:/opt/zammad/config/initializers/zz_ops_dev_mail_catcher.rb:ro
+      - ./dev:/opt/ops-dev:ro
     depends_on:
       zammad-init:
         condition: service_completed_successfully

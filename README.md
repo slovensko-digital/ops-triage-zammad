@@ -11,6 +11,16 @@ docker compose up -d --build
 - Mailpit: http://localhost:8025. Every email Triage sends lands here, never in a real inbox (`dev/mail_catcher.rb`, mounted by `docker-compose.yml` only).
 - Triage calls the portal on the host at `http://host.docker.internal:3000` (webhooks, responsible subject search).
 
+Triage only sends trigger emails (e.g. to responsible subjects) through an email channel, which a fresh install does not have. With the portal running, set it up once, and again after new responsible subjects are added in the portal:
+
+```
+docker compose exec zammad-railsserver bundle exec rails r /opt/ops-dev/setup_mail.rb
+```
+
+It adds an email channel for `podnety@triaz.odkazprestarostu.sk` on every group and, for every responsible subject in the portal, an organization with a recipient `rs-<portal id>@responsible-subject.example`. Set a responsible subject on a resolution ticket and the email shows up in Mailpit.
+
+One stack runs with 1.5 GB of Docker Desktop memory, a second Zammad (e.g. a Backoffice) or Elasticsearch needs more (Settings → Resources). When memory runs out, Zammad containers exit with code 137.
+
 To click through together with the portal, follow "Local Triage" in the [ops-portal README](https://github.com/slovensko-digital/ops-portal#local-triage).
 
 ## First time deployment

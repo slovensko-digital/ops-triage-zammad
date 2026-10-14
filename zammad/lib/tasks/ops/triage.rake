@@ -359,6 +359,8 @@ namespace :ops do
       token.preferences = {"permission"=>["admin.user", "admin.group", "report", "ticket.agent", "admin.ticket"]}
       token.token = ENV.fetch('API_TOKEN', SecureRandom.urlsafe_base64(48))
       token.save!
+      # Token generates a random value before create, so a new token needs API_TOKEN set again
+      token.update!(token: ENV['API_TOKEN']) if ENV['API_TOKEN'].present? && token.token != ENV['API_TOKEN']
 
       ObjectManager::Attribute.add(
         object: 'Ticket',
