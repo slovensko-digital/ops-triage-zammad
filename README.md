@@ -1,5 +1,18 @@
 # OPS Triage Zammad
 
+## Local development
+
+```
+cp .env.sample .env
+docker compose up -d --build
+```
+
+- Triage: http://localhost:8080 (`example@example.org` / `PASSword123`). The first start runs `zammad-init`, which takes a few minutes.
+- Mailpit: http://localhost:8025. Every email Triage sends lands here, never in a real inbox (`dev/mail_catcher.rb`, mounted by `docker-compose.yml` only).
+- Triage calls the portal on the host at `http://host.docker.internal:3000` (webhooks, responsible subject search).
+
+To click through together with the portal, follow "Local Triage" in the [ops-portal README](https://github.com/slovensko-digital/ops-portal#local-triage).
+
 ## First time deployment
 
 ```
