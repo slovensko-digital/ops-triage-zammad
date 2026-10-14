@@ -1,5 +1,19 @@
 # OPS Triage Zammad
 
+## Local development
+
+```
+cp .env.sample .env
+docker compose up -d --build
+```
+
+- Triage: http://localhost:8080 (`example@example.org` / `PASSword123`). The first start runs `zammad-init`, which takes a few minutes.
+- The portal calls Triage with `API_TOKEN`. Triage calls the portal on the host at `http://host.docker.internal:3000` (webhooks signed with `WEBHOOK_SECRET`, responsible subject search). The ops-portal `.env.sample` has the same values.
+
+One stack runs with 1.5 GB of Docker Desktop memory, a second Zammad (e.g. a Backoffice) or Elasticsearch needs more (Settings → Resources). When memory runs out, Zammad containers exit with code 137.
+
+To click through together with the portal, follow "Local Triage" in the [ops-portal README](https://github.com/slovensko-digital/ops-portal#local-triage).
+
 ## First time deployment
 
 ```
