@@ -357,10 +357,14 @@ namespace :ops do
       token.persistent = true
       token.user_id = tech_user.id
       token.preferences = {"permission"=>["admin.user", "admin.group", "report", "ticket.agent", "admin.ticket"]}
-      token.token = ENV.fetch('API_TOKEN', SecureRandom.urlsafe_base64(48))
       token.save!
-      # Token generates a random value before create, so a new token needs API_TOKEN set again
-      token.update!(token: ENV['API_TOKEN']) if ENV['API_TOKEN'].present? && token.token != ENV['API_TOKEN']
+
+      # The token value is set only after the token exists. When Zammad creates a token it replaces
+      # any assigned value with a random one (before_create :generate_token,
+      # https://github.com/zammad/zammad/blob/7.2.0/app/models/token.rb#L7), so on a fresh install
+      # API_TOKEN assigned before save! would be lost.
+      api_token = ENV.fetch('API_TOKEN', SecureRandom.urlsafe_base64(48))
+      token.update!(token: api_token) if token.token != api_token
 
       ObjectManager::Attribute.add(
         object: 'Ticket',
