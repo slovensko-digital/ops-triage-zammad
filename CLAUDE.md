@@ -4,10 +4,10 @@ Triage: the Zammad where volunteers review portal issues and route them to the
 responsible subject. Customisations live in `zammad/` (migrations, `lib/ops/*`
 patches, jobs) and `hacks/`.
 
-## Flow docs
+## How it works docs
 
 The flows between the portal, Triage and Backoffice are documented in
-[`ops-portal/docs/flows/`](https://github.com/slovensko-digital/ops-portal/tree/main/docs/flows).
+[`ops-portal/docs/how-it-works/`](https://github.com/slovensko-digital/ops-portal/tree/main/docs/how-it-works).
 When you change a flow here, open a PR in `ops-portal` that updates the
 matching file:
 
