@@ -6,7 +6,8 @@
 docker compose up -d --build
 ```
 
-- Triage: http://localhost:8080 (`example@example.org` / `PASSword123`). The first start runs `zammad-init`, which takes a few minutes.
+- Triage: http://localhost:8080 (`admin@example.org` / `PASSword123`). The first start runs `zammad-init`, which takes a few minutes.
+- Volunteer (agent): `dobrovolnik@example.org` / `PASSword123`. The portal's `responsible_subjects:activate_basic` assigns municipalities to them, using the admin's `ADMIN_API_TOKEN`. `zammad-dev-setup` creates both (`dev/setup_users.rb`).
 - Mailpit: http://localhost:8025. Every email Triage sends lands here, never in a real inbox (`dev/mail_catcher.rb`, mounted by `docker-compose.yml` only). Trigger emails (e.g. to responsible subjects) need an email channel, `zammad-dev-setup` sets it up (`dev/setup_mail.rb`).
 - Settings come from `.env.sample`, put local overrides into `.env`.
 - The portal calls Triage with `API_TOKEN`. Triage calls the portal on the host at `http://host.docker.internal:3000` (webhooks signed with `WEBHOOK_SECRET`, responsible subject search). The ops-portal `.env.sample` has the same values.

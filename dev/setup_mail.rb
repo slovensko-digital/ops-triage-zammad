@@ -1,5 +1,4 @@
-# Local development only. The zammad-dev-setup service in docker-compose.yml runs it on every
-# `docker compose up`, after zammad-init.
+# Local development only, run by dev/setup.rb on every `docker compose up`.
 #
 # Zammad sends trigger emails (e.g. "preposielanie - Zodpovedný subjekt") only from the group's
 # email address, and only when that address has an email channel. A fresh install has neither,

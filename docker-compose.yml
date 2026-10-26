@@ -138,10 +138,10 @@ services:
     restart: ${INIT_RESTART:-on-failure}
     user: 0:0
 
-  # local development only: email channel for trigger emails, see dev/setup_mail.rb
+  # local development only: email channel for trigger emails, admin API token and a volunteer, see dev/setup.rb
   zammad-dev-setup:
     <<: *zammad-service
-    command: ["bundle", "exec", "rails", "r", "/opt/ops-dev/setup_mail.rb"]
+    command: ["bundle", "exec", "rails", "r", "/opt/ops-dev/setup.rb"]
     restart: on-failure
 
   zammad-mailpit:
