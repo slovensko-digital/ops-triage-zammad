@@ -1,3 +1,6 @@
+x-load-env:
+  - "<% require 'dotenv'; Dotenv.load('.env.' + ENV.fetch('KAMAL_DESTINATION')) %>"
+
 service: ops-triage-zammad
 
 image: sd/ops-triage-zammad
