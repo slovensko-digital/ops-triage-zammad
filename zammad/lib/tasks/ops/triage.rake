@@ -909,6 +909,29 @@ namespace :ops do
         flow.created_by_id = 1
       end.save!
 
+      # The signed preview link also opens issues only their author can see (in triage, rejected, duplicate, ...).
+      # When the portal has sent it, it takes portal_url's place in the sidebar (same label and position), so the
+      # change is invisible to volunteers. Tickets without it keep portal_url. Runs after the setup workflows (150).
+      CoreWorkflow.find_or_initialize_by(name: 'ops - ticket - show portal preview url instead of portal url').tap do |flow|
+        flow.object = "Ticket"
+        flow.preferences = { "screen" => [ "edit" ] }
+        flow.condition_saved = {
+          "ticket.origin" => { "operator" => "is", "value" => [ "portal" ] },
+          "ticket.portal_preview_url" => { "operator" => "is set", "value" => [] }
+        }
+        flow.condition_selected = {}
+        flow.perform = {
+          "ticket.portal_url" => { "operator" => "hide", "hide" => "true" },
+          "ticket.portal_preview_url" => { "operator" => "show", "show" => "true" }
+        }
+        flow.active = true
+        flow.stop_after_match = false
+        flow.changeable = true # TODO consider hiding from end users
+        flow.priority = 160
+        flow.updated_by_id = 1
+        flow.created_by_id = 1
+      end.save!
+
       CoreWorkflow.find_or_initialize_by(name: 'ops - read-only ticket attributes').tap do |flow|
         flow.object = "Ticket"
         flow.preferences = { "screen" => [ "edit" ] }
@@ -921,6 +944,7 @@ namespace :ops do
           "ticket.responsible_subject_changed_at" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.portal_url" => { "operator" => "set_readonly", "set_readonly" => "true" },
           "ticket.portal_duplicates_url" => { "operator" => "set_readonly", "set_readonly" => "true" },
+          "ticket.portal_preview_url" => { "operator" => "set_readonly", "set_readonly" => "true" },
         }
         flow.active = true
         flow.stop_after_match = false
