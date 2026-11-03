@@ -39,6 +39,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          ISSUE_PREVIEW_SECRET: ${{ secrets.ISSUE_PREVIEW_SECRET }}
           ELASTICSEARCH_PASS: ${{ secrets.ELASTICSEARCH_PASS }}
           ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
           RAILS_LOG_LEVEL: ${{ vars.RAILS_LOG_LEVEL }}
