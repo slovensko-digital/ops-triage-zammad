@@ -137,7 +137,7 @@ OPS_CATEGORIES_MAP = {
     "protiparkovacia zábrana/stĺpik/biskupský klobúk": [ "chýbajúca", "poškodená", "posunutá" ],
   },
   "Osvetlenie": {
-    "osvetlenie": [ "nefunknčné", "poškodený stĺp", "chýbajúce", "nedostatočné", "nevhodné (silné a pod.)" ],
+    "osvetlenie": [ "nefunkčné", "poškodený stĺp", "chýbajúce", "nedostatočné", "nevhodné (silné a pod.)" ],
   },
   "Kanalizácia": {
     "kanalizáčná vpusť": [ "upchatá", "chýbajúci kanalizačný poklop", "poškodený kanalizačný poklop", "havária kanalizačného potrubia" ],
