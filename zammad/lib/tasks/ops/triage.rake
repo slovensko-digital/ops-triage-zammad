@@ -1461,7 +1461,6 @@ namespace :ops do
             "body" => "<div>Na portáli Odkaz pre starostu vám bola adresovaná neverejná pochvala.</div><div><br></div>" \
               "<div><b>Názov:</b>&nbsp;\#{ticket.title}<br><br></div>" \
               "<div><b>Text pochvaly:</b></div><div>\#{ticket.description}<br><br></div>" \
-              "<div>Odkaz na portál:&nbsp;\#{ticket.portal_url} <br><br></div>" \
               "<div><i>Na pochvalu nie je možné odpovedať.</i></div>",
             "internal" => "true",
             "recipient" => [ "userid_#{template_external_responsible_subject_user.id}" ],
