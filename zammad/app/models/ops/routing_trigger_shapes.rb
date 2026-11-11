@@ -17,6 +17,11 @@
 # problems: a name or note that does not match its municipality and owner (with the expected name), an owner that does
 # not exist, not exactly one municipality, or a municipality Triage does not know (a typo in the condition).
 #
+# Responsible subjects (perform and, in create_or_changed, the condition) are checked against the portal's active ones,
+# from GET /api/v1/responsible_subjects next to the search URL of the responsible_subject field, the same portal the
+# admin UI searches. A subject that is not there (deleted or deactivated) or whose label differs from the portal name
+# is a problem. When the portal cannot be reached, the report says so and skips this check.
+#
 # A ticket.action value that is not a string, e.g. ["create"] from a hand-written condition, is a problem too: Zammad
 # compares the action with ==, so the trigger never fires (Selector::Sql). Saving the trigger in the admin UI fixes it.
 class Ops::RoutingTriggerShapes
@@ -44,6 +49,11 @@ class Ops::RoutingTriggerShapes
   def report
     grouped = shapes
     say "700 triggers: #{grouped.sum { |_shape, shape_triggers| shape_triggers.size }}, shapes: #{grouped.size}"
+    if portal_responsible_subjects
+      say "portal responsible subjects: #{portal_responsible_subjects.size} active, from #{responsible_subjects_url}"
+    else
+      say "WARNING: responsible subjects not checked, #{@portal_error}"
+    end
     grouped.each_with_index do |(shape, shape_triggers), index|
       with_problems = shape_triggers.count { |trigger| problems(trigger).any? }
       say ''
@@ -84,6 +94,7 @@ class Ops::RoutingTriggerShapes
       ("name differs, expected: #{expected}" if expected && trigger.name != expected),
       ("note differs, expected: #{PREFIX}#{municipalities.first}" if municipalities.size == 1 && trigger.note != "#{PREFIX}#{municipalities.first}"),
       ("ticket.action is not a string: #{action_values(condition).inspect}" unless action_values(condition).all?(String)),
+      *responsible_subjects_in(trigger, condition).filter_map { |subject| responsible_subject_problem(subject) },
     ].compact
   end
 
@@ -97,6 +108,62 @@ class Ops::RoutingTriggerShapes
     return "#{line}, no similar option" if similar.empty?
 
     "#{line}, similar options: #{similar.map { |option| "#{option.inspect} #{option.codepoints.inspect}" }.join(', ')}"
+  end
+
+  # {'value' => id, 'label' => name} from perform and from the condition; the admin UI stores the id as a string
+  def responsible_subjects_in(trigger, condition)
+    from_condition = leaves(condition)
+                     .select { |name, spec| name == 'ticket.responsible_subject' && spec['operator'] == 'is' }
+                     .flat_map { |_name, spec| Array(spec['value']) }
+    [trigger.perform&.dig('ticket.responsible_subject', 'value'), *from_condition].select { |subject| subject.is_a?(Hash) }.uniq
+  end
+
+  def responsible_subject_problem(subject)
+    return unless portal_responsible_subjects
+
+    id = subject['value'].to_s
+    label = subject['label']
+    portal_name = portal_responsible_subjects[id]
+    if portal_name.nil?
+      "responsible subject #{id} #{label.inspect} is not an active subject in the portal"
+    elsif label != portal_name
+      "responsible subject #{id} label #{label.inspect} differs from the portal name #{portal_name.inspect}"
+    end
+  end
+
+  # the portal's active responsible subjects as {id string => name}, nil when the portal cannot be reached
+  def portal_responsible_subjects
+    return @portal_responsible_subjects if defined?(@portal_responsible_subjects)
+
+    @portal_responsible_subjects = fetch_portal_responsible_subjects
+  end
+
+  def fetch_portal_responsible_subjects
+    url = responsible_subjects_url
+    return portal_error("no list URL in the responsible_subject field's search URL #{responsible_subjects_field['search_url'].inspect}") unless url
+
+    result = UserAgent.get(url, {}, { json: true, open_timeout: 4, read_timeout: 30, total_timeout: 60,
+                                      verify_ssl: responsible_subjects_field['verify_ssl'] != false })
+    return portal_error("#{url} answered #{result.code.inspect} #{result.error}".strip) unless result.success?
+    return portal_error("#{url} did not answer with a list") unless result.data.is_a?(Array)
+
+    result.data.to_h { |subject| [subject['id'].to_s, subject['name']] }
+  end
+
+  # .../api/v1/responsible_subjects/search?q=... -> .../api/v1/responsible_subjects
+  def responsible_subjects_url
+    search_url = responsible_subjects_field['search_url'].to_s
+    url = search_url.sub(%r{/search\?.*\z}, '')
+    url unless url == search_url
+  end
+
+  def responsible_subjects_field
+    @responsible_subjects_field ||= ObjectManager::Attribute.get(object: 'Ticket', name: 'responsible_subject')&.data_option || {}
+  end
+
+  def portal_error(message)
+    @portal_error = message
+    nil
   end
 
   def comparable(text)
