@@ -89,9 +89,7 @@ class Ops::OwnerHandover
       grant_group_access(new_owner, trigger_group_id(trigger), dry_run:)
       next if dry_run
 
-      perform = trigger.perform.deep_dup
-      perform['ticket.owner_id'] = perform['ticket.owner_id'].merge('value' => new_owner.id)
-      trigger.update!(name: new_name, perform: perform, updated_by_id: 1)
+      trigger.update!(name: new_name, perform: perform_with_owner(trigger.perform, new_owner), updated_by_id: 1)
     end
     say 'Nothing changed, run again with dry_run: false to apply.' if dry_run && selected.any?
     selected
@@ -144,13 +142,40 @@ class Ops::OwnerHandover
     trigger.perform&.dig('ticket.group_id', 'value')&.to_i
   end
 
+  # the admin UI saves ids as strings ("6") and shows value_completion, the portal saves integers without it; keep the
+  # format the trigger has
+  def perform_with_owner(perform, new_owner)
+    owner = perform['ticket.owner_id'].dup
+    owner['value'] = owner['value'].is_a?(String) ? new_owner.id.to_s : new_owner.id
+    owner['value_completion'] = "#{agent_name(new_owner)} <#{new_owner.email}>" if owner.key?('value_completion')
+    perform.merge('ticket.owner_id' => owner)
+  end
+
+  # municipalities in "ticket.address_municipality is ..." conditions, in any branch of the condition
   def trigger_municipalities(trigger)
-    Array(trigger.condition&.dig('ticket.address_municipality', 'value'))
+    conditions_of(trigger.condition)
+      .select { |name, spec| name == 'ticket.address_municipality' && spec['operator'] == 'is' }
+      .flat_map { |_name, spec| Array(spec['value']) }
+      .uniq
+  end
+
+  # [name, {operator, value, ...}] of every condition, in both formats Zammad stores:
+  #   flat, as created by the portal:      { 'ticket.address_municipality' => { 'operator' => 'is', 'value' => [...] }, ... }
+  #   nested, as saved by the admin UI in expert mode:
+  #     { 'operator' => 'OR', 'conditions' => [{ 'operator' => 'AND', 'conditions' => [{ 'name' => ..., 'operator' => ..., 'value' => ... }] }] }
+  def conditions_of(condition)
+    return [] unless condition.is_a?(Hash)
+    return Array(condition['conditions']).flat_map { |child| conditions_of(child) } if condition.key?('conditions')
+    return [[condition['name'], condition]] if condition.key?('name')
+
+    condition.map { |name, spec| [name, spec] }
   end
 
   def other_triggers_mentioning_old_owner
-    pattern = /"ticket\.owner_id"=>\{[^}]*"value"=>\[?"?#{old_owner.id}\b/
-    (Trigger.all - triggers).select { |trigger| trigger.condition.inspect.match?(pattern) || trigger.perform.inspect.match?(pattern) }
+    old_id = old_owner.id.to_s
+    (Trigger.all - triggers).select do |trigger|
+      conditions_of(trigger.condition).any? { |name, spec| name == 'ticket.owner_id' && Array(spec['value']).map(&:to_s).include?(old_id) }
+    end
   end
 
   # catches typos: an unknown municipality, or one with nothing of the old owner, would otherwise just move nothing
