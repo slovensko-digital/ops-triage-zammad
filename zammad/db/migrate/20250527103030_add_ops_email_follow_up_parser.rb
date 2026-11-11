@@ -8,6 +8,8 @@ class AddOpsEmailFollowUpParser < ActiveRecord::Migration[7.1]
       area:        'Postmaster::PreFilter',
       description: __('Defines postmaster filter to identify responsible subject sender.'),
       options:     {},
+      # Renamed to Channel::Filter::OpsIdentifyResponsibleSubjectSender by
+      # 20261111120000_rename_ops_identify_responsible_subject_sender_filter (ops#1370).
       state:       'Ops::IdentifyResponsibleSubjectSender',
       frontend:    false
     )

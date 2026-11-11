@@ -4,6 +4,6 @@ Setting.create_if_not_exists(
   area:        'Postmaster::PreFilter',
   description: __('Defines postmaster filter to identify responsible subject sender.'),
   options:     {},
-  state:       'Ops::IdentifyResponsibleSubjectSender',
+  state:       'Channel::Filter::OpsIdentifyResponsibleSubjectSender',
   frontend:    false
 )
