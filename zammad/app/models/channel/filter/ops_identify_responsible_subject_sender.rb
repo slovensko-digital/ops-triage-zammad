@@ -1,4 +1,4 @@
-class Ops::IdentifyResponsibleSubjectSender
+class Channel::Filter::OpsIdentifyResponsibleSubjectSender
   def self.run(_channel, mail, _transaction_params)
     subject = mail[:subject]
 
