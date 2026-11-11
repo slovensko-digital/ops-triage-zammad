@@ -13,11 +13,11 @@
 #   create_or_changed  saved from the admin UI (expert mode): OR of the create branch and
 #                      "responsible_subject has changed AND is <municipality>", string ids and value_completion
 #
-# Anything else is UNKNOWN. A trigger whose name or note does not match its municipality and owner, whose owner does
-# not exist or whose municipality Triage does not know (a typo in the condition) gets its own group with the failed
-# checks, and a wrong name is listed with the expected one.
+# Anything else is UNKNOWN. Only the settings decide the shape. Under its shape, each trigger is listed with its own
+# problems: a name or note that does not match its municipality and owner (with the expected name), an owner that does
+# not exist, not exactly one municipality, or a municipality Triage does not know (a typo in the condition).
 #
-# A ticket.action value that is not a string, e.g. ["create"] from a hand-written condition, fails a check: Zammad
+# A ticket.action value that is not a string, e.g. ["create"] from a hand-written condition, is a problem too: Zammad
 # compares the action with ==, so the trigger never fires (Selector::Sql). Saving the trigger in the admin UI fixes it.
 class Ops::RoutingTriggerShapes
   PREFIX = '700 - Priradenie podnetu skupine '.freeze
@@ -45,17 +45,14 @@ class Ops::RoutingTriggerShapes
     grouped = shapes
     say "700 triggers: #{grouped.sum { |_shape, shape_triggers| shape_triggers.size }}, shapes: #{grouped.size}"
     grouped.each_with_index do |(shape, shape_triggers), index|
-      failed = shape['checks'].reject { |_check, passed| passed }.keys
+      with_problems = shape_triggers.count { |trigger| problems(trigger).any? }
       say ''
-      say "=== Shape #{index + 1}: #{label(shape)}#{failed.any? ? " (failed checks: #{failed.join(', ')})" : ''} - " \
-          "#{shape_triggers.size} triggers"
-      say JSON.pretty_generate(shape.except('checks'))
+      say "=== Shape #{index + 1}: #{label(shape)} - #{shape_triggers.size} triggers" \
+          "#{with_problems.positive? ? ", #{with_problems} with problems" : ''}"
+      say JSON.pretty_generate(shape)
       shape_triggers.each do |trigger|
         say "  ##{trigger.id} #{trigger.active ? '' : '[INACTIVE] '}#{trigger.name}"
-        expected = expected_name(trigger)
-        say "    expected: #{expected}" if expected && trigger.name != expected
-        unknown = municipalities_in(tree(trigger.condition)).reject { |municipality| known_municipalities.include?(municipality) }
-        say "    unknown municipalities: #{unknown.inspect}" if unknown.any?
+        problems(trigger).each { |problem| say "    #{problem}" }
       end
     end
     grouped
@@ -73,24 +70,44 @@ class Ops::RoutingTriggerShapes
     end
   end
 
-  private
-
-  def shape_of(trigger)
+  # what is wrong with one trigger beyond its shape, as lines for the report
+  def problems(trigger)
     condition = tree(trigger.condition)
     municipalities = municipalities_in(condition)
+    unknown = municipalities.reject { |municipality| known_municipalities.include?(municipality) }
+    expected = expected_name(trigger)
 
+    [
+      ("municipalities: #{municipalities.inspect}, expected exactly one" if municipalities.size != 1),
+      *unknown.map { |municipality| unknown_municipality(municipality) },
+      ("owner #{trigger.perform&.dig('ticket.owner_id', 'value').inspect} does not exist" if owner_of(trigger).nil?),
+      ("name differs, expected: #{expected}" if expected && trigger.name != expected),
+      ("note differs, expected: #{PREFIX}#{municipalities.first}" if municipalities.size == 1 && trigger.note != "#{PREFIX}#{municipalities.first}"),
+      ("ticket.action is not a string: #{action_values(condition).inspect}" unless action_values(condition).all?(String)),
+    ].compact
+  end
+
+  private
+
+  # an unknown municipality with the options it nearly matches: the same name under a parent ("Parent::Name"), or the
+  # same text with other whitespace, case or unicode form, which looks the same in the UI and in inspect
+  def unknown_municipality(municipality)
+    similar = known_municipalities.select { |option| comparable(option.split('::').last) == comparable(municipality) }
+    line = "unknown municipality: #{municipality.inspect} #{municipality.codepoints.inspect}"
+    return "#{line}, no similar option" if similar.empty?
+
+    "#{line}, similar options: #{similar.map { |option| "#{option.inspect} #{option.codepoints.inspect}" }.join(', ')}"
+  end
+
+  def comparable(text)
+    text.to_s.unicode_normalize(:nfkc).gsub(/[[:space:]\u200B-\u200D\uFEFF]+/, ' ').strip.downcase
+  end
+
+  def shape_of(trigger)
     {
       'attributes' => trigger.attributes.slice('activator', 'execution_condition_mode', 'disable_notification'),
-      'condition' => shape_of_tree(condition),
+      'condition' => shape_of_tree(tree(trigger.condition)),
       'perform' => (trigger.perform || {}).keys.sort.to_h { |key| [key, shape_of_spec(key, trigger.perform[key])] },
-      'checks' => {
-        'one municipality' => municipalities.size == 1,
-        'municipalities known in Triage' => municipalities.all? { |municipality| known_municipalities.include?(municipality) },
-        'owner exists' => !owner_of(trigger).nil?,
-        'name is prefix + municipality + owner' => trigger.name == expected_name(trigger),
-        'note is prefix + municipality' => municipalities.size == 1 && trigger.note == "#{PREFIX}#{municipalities.first}",
-        'ticket.action is a string' => action_values(condition).all?(String),
-      },
     }
   end
 
