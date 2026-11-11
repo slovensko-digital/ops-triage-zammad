@@ -16,6 +16,9 @@
 # Anything else is UNKNOWN. A trigger whose name or note does not match its municipality and owner, whose owner does
 # not exist or whose municipality Triage does not know (a typo in the condition) gets its own group with the failed
 # checks, and a wrong name is listed with the expected one.
+#
+# A ticket.action value that is not a string, e.g. ["create"] from a hand-written condition, fails a check: Zammad
+# compares the action with ==, so the trigger never fires (Selector::Sql). Saving the trigger in the admin UI fixes it.
 class Ops::RoutingTriggerShapes
   PREFIX = '700 - Priradenie podnetu skupine '.freeze
   CONSTANT_FIELDS = %w[ticket.action ticket.origin ticket.process_type].freeze
@@ -86,6 +89,7 @@ class Ops::RoutingTriggerShapes
         'owner exists' => !owner_of(trigger).nil?,
         'name is prefix + municipality + owner' => trigger.name == expected_name(trigger),
         'note is prefix + municipality' => municipalities.size == 1 && trigger.note == "#{PREFIX}#{municipalities.first}",
+        'ticket.action is a string' => action_values(condition).all?(String),
       },
     }
   end
@@ -135,6 +139,10 @@ class Ops::RoutingTriggerShapes
       .select { |name, spec| name == 'ticket.address_municipality' && spec['operator'] == 'is' }
       .flat_map { |_name, spec| Array(spec['value']) }
       .uniq
+  end
+
+  def action_values(condition)
+    leaves(condition).select { |name, _spec| name == 'ticket.action' }.map { |_name, spec| spec['value'] }
   end
 
   def shape_of_tree(node)
