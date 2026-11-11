@@ -8,7 +8,7 @@ class AddOpsEmailFollowUpParser < ActiveRecord::Migration[7.1]
       area:        'Postmaster::PreFilter',
       description: __('Defines postmaster filter to identify responsible subject sender.'),
       options:     {},
-      state:       'Ops::IdentifyResponsibleSubjectSender',
+      state:       'Channel::Filter::OpsIdentifyResponsibleSubjectSender',
       frontend:    false
     )
   end
