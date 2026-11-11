@@ -13,11 +13,21 @@
 #   create_or_changed  saved from the admin UI (expert mode): OR of the create branch and
 #                      "responsible_subject has changed AND is <municipality>", string ids and value_completion
 #
-# Anything else is UNKNOWN. A trigger whose name or note does not match its municipality and owner, whose owner does
-# not exist or whose municipality Triage does not know (a typo in the condition) gets its own group with the failed
-# checks, and a wrong name is listed with the expected one.
+# Anything else is UNKNOWN. Only the settings decide the shape. Under its shape, each trigger is listed with its own
+# problems: a name or note that does not match its municipality and owner (with the expected name), an owner that does
+# not exist, a condition without ticket.origin, not exactly one municipality, or a municipality Triage does not know
+# (a typo in the condition).
 #
-# A ticket.action value that is not a string, e.g. ["create"] from a hand-written condition, fails a check: Zammad
+# A city with districts is one municipality: the condition lists "City" and "City::<district>" for each district, as
+# the portal creates it (ResponsibleSubjects::TriageSetup#address_municipality_values). Zammad's "is" is an exact
+# match, so districts without plain "City" leave out an address outside every district boundary, which is a problem.
+#
+# Responsible subjects (perform and, in create_or_changed, the condition) are checked against the portal's active ones,
+# from GET /api/v1/responsible_subjects next to the search URL of the responsible_subject field, the same portal the
+# admin UI searches. A subject that is not there (deleted or deactivated) or whose label differs from the portal name
+# is a problem. When the portal cannot be reached, the report says so and skips this check.
+#
+# A ticket.action value that is not a string, e.g. ["create"] from a hand-written condition, is a problem too: Zammad
 # compares the action with ==, so the trigger never fires (Selector::Sql). Saving the trigger in the admin UI fixes it.
 class Ops::RoutingTriggerShapes
   PREFIX = '700 - Priradenie podnetu skupine '.freeze
@@ -44,18 +54,20 @@ class Ops::RoutingTriggerShapes
   def report
     grouped = shapes
     say "700 triggers: #{grouped.sum { |_shape, shape_triggers| shape_triggers.size }}, shapes: #{grouped.size}"
+    if portal_responsible_subjects
+      say "portal responsible subjects: #{portal_responsible_subjects.size} active, from #{responsible_subjects_url}"
+    else
+      say "WARNING: responsible subjects not checked, #{@portal_error}"
+    end
     grouped.each_with_index do |(shape, shape_triggers), index|
-      failed = shape['checks'].reject { |_check, passed| passed }.keys
+      with_problems = shape_triggers.count { |trigger| problems(trigger).any? }
       say ''
-      say "=== Shape #{index + 1}: #{label(shape)}#{failed.any? ? " (failed checks: #{failed.join(', ')})" : ''} - " \
-          "#{shape_triggers.size} triggers"
-      say JSON.pretty_generate(shape.except('checks'))
+      say "=== Shape #{index + 1}: #{label(shape)} - #{shape_triggers.size} triggers" \
+          "#{with_problems.positive? ? ", #{with_problems} with problems" : ''}"
+      say JSON.pretty_generate(shape)
       shape_triggers.each do |trigger|
         say "  ##{trigger.id} #{trigger.active ? '' : '[INACTIVE] '}#{trigger.name}"
-        expected = expected_name(trigger)
-        say "    expected: #{expected}" if expected && trigger.name != expected
-        unknown = municipalities_in(tree(trigger.condition)).reject { |municipality| known_municipalities.include?(municipality) }
-        say "    unknown municipalities: #{unknown.inspect}" if unknown.any?
+        problems(trigger).each { |problem| say "    #{problem}" }
       end
     end
     grouped
@@ -73,24 +85,105 @@ class Ops::RoutingTriggerShapes
     end
   end
 
-  private
-
-  def shape_of(trigger)
+  # what is wrong with one trigger beyond its shape, as lines for the report
+  def problems(trigger)
     condition = tree(trigger.condition)
     municipalities = municipalities_in(condition)
+    municipality = municipality_of(municipalities)
+    unknown = municipalities.reject { |value| known_municipalities.include?(value) }
+    expected = expected_name(trigger)
 
+    [
+      ("municipalities: #{municipalities.inspect}, expected one municipality and its districts (Name::District)" unless municipality),
+      ("municipality #{municipality.inspect} missing next to its districts" if municipality && municipalities.exclude?(municipality)),
+      *unknown.map { |value| unknown_municipality(value) },
+      ("owner #{trigger.perform&.dig('ticket.owner_id', 'value').inspect} does not exist" if owner_of(trigger).nil?),
+      ("name differs, expected: #{expected}" if expected && trigger.name != expected),
+      ("note differs, expected: #{PREFIX}#{municipality}" if municipality && trigger.note != "#{PREFIX}#{municipality}"),
+      ('ticket.origin missing in the condition' if origin_missing?(condition)),
+      ("ticket.action is not a string: #{action_values(condition).inspect}" unless action_values(condition).all?(String)),
+      *responsible_subjects_in(trigger, condition).filter_map { |subject| responsible_subject_problem(subject) },
+    ].compact
+  end
+
+  private
+
+  # an unknown municipality with the options it nearly matches: the same name under a parent ("Parent::Name"), or the
+  # same text with other whitespace, case or unicode form, which looks the same in the UI and in inspect, so similar
+  # options come with codepoints to tell them apart
+  def unknown_municipality(municipality)
+    similar = known_municipalities.select { |option| comparable(option.split('::').last) == comparable(municipality) }
+    return "unknown municipality: #{municipality.inspect}, no similar option" if similar.empty?
+
+    "unknown municipality: #{municipality.inspect} #{municipality.codepoints.inspect}, " \
+      "similar options: #{similar.map { |option| "#{option.inspect} #{option.codepoints.inspect}" }.join(', ')}"
+  end
+
+  # {'value' => id, 'label' => name} from perform and from the condition; the admin UI stores the id as a string
+  def responsible_subjects_in(trigger, condition)
+    from_condition = leaves(condition)
+                     .select { |name, spec| name == 'ticket.responsible_subject' && spec['operator'] == 'is' }
+                     .flat_map { |_name, spec| Array(spec['value']) }
+    [trigger.perform&.dig('ticket.responsible_subject', 'value'), *from_condition].select { |subject| subject.is_a?(Hash) }.uniq
+  end
+
+  def responsible_subject_problem(subject)
+    return unless portal_responsible_subjects
+
+    id = subject['value'].to_s
+    label = subject['label']
+    portal_name = portal_responsible_subjects[id]
+    if portal_name.nil?
+      "responsible subject #{id} #{label.inspect} is not an active subject in the portal"
+    elsif label != portal_name
+      "responsible subject #{id} label #{label.inspect} differs from the portal name #{portal_name.inspect}"
+    end
+  end
+
+  # the portal's active responsible subjects as {id string => name}, nil when the portal cannot be reached
+  def portal_responsible_subjects
+    return @portal_responsible_subjects if defined?(@portal_responsible_subjects)
+
+    @portal_responsible_subjects = fetch_portal_responsible_subjects
+  end
+
+  def fetch_portal_responsible_subjects
+    url = responsible_subjects_url
+    return portal_error("no list URL in the responsible_subject field's search URL #{responsible_subjects_field['search_url'].inspect}") unless url
+
+    result = UserAgent.get(url, {}, { json: true, open_timeout: 4, read_timeout: 30, total_timeout: 60,
+                                      verify_ssl: responsible_subjects_field['verify_ssl'] != false })
+    return portal_error("#{url} answered #{result.code.inspect} #{result.error}".strip) unless result.success?
+    return portal_error("#{url} did not answer with a list") unless result.data.is_a?(Array)
+
+    result.data.to_h { |subject| [subject['id'].to_s, subject['name']] }
+  end
+
+  # .../api/v1/responsible_subjects/search?q=... -> .../api/v1/responsible_subjects
+  def responsible_subjects_url
+    search_url = responsible_subjects_field['search_url'].to_s
+    url = search_url.sub(%r{/search\?.*\z}, '')
+    url unless url == search_url
+  end
+
+  def responsible_subjects_field
+    @responsible_subjects_field ||= ObjectManager::Attribute.get(object: 'Ticket', name: 'responsible_subject')&.data_option || {}
+  end
+
+  def portal_error(message)
+    @portal_error = message
+    nil
+  end
+
+  def comparable(text)
+    text.to_s.unicode_normalize(:nfkc).gsub(/[[:space:]\u200B-\u200D\uFEFF]+/, ' ').strip.downcase
+  end
+
+  def shape_of(trigger)
     {
       'attributes' => trigger.attributes.slice('activator', 'execution_condition_mode', 'disable_notification'),
-      'condition' => shape_of_tree(condition),
+      'condition' => shape_of_tree(tree(trigger.condition)),
       'perform' => (trigger.perform || {}).keys.sort.to_h { |key| [key, shape_of_spec(key, trigger.perform[key])] },
-      'checks' => {
-        'one municipality' => municipalities.size == 1,
-        'municipalities known in Triage' => municipalities.all? { |municipality| known_municipalities.include?(municipality) },
-        'owner exists' => !owner_of(trigger).nil?,
-        'name is prefix + municipality + owner' => trigger.name == expected_name(trigger),
-        'note is prefix + municipality' => municipalities.size == 1 && trigger.note == "#{PREFIX}#{municipalities.first}",
-        'ticket.action is a string' => action_values(condition).all?(String),
-      },
     }
   end
 
@@ -101,10 +194,20 @@ class Ops::RoutingTriggerShapes
   # nil when the name cannot be built: no owner, or not exactly one municipality
   def expected_name(trigger)
     owner = owner_of(trigger)
-    municipalities = municipalities_in(tree(trigger.condition))
-    return unless owner && municipalities.size == 1
+    municipality = municipality_of(municipalities_in(tree(trigger.condition)))
+    return unless owner && municipality
 
-    "#{PREFIX}#{municipalities.first} #{agent_name(owner)}"
+    "#{PREFIX}#{municipality} #{agent_name(owner)}"
+  end
+
+  # the one municipality of "City" and "City::<district>" values, nil when there is none or more than one
+  def municipality_of(municipalities)
+    names = municipalities.map { |value| value.to_s.split('::').first }.uniq
+    names.first if names.size == 1
+  end
+
+  def origin_missing?(condition)
+    leaves(condition).none? { |name, _spec| name == 'ticket.origin' }
   end
 
   # the address_municipality options: municipalities and, for cities, "City::District"
