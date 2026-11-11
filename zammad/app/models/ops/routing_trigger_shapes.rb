@@ -101,13 +101,14 @@ class Ops::RoutingTriggerShapes
   private
 
   # an unknown municipality with the options it nearly matches: the same name under a parent ("Parent::Name"), or the
-  # same text with other whitespace, case or unicode form, which looks the same in the UI and in inspect
+  # same text with other whitespace, case or unicode form, which looks the same in the UI and in inspect, so similar
+  # options come with codepoints to tell them apart
   def unknown_municipality(municipality)
     similar = known_municipalities.select { |option| comparable(option.split('::').last) == comparable(municipality) }
-    line = "unknown municipality: #{municipality.inspect} #{municipality.codepoints.inspect}"
-    return "#{line}, no similar option" if similar.empty?
+    return "unknown municipality: #{municipality.inspect}, no similar option" if similar.empty?
 
-    "#{line}, similar options: #{similar.map { |option| "#{option.inspect} #{option.codepoints.inspect}" }.join(', ')}"
+    "unknown municipality: #{municipality.inspect} #{municipality.codepoints.inspect}, " \
+      "similar options: #{similar.map { |option| "#{option.inspect} #{option.codepoints.inspect}" }.join(', ')}"
   end
 
   # {'value' => id, 'label' => name} from perform and from the condition; the admin UI stores the id as a string
