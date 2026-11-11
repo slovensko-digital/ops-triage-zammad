@@ -1,4 +1,4 @@
-FROM zammad/zammad-docker-compose:7.2
+FROM zammad/zammad-docker-compose:7.2.3
 
 RUN sed -i 's/config.log_level = :info/config.log_level = ENV.fetch("RAILS_LOG_LEVEL", :info)/' /opt/zammad/config/environments/production.rb
 
