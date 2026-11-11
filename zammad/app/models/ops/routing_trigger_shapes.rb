@@ -15,7 +15,12 @@
 #
 # Anything else is UNKNOWN. Only the settings decide the shape. Under its shape, each trigger is listed with its own
 # problems: a name or note that does not match its municipality and owner (with the expected name), an owner that does
-# not exist, not exactly one municipality, or a municipality Triage does not know (a typo in the condition).
+# not exist, a condition without ticket.origin, not exactly one municipality, or a municipality Triage does not know
+# (a typo in the condition).
+#
+# A city with districts is one municipality: the condition lists "City" and "City::<district>" for each district, as
+# the portal creates it (ResponsibleSubjects::TriageSetup#address_municipality_values). Zammad's "is" is an exact
+# match, so districts without plain "City" leave out an address outside every district boundary, which is a problem.
 #
 # Responsible subjects (perform and, in create_or_changed, the condition) are checked against the portal's active ones,
 # from GET /api/v1/responsible_subjects next to the search URL of the responsible_subject field, the same portal the
@@ -84,15 +89,18 @@ class Ops::RoutingTriggerShapes
   def problems(trigger)
     condition = tree(trigger.condition)
     municipalities = municipalities_in(condition)
-    unknown = municipalities.reject { |municipality| known_municipalities.include?(municipality) }
+    municipality = municipality_of(municipalities)
+    unknown = municipalities.reject { |value| known_municipalities.include?(value) }
     expected = expected_name(trigger)
 
     [
-      ("municipalities: #{municipalities.inspect}, expected exactly one" if municipalities.size != 1),
-      *unknown.map { |municipality| unknown_municipality(municipality) },
+      ("municipalities: #{municipalities.inspect}, expected one municipality and its districts (Name::District)" unless municipality),
+      ("municipality #{municipality.inspect} missing next to its districts" if municipality && municipalities.exclude?(municipality)),
+      *unknown.map { |value| unknown_municipality(value) },
       ("owner #{trigger.perform&.dig('ticket.owner_id', 'value').inspect} does not exist" if owner_of(trigger).nil?),
       ("name differs, expected: #{expected}" if expected && trigger.name != expected),
-      ("note differs, expected: #{PREFIX}#{municipalities.first}" if municipalities.size == 1 && trigger.note != "#{PREFIX}#{municipalities.first}"),
+      ("note differs, expected: #{PREFIX}#{municipality}" if municipality && trigger.note != "#{PREFIX}#{municipality}"),
+      ('ticket.origin missing in the condition' if origin_missing?(condition)),
       ("ticket.action is not a string: #{action_values(condition).inspect}" unless action_values(condition).all?(String)),
       *responsible_subjects_in(trigger, condition).filter_map { |subject| responsible_subject_problem(subject) },
     ].compact
@@ -186,10 +194,20 @@ class Ops::RoutingTriggerShapes
   # nil when the name cannot be built: no owner, or not exactly one municipality
   def expected_name(trigger)
     owner = owner_of(trigger)
-    municipalities = municipalities_in(tree(trigger.condition))
-    return unless owner && municipalities.size == 1
+    municipality = municipality_of(municipalities_in(tree(trigger.condition)))
+    return unless owner && municipality
 
-    "#{PREFIX}#{municipalities.first} #{agent_name(owner)}"
+    "#{PREFIX}#{municipality} #{agent_name(owner)}"
+  end
+
+  # the one municipality of "City" and "City::<district>" values, nil when there is none or more than one
+  def municipality_of(municipalities)
+    names = municipalities.map { |value| value.to_s.split('::').first }.uniq
+    names.first if names.size == 1
+  end
+
+  def origin_missing?(condition)
+    leaves(condition).none? { |name, _spec| name == 'ticket.origin' }
   end
 
   # the address_municipality options: municipalities and, for cities, "City::District"
