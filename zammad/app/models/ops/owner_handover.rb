@@ -77,6 +77,7 @@ class Ops::OwnerHandover
     new_owner = find_agent!(to)
     selected = triggers
     selected = selected.select { |trigger| trigger_municipalities(trigger).intersect?(municipalities) } if municipalities
+    warn_about_municipalities(municipalities, selected.flat_map { |trigger| trigger_municipalities(trigger) }, 'triggers')
     warn_about_mixed_triggers(selected, municipalities)
 
     say "#{dry_run ? '[DRY RUN] ' : ''}Triggers of #{describe(old_owner)} -> #{describe(new_owner)}: #{selected.size}"
@@ -98,13 +99,14 @@ class Ops::OwnerHandover
 
   def reassign_tickets!(to:, municipalities: nil, dry_run: true)
     new_owner = find_agent!(to)
+    selected = tickets(municipalities:).to_a
+    warn_about_municipalities(municipalities, selected.map { |ticket| ticket.address_municipality.presence || NO_MUNICIPALITY }, 'tickets')
     still_routed = still_routed_municipalities(municipalities)
     if still_routed.any?
       raise ArgumentError, "Active triggers still route #{still_routed.inspect} to #{describe(old_owner)}, " \
                            'run reassign_triggers! for them first'
     end
 
-    selected = tickets(municipalities:).to_a
     say "#{dry_run ? '[DRY RUN] ' : ''}Tickets of #{describe(old_owner)} -> #{describe(new_owner)}: #{selected.size}"
     selected.group_by(&:group_id).each do |group_id, group_tickets|
       say "  group #{group_name(group_id)}: #{group_tickets.size} | ticket ids #{group_tickets.map(&:id).join(', ')}"
@@ -149,6 +151,35 @@ class Ops::OwnerHandover
   def other_triggers_mentioning_old_owner
     pattern = /"ticket\.owner_id"=>\{[^}]*"value"=>\[?"?#{old_owner.id}\b/
     (Trigger.all - triggers).select { |trigger| trigger.condition.inspect.match?(pattern) || trigger.perform.inspect.match?(pattern) }
+  end
+
+  # catches typos: an unknown municipality, or one with nothing of the old owner, would otherwise just move nothing
+  def warn_about_municipalities(municipalities, found, what)
+    return unless municipalities
+
+    municipalities.each do |municipality|
+      if !known_municipalities.include?(municipality)
+        suggestion = suggest_municipality(municipality)
+        say "  !! #{municipality.inspect} is not a municipality in Triage#{suggestion ? ", did you mean #{suggestion.inspect}?" : ''}"
+      elsif !found.include?(municipality)
+        say "  !! #{describe(old_owner)} has no #{what} for #{municipality.inspect}"
+      end
+    end
+  end
+
+  # the address_municipality options: municipalities and, for cities, "City::District"
+  def known_municipalities
+    @known_municipalities ||= begin
+      options = ObjectManager::Attribute.get(object: 'Ticket', name: 'address_municipality').data_option['options']
+      flatten = ->(nodes) { Array(nodes).flat_map { |node| [node['value'] || node[:value], *flatten.call(node['children'] || node[:children])] } }
+      [NO_MUNICIPALITY, *flatten.call(options)].to_set
+    end
+  end
+
+  # ignores case and diacritics, so "pezinok" or "Banska Bystrica" are found
+  def suggest_municipality(municipality)
+    normalize = ->(name) { ActiveSupport::Inflector.transliterate(name.to_s).downcase.strip }
+    known_municipalities.find { |known| normalize.call(known) == normalize.call(municipality) }
   end
 
   # a trigger for several municipalities moves as a whole
