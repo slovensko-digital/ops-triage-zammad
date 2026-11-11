@@ -13,8 +13,9 @@
 #   create_or_changed  saved from the admin UI (expert mode): OR of the create branch and
 #                      "responsible_subject has changed AND is <municipality>", string ids and value_completion
 #
-# Anything else is UNKNOWN. A trigger whose name or note does not match its municipality and owner, or whose owner
-# does not exist, gets its own group with the failed checks.
+# Anything else is UNKNOWN. A trigger whose name or note does not match its municipality and owner, whose owner does
+# not exist or whose municipality Triage does not know (a typo in the condition) gets its own group with the failed
+# checks, and a wrong name is listed with the expected one.
 class Ops::RoutingTriggerShapes
   PREFIX = '700 - Priradenie podnetu skupine '.freeze
   CONSTANT_FIELDS = %w[ticket.action ticket.origin ticket.process_type].freeze
@@ -46,7 +47,13 @@ class Ops::RoutingTriggerShapes
       say "=== Shape #{index + 1}: #{label(shape)}#{failed.any? ? " (failed checks: #{failed.join(', ')})" : ''} - " \
           "#{shape_triggers.size} triggers"
       say JSON.pretty_generate(shape.except('checks'))
-      shape_triggers.each { |trigger| say "  ##{trigger.id} #{trigger.active ? '' : '[INACTIVE] '}#{trigger.name}" }
+      shape_triggers.each do |trigger|
+        say "  ##{trigger.id} #{trigger.active ? '' : '[INACTIVE] '}#{trigger.name}"
+        expected = expected_name(trigger)
+        say "    expected: #{expected}" if expected && trigger.name != expected
+        unknown = municipalities_in(tree(trigger.condition)).reject { |municipality| known_municipalities.include?(municipality) }
+        say "    unknown municipalities: #{unknown.inspect}" if unknown.any?
+      end
     end
     grouped
   end
@@ -68,7 +75,6 @@ class Ops::RoutingTriggerShapes
   def shape_of(trigger)
     condition = tree(trigger.condition)
     municipalities = municipalities_in(condition)
-    owner = User.find_by(id: trigger.perform&.dig('ticket.owner_id', 'value'))
 
     {
       'attributes' => trigger.attributes.slice('activator', 'execution_condition_mode', 'disable_notification'),
@@ -76,12 +82,34 @@ class Ops::RoutingTriggerShapes
       'perform' => (trigger.perform || {}).keys.sort.to_h { |key| [key, shape_of_spec(key, trigger.perform[key])] },
       'checks' => {
         'one municipality' => municipalities.size == 1,
-        'owner exists' => !owner.nil?,
-        'name is prefix + municipality + owner' => owner.present? && municipalities.size == 1 &&
-          trigger.name == "#{PREFIX}#{municipalities.first} #{agent_name(owner)}",
+        'municipalities known in Triage' => municipalities.all? { |municipality| known_municipalities.include?(municipality) },
+        'owner exists' => !owner_of(trigger).nil?,
+        'name is prefix + municipality + owner' => trigger.name == expected_name(trigger),
         'note is prefix + municipality' => municipalities.size == 1 && trigger.note == "#{PREFIX}#{municipalities.first}",
       },
     }
+  end
+
+  def owner_of(trigger)
+    User.find_by(id: trigger.perform&.dig('ticket.owner_id', 'value'))
+  end
+
+  # nil when the name cannot be built: no owner, or not exactly one municipality
+  def expected_name(trigger)
+    owner = owner_of(trigger)
+    municipalities = municipalities_in(tree(trigger.condition))
+    return unless owner && municipalities.size == 1
+
+    "#{PREFIX}#{municipalities.first} #{agent_name(owner)}"
+  end
+
+  # the address_municipality options: municipalities and, for cities, "City::District"
+  def known_municipalities
+    @known_municipalities ||= begin
+      options = ObjectManager::Attribute.get(object: 'Ticket', name: 'address_municipality').data_option['options']
+      flatten = ->(nodes) { Array(nodes).flat_map { |node| [node['value'] || node[:value], *flatten.call(node['children'] || node[:children])] } }
+      flatten.call(options).to_set
+    end
   end
 
   # the condition in both formats Zammad stores, as [operator, children] for OR/AND, [name, spec] for a condition
