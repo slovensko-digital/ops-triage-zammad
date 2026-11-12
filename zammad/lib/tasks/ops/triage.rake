@@ -255,6 +255,11 @@ namespace :ops do
     task migrate: :environment do
       next unless User.any?
 
+      # Kamal replaces every container on deploy, so Zammad's self-restart is not needed.
+      # With it on, a migration that adds a ticket field makes Puma kill itself in a loop
+      # for 5 minutes, longer than deploy_timeout.
+      Setting.set('auto_shutdown', false)
+
       puts "Migrating triage environment..."
       if User.count <= 2
         setup_admin_user
