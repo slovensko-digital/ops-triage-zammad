@@ -1,28 +1,30 @@
 # Hands over the work of an agent (volunteer) who stops working for us to other agents.
 #
-# New portal tickets get their owner from the 700 routing triggers ("700 - Priradenie podnetu skupine <municipality>
-# <agent name>", created by the portal's responsible_subjects:activate_basic), one per municipality. The handover:
+# New portal tickets get their group and owner from the 700 routing triggers ("700 - Priradenie podnetu skupine
+# <municipality> <agent name>", created by the portal's responsible_subjects:activate_basic). The handover works by
+# group: a trigger moves as a whole, never split, and the tickets move with the group they are in.
 #
-#   1. report             lists the triggers routing to the old owner and the tickets they own, by municipality,
+#   1. report             lists the triggers routing to the old owner and the tickets they own, by group,
 #   2. reassign_triggers! points the triggers to the new owner, so no new tickets reach the old owner,
 #   3. reassign_tickets!  moves the old owner's tickets to the new owner.
 #
-# A municipality's tickets cannot be moved while an active trigger still routes the municipality to the old owner.
-# The new owner gets full access to the trigger's and the tickets' groups, the same access the portal gives the agent
-# when it activates a municipality. Tickets move silently: no notifications to the new owner, no triggers.
+# A group's tickets cannot be moved while an active trigger still routes tickets to the group and the old owner.
+# The new owner gets full access to the groups, the same access the portal gives the agent when it activates a
+# municipality. Tickets move silently: no notifications to the new owner, no triggers.
 #
-# Both reassign methods only print the plan unless called with dry_run: false. Pass municipalities: to split the
-# old owner's municipalities between several new owners, without it all of them go to the one new owner.
+# Both reassign methods only print the plan unless called with dry_run: false. Pass groups: to split the old owner's
+# groups between several new owners, without it all of them go to the one new owner. A group is named with its
+# parents, the way the report shows it: "Bratislava / Devín". An unknown name raises ArgumentError.
 #
 #   h = Ops::OwnerHandover.new('old@example.org')
 #   h.report
-#   h.reassign_triggers!(to: 'new@example.org', municipalities: ['Pezinok', 'Malacky'])
-#   h.reassign_triggers!(to: 'new@example.org', municipalities: ['Pezinok', 'Malacky'], dry_run: false)
-#   h.reassign_tickets!(to: 'new@example.org', municipalities: ['Pezinok', 'Malacky'], dry_run: false)
+#   h.reassign_triggers!(to: 'new@example.org', groups: ['Pezinok', 'Malacky'])
+#   h.reassign_triggers!(to: 'new@example.org', groups: ['Pezinok', 'Malacky'], dry_run: false)
+#   h.reassign_tickets!(to: 'new@example.org', groups: ['Pezinok', 'Malacky'], dry_run: false)
 #
 # The same from the shell: rake ops:owner_handover:{report,triggers,tickets}, see lib/tasks/ops/owner_handover.rake.
 class Ops::OwnerHandover
-  NO_MUNICIPALITY = '(bez oblasti)'.freeze
+  GROUP_SEPARATOR = ' / '.freeze
 
   attr_reader :old_owner
 
@@ -32,26 +34,31 @@ class Ops::OwnerHandover
   end
 
   # triggers setting the old owner as the ticket owner, the 700 routing triggers and any other
-  def triggers
-    Trigger.order(:name).select { |trigger| owner_id_set_by(trigger) == old_owner.id }
+  def triggers(groups: nil)
+    selected = Trigger.order(:name).select { |trigger| owner_id_set_by(trigger) == old_owner.id }
+    return selected unless groups
+
+    ids = find_groups!(groups).map(&:id)
+    selected.select { |trigger| ids.include?(trigger_group_id(trigger)) }
   end
 
-  def tickets(municipalities: nil)
+  def tickets(groups: nil)
     scope = Ticket.where(owner_id: old_owner.id)
-    scope = scope.where(address_municipality: municipality_values(municipalities)) if municipalities
+    scope = scope.where(group_id: find_groups!(groups).map(&:id)) if groups
     scope.order(:id)
   end
 
   def report
+    all_triggers = triggers
     say "Old owner: #{describe(old_owner)}"
     say ''
 
-    say "Triggers setting the old owner as the ticket owner (#{triggers.size}):"
-    triggers.each do |trigger|
+    say "Triggers setting the old owner as the ticket owner (#{all_triggers.size}):"
+    all_triggers.each do |trigger|
       say "  ##{trigger.id} #{trigger.active ? 'active' : 'INACTIVE'} | group #{group_name(trigger_group_id(trigger))} | " \
           "municipalities #{trigger_municipalities(trigger).inspect} | #{trigger.name}"
     end
-    other = other_triggers_mentioning_old_owner
+    other = other_triggers_mentioning_old_owner(all_triggers)
     if other.any?
       say ''
       say 'Other triggers mentioning the old owner, check them by hand:'
@@ -59,26 +66,24 @@ class Ops::OwnerHandover
     end
 
     say ''
-    rows = tickets.pluck(:address_municipality, :ops_state, :id)
-    say "Tickets owned by the old owner (#{rows.size}), by municipality and ops_state:"
-    routed = triggers.select(&:active).flat_map { |trigger| trigger_municipalities(trigger) }
-    rows.group_by { |municipality, _state, _id| municipality.presence || NO_MUNICIPALITY }.sort.each do |municipality, municipality_rows|
-      note = routed.include?(municipality) ? ' (still routed to the old owner)' : ''
-      say "  #{municipality}: #{municipality_rows.size}#{note}"
-      municipality_rows.group_by { |_m, state, _id| state.presence || '(empty)' }.sort.each do |state, state_rows|
+    rows = tickets.pluck(:group_id, :ops_state, :id)
+    say "Tickets owned by the old owner (#{rows.size}), by group and ops_state:"
+    routed = routed_group_ids(all_triggers)
+    rows.group_by(&:first).sort_by { |group_id, _rows| group_name(group_id) }.each do |group_id, group_rows|
+      note = routed.include?(group_id) ? ' (still routed to the old owner)' : ''
+      say "  #{group_name(group_id)}: #{group_rows.size}#{note}"
+      group_rows.group_by { |_g, state, _id| state.presence || '(empty)' }.sort.each do |state, state_rows|
         say "    #{state}: #{state_rows.size} | ticket ids #{state_rows.map(&:last).join(', ')}"
       end
     end
 
-    { triggers: triggers, tickets: rows }
+    { triggers: all_triggers, tickets: rows }
   end
 
-  def reassign_triggers!(to:, municipalities: nil, dry_run: true)
+  def reassign_triggers!(to:, groups: nil, dry_run: true)
     new_owner = find_agent!(to)
-    selected = triggers
-    selected = selected.select { |trigger| trigger_municipalities(trigger).intersect?(municipalities) } if municipalities
-    warn_about_municipalities(municipalities, selected.flat_map { |trigger| trigger_municipalities(trigger) }, 'triggers')
-    warn_about_mixed_triggers(selected, municipalities)
+    selected = triggers(groups:)
+    warn_about_groups(groups, selected.map { |trigger| trigger_group_id(trigger) }, 'triggers')
 
     say "#{dry_run ? '[DRY RUN] ' : ''}Triggers of #{describe(old_owner)} -> #{describe(new_owner)}: #{selected.size}"
     selected.each do |trigger|
@@ -95,14 +100,14 @@ class Ops::OwnerHandover
     selected
   end
 
-  def reassign_tickets!(to:, municipalities: nil, dry_run: true)
+  def reassign_tickets!(to:, groups: nil, dry_run: true)
     new_owner = find_agent!(to)
-    selected = tickets(municipalities:).to_a
-    warn_about_municipalities(municipalities, selected.map { |ticket| ticket.address_municipality.presence || NO_MUNICIPALITY }, 'tickets')
-    still_routed = still_routed_municipalities(municipalities)
+    selected = tickets(groups:).to_a
+    warn_about_groups(groups, selected.map(&:group_id), 'tickets')
+    still_routed = routed_group_ids(triggers(groups:))
     if still_routed.any?
-      raise ArgumentError, "Active triggers still route #{still_routed.inspect} to #{describe(old_owner)}, " \
-                           'run reassign_triggers! for them first'
+      raise ArgumentError, "Active triggers still route groups #{still_routed.map { |id| group_name(id) }.inspect} " \
+                           "to #{describe(old_owner)}, run reassign_triggers! for them first"
     end
 
     say "#{dry_run ? '[DRY RUN] ' : ''}Tickets of #{describe(old_owner)} -> #{describe(new_owner)}: #{selected.size}"
@@ -142,6 +147,37 @@ class Ops::OwnerHandover
     trigger.perform&.dig('ticket.group_id', 'value')&.to_i
   end
 
+  def routed_group_ids(triggers)
+    triggers.select(&:active).map { |trigger| trigger_group_id(trigger) }.uniq
+  end
+
+  # groups by the names the report shows ("Bratislava / Devín"; "Bratislava::Devín", as Zammad stores it, works too),
+  # raises for any name that is not a group
+  def find_groups!(names)
+    stored = names.to_h { |name| [name, name.to_s.strip.split(GROUP_SEPARATOR.strip).map(&:strip).join('::')] }
+    groups = Group.where(name: stored.values.uniq).index_by(&:name)
+    unknown = stored.reject { |_name, value| groups.key?(value) }.keys
+    if unknown.any?
+      messages = unknown.map do |name|
+        suggestions = suggest_groups(name)
+        "#{name.inspect}#{suggestions.any? ? " (did you mean #{suggestions.map(&:inspect).join(' or ')}?)" : ''}"
+      end
+      raise ArgumentError, "Not a group in Triage: #{messages.join(', ')}"
+    end
+
+    stored.values.uniq.map { |value| groups[value] }
+  end
+
+  # ignores case and diacritics and matches the last part too, so "pezinok" finds "Pezinok" and "Devin" finds
+  # "Bratislava / Devín"
+  def suggest_groups(name)
+    normalize = ->(value) { ActiveSupport::Inflector.transliterate(value.to_s).downcase.gsub(/\s+/, ' ').strip }
+    wanted = normalize.call(name.to_s.gsub('::', GROUP_SEPARATOR))
+    Group.all.map { |group| group_label(group) }.select do |label|
+      normalize.call(label) == wanted || normalize.call(label.split(GROUP_SEPARATOR).last) == wanted
+    end
+  end
+
   # the admin UI saves ids as strings ("6") and shows value_completion, the portal saves integers without it; keep the
   # format the trigger has
   def perform_with_owner(perform, new_owner)
@@ -151,7 +187,8 @@ class Ops::OwnerHandover
     perform.merge('ticket.owner_id' => owner)
   end
 
-  # municipalities in "ticket.address_municipality is ..." conditions, in any branch of the condition
+  # municipalities in "ticket.address_municipality is ..." conditions, in any branch of the condition; only shown in
+  # the report
   def trigger_municipalities(trigger)
     conditions_of(trigger.condition)
       .select { |name, spec| name == 'ticket.address_municipality' && spec['operator'] == 'is' }
@@ -171,59 +208,22 @@ class Ops::OwnerHandover
     condition.map { |name, spec| [name, spec] }
   end
 
-  def other_triggers_mentioning_old_owner
+  def other_triggers_mentioning_old_owner(owner_triggers)
     old_id = old_owner.id.to_s
-    (Trigger.all - triggers).select do |trigger|
+    (Trigger.all - owner_triggers).select do |trigger|
       conditions_of(trigger.condition).any? { |name, spec| name == 'ticket.owner_id' && Array(spec['value']).map(&:to_s).include?(old_id) }
     end
   end
 
-  # catches typos: an unknown municipality, or one with nothing of the old owner, would otherwise just move nothing
-  def warn_about_municipalities(municipalities, found, what)
-    return unless municipalities
+  # a group with nothing of the old owner would otherwise just move nothing
+  def warn_about_groups(groups, found_group_ids, what)
+    return unless groups
 
-    municipalities.each do |municipality|
-      if !known_municipalities.include?(municipality)
-        suggestion = suggest_municipality(municipality)
-        say "  !! #{municipality.inspect} is not a municipality in Triage#{suggestion ? ", did you mean #{suggestion.inspect}?" : ''}"
-      elsif !found.include?(municipality)
-        say "  !! #{describe(old_owner)} has no #{what} for #{municipality.inspect}"
-      end
+    find_groups!(groups).each do |group|
+      next if found_group_ids.include?(group.id)
+
+      say "  !! #{describe(old_owner)} has no #{what} in group #{group_label(group).inspect}"
     end
-  end
-
-  # the address_municipality options: municipalities and, for cities, "City::District"
-  def known_municipalities
-    @known_municipalities ||= begin
-      options = ObjectManager::Attribute.get(object: 'Ticket', name: 'address_municipality').data_option['options']
-      flatten = ->(nodes) { Array(nodes).flat_map { |node| [node['value'] || node[:value], *flatten.call(node['children'] || node[:children])] } }
-      [NO_MUNICIPALITY, *flatten.call(options)].to_set
-    end
-  end
-
-  # ignores case and diacritics, so "pezinok" or "Banska Bystrica" are found
-  def suggest_municipality(municipality)
-    normalize = ->(name) { ActiveSupport::Inflector.transliterate(name.to_s).downcase.strip }
-    known_municipalities.find { |known| normalize.call(known) == normalize.call(municipality) }
-  end
-
-  # a trigger for several municipalities moves as a whole
-  def warn_about_mixed_triggers(selected, municipalities)
-    return unless municipalities
-
-    selected.each do |trigger|
-      extra = trigger_municipalities(trigger) - municipalities
-      say "  !! ##{trigger.id} also routes #{extra.inspect}, they move too" if extra.any?
-    end
-  end
-
-  def still_routed_municipalities(municipalities)
-    routed = triggers.select(&:active).flat_map { |trigger| trigger_municipalities(trigger) }.uniq
-    municipalities ? routed & municipalities : routed
-  end
-
-  def municipality_values(municipalities)
-    municipalities.flat_map { |municipality| municipality == NO_MUNICIPALITY ? [nil, ''] : [municipality] }
   end
 
   def renamed(name, new_owner)
@@ -237,7 +237,7 @@ class Ops::OwnerHandover
     group = Group.find_by(id: group_id)
     return if group.nil? || user.group_access?(group.id, 'full')
 
-    say "    + #{describe(user)} gets full access to group #{group.name}"
+    say "    + #{describe(user)} gets full access to group #{group_label(group)}"
     return if dry_run
 
     user.group_names_access_map = user.group_names_access_map.merge(group.name => ['full'])
@@ -253,8 +253,14 @@ class Ops::OwnerHandover
     "#{agent_name(user)} <#{user.email}> (##{user.id})"
   end
 
+  # the group with its parents, "Bratislava / Devín"
+  def group_label(group)
+    group.name.split('::').join(GROUP_SEPARATOR)
+  end
+
   def group_name(group_id)
-    Group.find_by(id: group_id)&.name || group_id.inspect
+    group = Group.find_by(id: group_id)
+    group ? group_label(group) : group_id.inspect
   end
 
   def say(line)
