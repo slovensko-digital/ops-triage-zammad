@@ -1,21 +1,8 @@
-# Finds the groups whose tickets are not all owned by the agent the group is routed to, and prints the
-# ops:owner_handover:tickets commands that fix them. Read only.
+# Lists the groups with tickets of earlier owners (owners were changed by hand before Ops::OwnerHandover), with the
+# ops:owner_handover:tickets commands moving them to the owner the group's active trigger routes it to. Read only.
 #
-# Before Ops::OwnerHandover, owners were changed by hand: the 700 trigger got a new owner and the tickets were moved
-# one by one, or not at all. So a group can have tickets of the previous owners next to the tickets of the current
-# one. The current owner is the one the group's active trigger routes new tickets to (any active trigger setting
-# ticket.group_id and ticket.owner_id). A group is listed when some of its tickets are owned by anyone else, or, when
-# no single owner is routed, when its tickets have more than one owner.
-#
-#   Ops::OwnerConflicts.new.report
-#   rake ops:owner_handover:conflicts
-#
-# Every other owner gets a command moving their tickets in the group to the current owner, one command per old and
-# new owner with all their groups in GROUPS. No command is printed (!!) for a group no active trigger routes, a group
-# active triggers route to several owners, or an old or routed owner who is not an agent (the handover refuses them).
-# Tickets without an owner and test tickets (the tickets of the customers with test_customer_logins:, by default
-# Ops::OwnerHandoverSupport::DEFAULT_TEST_CUSTOMER_LOGINS) are left out, the report says how many test tickets it
-# omitted. Ticket ids are listed newest first, only the first TICKET_IDS_SHOWN of them unless all_ids: true.
+# A group is listed when a ticket has another owner than the routed one, or, without a single routed owner, when its
+# tickets have several owners; then there is no command (!!). Unowned and test tickets are left out.
 class Ops::OwnerConflicts
   include Ops::OwnerHandoverSupport
 
@@ -80,12 +67,11 @@ class Ops::OwnerConflicts
 
   private
 
-  # tickets with an owner and a group, the test tickets too
+  # test tickets included
   def owned_tickets
     Ticket.where.not(owner_id: NO_OWNER_ID).where.not(group_id: nil)
   end
 
-  # tickets: [[state id, ticket id, created_at]]
   def count(tickets)
     "#{tickets.size} (#{tickets.count { |state_id, _id, _created_at| open_state_ids.include?(state_id) }} open)"
   end

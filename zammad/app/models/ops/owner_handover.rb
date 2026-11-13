@@ -1,36 +1,18 @@
-# Hands over the work of an agent (volunteer) who stops working for us to other agents.
+# Hands over the triggers and tickets of an agent who stops volunteering, group by group: the 700 routing triggers
+# set each new ticket's group and owner, a trigger moves as a whole and tickets move with their group.
 #
-# New portal tickets get their group and owner from the 700 routing triggers ("700 - Priradenie podnetu skupine
-# <municipality> <agent name>", created by the portal's responsible_subjects:activate_basic). The handover works by
-# group: a trigger moves as a whole, never split, and the tickets move with the group they are in.
+#   1. report             the old owner's triggers and tickets by group, with commands moving them to the routed owner
+#   2. reassign_triggers! points the triggers to the new owner, who gets full access to the groups
+#   3. reassign_tickets!  moves the tickets, closed ones too (they can be reopened), without notifications or triggers;
+#                         refused while an active trigger still routes the group to the old owner
 #
-#   1. report             lists the triggers routing to the old owner and the tickets they own, by group, with the
-#                         reassign_tickets! commands moving each group's tickets to the owner its active trigger
-#                         routes the group to now (the same as Ops::OwnerConflicts),
-#   2. reassign_triggers! points the triggers to the new owner, so no new tickets reach the old owner,
-#   3. reassign_tickets!  moves the old owner's tickets to the new owner, closed ones too: a closed ticket can be
-#                         reopened and the new owner is then in charge of it.
-#
-# A group's tickets cannot be moved while an active trigger still routes tickets to the group and the old owner.
-# The new owner gets full access to the groups, the same access the portal gives the agent when it activates a
-# municipality. Tickets move silently: no notifications to the new owner, no triggers.
-#
-# Test tickets, the tickets of the customers with test_customer_logins: (by default DEFAULT_TEST_CUSTOMER_LOGINS, the
-# portal's anonymous user), are never moved: the report and reassign_tickets! say how many were omitted and list them.
-#
-# Both reassign methods only print the plan unless called with dry_run: false. Pass groups: to split the old owner's
-# groups between several new owners, without it all of them go to the one new owner. A group is named with its
-# parents, the way the report shows it: "Bratislava / Devín". An unknown name raises ArgumentError.
+# Test tickets (customers in test_customer_logins:) are never moved. The reassign methods are dry runs unless
+# dry_run: false; groups: limits them to some groups, named as the report shows them ("Bratislava / Devín").
 #
 #   h = Ops::OwnerHandover.new('old@example.org')
 #   h.report
-#   h.reassign_triggers!(to: 'new@example.org', groups: ['Pezinok', 'Malacky'])
-#   h.reassign_triggers!(to: 'new@example.org', groups: ['Pezinok', 'Malacky'], dry_run: false)
-#   h.reassign_tickets!(to: 'new@example.org', groups: ['Pezinok', 'Malacky'], dry_run: false)
-#
-# Ticket ids are listed newest first (created_at), only the first TICKET_IDS_SHOWN of them unless all_ids: true.
-#
-# The same from the shell: rake ops:owner_handover:{report,triggers,tickets}, see lib/tasks/ops/owner_handover.rake.
+#   h.reassign_triggers!(to: 'new@example.org', groups: ['Pezinok'], dry_run: false)
+#   h.reassign_tickets!(to: 'new@example.org', groups: ['Pezinok'], dry_run: false)
 class Ops::OwnerHandover
   include Ops::OwnerHandoverSupport
 
@@ -41,7 +23,7 @@ class Ops::OwnerHandover
     @old_owner = find_agent!(old_owner_email)
   end
 
-  # triggers setting the old owner as the ticket owner, the 700 routing triggers and any other
+  # every trigger setting the old owner, not only the 700 ones
   def triggers(groups: nil)
     selected = Trigger.order(:name).select { |trigger| trigger_owner_id(trigger) == old_owner.id }
     return selected unless groups
@@ -50,12 +32,10 @@ class Ops::OwnerHandover
     selected.select { |trigger| ids.include?(trigger_group_id(trigger)) }
   end
 
-  # the old owner's tickets without the test tickets
   def tickets(groups: nil)
     without_test_tickets(owned_tickets(groups:)).order(:id)
   end
 
-  # the old owner's test tickets, never moved
   def test_tickets(groups: nil)
     only_test_tickets(owned_tickets(groups:)).order(:id)
   end
@@ -201,8 +181,7 @@ class Ops::OwnerHandover
     triggers.select(&:active).map { |trigger| trigger_group_id(trigger) }.uniq
   end
 
-  # groups by the names the report shows ("Bratislava / Devín"; "Bratislava::Devín", as Zammad stores it, works too),
-  # raises for any name that is not a group
+  # "Bratislava / Devín" or "Bratislava::Devín"; raises ArgumentError for an unknown name
   def find_groups!(names)
     stored = names.to_h { |name| [name, name.to_s.strip.split(GROUP_SEPARATOR.strip).map(&:strip).join('::')] }
     groups = Group.where(name: stored.values.uniq).index_by(&:name)
@@ -218,8 +197,7 @@ class Ops::OwnerHandover
     stored.values.uniq.map { |value| groups[value] }
   end
 
-  # ignores case and diacritics and matches the last part too, so "pezinok" finds "Pezinok" and "Devin" finds
-  # "Bratislava / Devín"
+  # ignores case and diacritics and matches the last part: "Devin" finds "Bratislava / Devín"
   def suggest_groups(name)
     normalize = ->(value) { ActiveSupport::Inflector.transliterate(value.to_s).downcase.gsub(/\s+/, ' ').strip }
     wanted = normalize.call(name.to_s.gsub('::', GROUP_SEPARATOR))
@@ -228,8 +206,7 @@ class Ops::OwnerHandover
     end
   end
 
-  # the admin UI saves ids as strings ("6") and shows value_completion, the portal saves integers without it; keep the
-  # format the trigger has
+  # keep the trigger's format: the admin UI saves string ids with value_completion, the portal integers without it
   def perform_with_owner(perform, new_owner)
     owner = perform['ticket.owner_id'].dup
     owner['value'] = owner['value'].is_a?(String) ? new_owner.id.to_s : new_owner.id
@@ -237,8 +214,6 @@ class Ops::OwnerHandover
     perform.merge('ticket.owner_id' => owner)
   end
 
-  # municipalities in "ticket.address_municipality is ..." conditions, in any branch of the condition; only shown in
-  # the report
   def trigger_municipalities(trigger)
     conditions_of(trigger.condition)
       .select { |name, spec| name == 'ticket.address_municipality' && spec['operator'] == 'is' }
@@ -246,10 +221,8 @@ class Ops::OwnerHandover
       .uniq
   end
 
-  # [name, {operator, value, ...}] of every condition, in both formats Zammad stores:
-  #   flat, as created by the portal:      { 'ticket.address_municipality' => { 'operator' => 'is', 'value' => [...] }, ... }
-  #   nested, as saved by the admin UI in expert mode:
-  #     { 'operator' => 'OR', 'conditions' => [{ 'operator' => 'AND', 'conditions' => [{ 'name' => ..., 'operator' => ..., 'value' => ... }] }] }
+  # [name, spec] of every condition, flat as the portal creates it ({ name => spec }) or nested as the admin UI saves it
+  # in expert mode ({ 'operator' => 'OR', 'conditions' => [{ 'name' => name, ... }] })
   def conditions_of(condition)
     return [] unless condition.is_a?(Hash)
     return Array(condition['conditions']).flat_map { |child| conditions_of(child) } if condition.key?('conditions')
@@ -265,7 +238,6 @@ class Ops::OwnerHandover
     end
   end
 
-  # a group with nothing of the old owner would otherwise just move nothing
   def warn_about_groups(groups, found_group_ids, what)
     return unless groups
 

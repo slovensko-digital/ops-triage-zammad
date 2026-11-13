@@ -1,7 +1,4 @@
-# What Ops::OwnerHandover and Ops::OwnerConflicts share: reading the routing triggers, leaving out test tickets,
-# naming users and groups, shortening ticket id lists and printing the ops:owner_handover:tickets commands.
-#
-# The including class calls setup_handover_support in its initializer.
+# Shared by Ops::OwnerHandover and Ops::OwnerConflicts; call setup_handover_support in the initializer.
 module Ops::OwnerHandoverSupport
   GROUP_SEPARATOR = ' / '.freeze
   TICKET_IDS_SHOWN = 10
@@ -19,8 +16,6 @@ module Ops::OwnerHandoverSupport
     @test_customer_ids = found.values
     @unknown_test_logins = @test_customer_logins - found.keys
   end
-
-  # --- triggers
 
   def trigger_owner_id(trigger)
     trigger.perform&.dig('ticket.owner_id', 'value').presence&.to_i
@@ -41,12 +36,10 @@ module Ops::OwnerHandoverSupport
     end
   end
 
-  # routed: owner id => [trigger ids], see routed_owners_by_group; the one owner id, nil when none or several
   def single_routed_owner_id(routed)
     routed.keys.first if routed.size == 1
   end
 
-  # routed: owner id => [trigger ids], see routed_owners_by_group
   def describe_routing(routed, old_owner_id: nil)
     by = ->(trigger_ids) { trigger_ids.map { |id| "##{id}" }.join(', ') }
     case routed.size
@@ -63,8 +56,6 @@ module Ops::OwnerHandoverSupport
     end
   end
 
-  # --- test tickets
-
   def without_test_tickets(scope)
     @test_customer_ids.any? ? scope.where.not(customer_id: @test_customer_ids) : scope
   end
@@ -73,16 +64,12 @@ module Ops::OwnerHandoverSupport
     @test_customer_ids.any? ? scope.where(customer_id: @test_customer_ids) : scope.none
   end
 
-  # "Test tickets omitted: 3 (customers ops-user-63745)", and a warning for each login with no user
   def say_test_tickets_note(count)
     say "Test tickets omitted: #{count} (customers #{@test_customer_logins.presence&.join(', ') || 'none'})"
     @unknown_test_logins.each { |login| say "  !! no user with login #{login.inspect}, nothing omitted for it" }
   end
 
-  # --- commands
-
-  # commands: { [old owner, new owner] => [group labels] }; the handover moves tickets between agents only, so a
-  # command is added only when both are agents, otherwise it says why there is none
+  # commands: { [old owner, new owner] => [group labels] }; the tickets task refuses non-agents on either side
   def add_tickets_command(commands, old_owner, new_owner, group_label, indent:)
     if !agent?(new_owner)
       say "#{indent}!! the routed owner is not an agent, the handover refuses them, fix the trigger first"
@@ -99,15 +86,13 @@ module Ops::OwnerHandoverSupport
     commands.each { |(old_owner, new_owner), group_labels| say "  #{tickets_command(old_owner, new_owner, group_labels)}" }
   end
 
-  # with TEST_LOGINS when the test customers are not the default ones, so the command omits the same test tickets
+  # TEST_LOGINS when not the default, so the command omits the same test tickets
   def tickets_command(old_owner, new_owner, group_labels)
     command = "rake 'ops:owner_handover:tickets[#{old_owner.email},#{new_owner.email}]' GROUPS='#{group_labels.join(';')}'"
     return command if @test_customer_logins.sort == DEFAULT_TEST_CUSTOMER_LOGINS.sort
 
     "#{command} TEST_LOGINS='#{@test_customer_logins.join(';')}'"
   end
-
-  # --- formatting
 
   # "12, 11, 10, ... (245 more)" of rows ending with [id, created_at], the newest first
   def ticket_ids(rows)
@@ -117,7 +102,7 @@ module Ops::OwnerHandoverSupport
     "#{ids.first(TICKET_IDS_SHOWN).join(', ')}, ... (#{ids.size - TICKET_IDS_SHOWN} more)"
   end
 
-  # [group id, rows] of rows starting with the group id, sorted by the group label
+  # rows starting with the group id, by group label
   def by_group(rows)
     rows.group_by(&:first).sort_by { |group_id, _rows| group_name(group_id) }
   end
@@ -144,7 +129,6 @@ module Ops::OwnerHandoverSupport
     user(id) ? describe(user(id)) : "unknown user ##{id}"
   end
 
-  # the group with its parents, "Bratislava / Devín"
   def group_label(group)
     group.name.split('::').join(GROUP_SEPARATOR)
   end
