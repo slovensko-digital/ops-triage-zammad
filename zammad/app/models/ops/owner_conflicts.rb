@@ -13,7 +13,7 @@
 # Every other owner gets a command moving their tickets in the group to the current owner, one command per old and
 # new owner with all their groups in GROUPS. No command is printed (!!) for a group no active trigger routes, a group
 # active triggers route to several owners, or an old owner who is not an agent anymore (the handover refuses them).
-# Tickets without an owner are left out.
+# Tickets without an owner are left out. Ticket ids are shortened unless all_ids: true, see Ops::OwnerHandover.ticket_ids.
 class Ops::OwnerConflicts
   GROUP_SEPARATOR = Ops::OwnerHandover::GROUP_SEPARATOR
   NO_OWNER_ID = 1
@@ -28,16 +28,17 @@ class Ops::OwnerConflicts
     end
   end
 
-  def initialize(out: $stdout)
+  def initialize(out: $stdout, all_ids: false)
     @out = out
+    @all_ids = all_ids
   end
 
   def conflicts
-    rows = Ticket.where.not(owner_id: NO_OWNER_ID).where.not(group_id: nil).pluck(:group_id, :owner_id, :id, :state_id)
+    rows = Ticket.where.not(owner_id: NO_OWNER_ID).where.not(group_id: nil).pluck(:group_id, :owner_id, :id, :state_id, :created_at)
     routes = routed_owners_by_group
 
     rows.group_by(&:first).filter_map do |group_id, group_rows|
-      by_owner = group_rows.group_by { |row| row[1] }.transform_values { |owner_rows| owner_rows.map { |row| row.values_at(2, 3) } }
+      by_owner = group_rows.group_by { |row| row[1] }.transform_values { |owner_rows| owner_rows.map { |row| row.values_at(2, 3, 4) } }
       routed = routes.fetch(group_id, {})
       next if routed.size == 1 && by_owner.keys == routed.keys
       next if routed.empty? && by_owner.size == 1
@@ -62,7 +63,7 @@ class Ops::OwnerConflicts
           next
         end
 
-        say "    #{describe(owner)}: #{count(tickets)} | ticket ids #{tickets.map(&:first).sort.join(', ')}"
+        say "    #{describe(owner)}: #{count(tickets)} | ticket ids #{Ops::OwnerHandover.ticket_ids(tickets.map { |id, _state_id, created_at| [id, created_at] }, all: @all_ids)}"
         if conflict.routed_owner.nil?
           next
         elsif !owner&.permissions?('ticket.agent')
@@ -109,7 +110,7 @@ class Ops::OwnerConflicts
   end
 
   def count(tickets)
-    "#{tickets.size} (#{tickets.count { |_id, state_id| open_state_ids.include?(state_id) }} open)"
+    "#{tickets.size} (#{tickets.count { |_id, state_id, _created_at| open_state_ids.include?(state_id) }} open)"
   end
 
   def open_state_ids

@@ -23,15 +23,27 @@
 #   h.reassign_triggers!(to: 'new@example.org', groups: ['Pezinok', 'Malacky'], dry_run: false)
 #   h.reassign_tickets!(to: 'new@example.org', groups: ['Pezinok', 'Malacky'], dry_run: false)
 #
+# Ticket ids are listed newest first (created_at), only the first TICKET_IDS_SHOWN of them unless all_ids: true.
+#
 # The same from the shell: rake ops:owner_handover:{report,triggers,tickets}, see lib/tasks/ops/owner_handover.rake.
 class Ops::OwnerHandover
   GROUP_SEPARATOR = ' / '.freeze
+  TICKET_IDS_SHOWN = 10
 
   attr_reader :old_owner
 
-  def initialize(old_owner_email, out: $stdout)
+  # "12, 11, 10, ... (245 more)" of [id, created_at] rows, the newest first
+  def self.ticket_ids(rows, all: false)
+    ids = rows.sort_by { |id, created_at| [created_at, id] }.reverse.map(&:first)
+    return ids.join(', ') if all || ids.size <= TICKET_IDS_SHOWN
+
+    "#{ids.first(TICKET_IDS_SHOWN).join(', ')}, ... (#{ids.size - TICKET_IDS_SHOWN} more)"
+  end
+
+  def initialize(old_owner_email, out: $stdout, all_ids: false)
     @old_owner = find_agent!(old_owner_email)
     @out = out
+    @all_ids = all_ids
   end
 
   # triggers setting the old owner as the ticket owner, the 700 routing triggers and any other
@@ -67,14 +79,14 @@ class Ops::OwnerHandover
     end
 
     say ''
-    rows = tickets.pluck(:group_id, :ops_state, :id)
+    rows = tickets.pluck(:group_id, :ops_state, :id, :created_at)
     say "Tickets owned by the old owner (#{rows.size}), by group and ops_state:"
     routed = routed_group_ids(all_triggers)
     rows.group_by(&:first).sort_by { |group_id, _rows| group_name(group_id) }.each do |group_id, group_rows|
       note = routed.include?(group_id) ? ' (still routed to the old owner)' : ''
       say "  #{group_name(group_id)}: #{group_rows.size}#{note}"
-      group_rows.group_by { |_g, state, _id| state.presence || '(empty)' }.sort.each do |state, state_rows|
-        say "    #{state}: #{state_rows.size} | ticket ids #{state_rows.map(&:last).join(', ')}"
+      group_rows.group_by { |_g, state, _id, _created_at| state.presence || '(empty)' }.sort.each do |state, state_rows|
+        say "    #{state}: #{state_rows.size} | ticket ids #{ticket_ids(state_rows.map { |row| row.last(2) })}"
       end
     end
 
@@ -113,7 +125,7 @@ class Ops::OwnerHandover
 
     say "#{dry_run ? '[DRY RUN] ' : ''}Tickets of #{describe(old_owner)} -> #{describe(new_owner)}: #{selected.size}"
     selected.group_by(&:group_id).each do |group_id, group_tickets|
-      say "  group #{group_name(group_id)}: #{group_tickets.size} | ticket ids #{group_tickets.map(&:id).join(', ')}"
+      say "  group #{group_name(group_id)}: #{group_tickets.size} | ticket ids #{ticket_ids(group_tickets.map { |t| [t.id, t.created_at] })}"
       grant_group_access(new_owner, group_id, dry_run:)
     end
     if dry_run
@@ -131,6 +143,10 @@ class Ops::OwnerHandover
   end
 
   private
+
+  def ticket_ids(rows)
+    self.class.ticket_ids(rows, all: @all_ids)
+  end
 
   def find_agent!(email)
     user = User.find_by(email: email.to_s.strip.downcase)
