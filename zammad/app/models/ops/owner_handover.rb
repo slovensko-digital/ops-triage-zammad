@@ -3,7 +3,8 @@
 #
 #   1. report             the old owner's triggers and tickets by group, with commands moving them to the routed owner
 #   2. reassign_triggers! points the triggers to the new owner, who gets full access to the groups
-#   3. reassign_tickets!  moves the tickets, closed ones too (they can be reopened), without notifications or triggers;
+#   3. reassign_tickets!  moves the tickets, closed ones too (they can be reopened), without notifications or triggers,
+#                         one transaction per group in the order listed;
 #                         refused while an active trigger still routes the group to the old owner
 #
 # Test tickets (customers in test_customer_logins:) are never moved. The reassign methods are dry runs unless
@@ -145,16 +146,16 @@ class Ops::OwnerHandover
       return selected
     end
 
-    # without Transaction.execute the changes stay in the EventBuffer and a later Transaction.execute in the same
-    # console session would dispatch them, notifying the new owner after all
     say ''
-    say "Moving #{delimited(selected.size)} tickets to #{describe(new_owner)}..."
-    Transaction.execute(disable_notification: true, disable: %w[Transaction::Notification Transaction::Trigger]) do
-      selected.each.with_index(1) do |ticket, done|
-        ticket.update!(owner_id: new_owner.id)
-        say_progress(done, selected.size)
-      end
-      say 'Finishing the transaction...'
+    say "Moving #{delimited(selected.size)} tickets to #{describe(new_owner)}, each group committed on its own..."
+    groups_to_move = selected.group_by(&:group_id).sort_by { |group_id, _tickets| group_name(group_id) }
+    moved = 0
+    groups_to_move.each.with_index(1) do |(group_id, group_tickets), index|
+      say ''
+      say "Group #{index} / #{groups_to_move.size} #{group_name(group_id)}: #{delimited(group_tickets.size)} tickets"
+      move_tickets(group_tickets, new_owner)
+      moved += group_tickets.size
+      say "  Committed, #{delimited(moved)} / #{delimited(selected.size)} tickets moved"
     end
     say ''
     say "Moved #{selected.size} tickets, #{tickets.count} left with #{describe(old_owner)} " \
@@ -163,6 +164,19 @@ class Ops::OwnerHandover
   end
 
   private
+
+  # one transaction, so a failure rolls back only these tickets and the groups moved before stay moved;
+  # without Transaction.execute the changes stay in the EventBuffer and a later Transaction.execute in the same
+  # console session would dispatch them, notifying the new owner after all
+  def move_tickets(tickets, new_owner)
+    Transaction.execute(disable_notification: true, disable: %w[Transaction::Notification Transaction::Trigger]) do
+      tickets.each.with_index(1) do |ticket, done|
+        ticket.update!(owner_id: new_owner.id)
+        say_progress(done, tickets.size)
+      end
+      say '  Finishing the transaction...'
+    end
+  end
 
   def say_plan(what, new_owner, count, dry_run:)
     say "#{dry_run ? '[DRY RUN] ' : ''}#{what} of #{describe(old_owner)} -> #{describe(new_owner)}: #{count}"
