@@ -2,6 +2,11 @@
 #
 # Every task takes ALL_IDS=1 to list every ticket id, not only the 10 newest, and TEST_LOGINS='ops-user-63745;...' to set
 # the test customers, whose tickets are left out and never moved.
+#
+# Through kamal wrap the whole command in double quotes, the alias runs it in a shell on the server, which would split
+# GROUPS='Dubnica nad Váhom' into words otherwise:
+#
+#   kamal rake "'ops:owner_handover:tickets[old@example.org,new@example.org]' GROUPS='Dubnica nad Váhom'"
 namespace :ops do
   namespace :owner_handover do
     list = ->(name) { ENV[name].presence&.split(';')&.map(&:strip) }
