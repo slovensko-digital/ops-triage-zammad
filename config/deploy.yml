@@ -76,7 +76,7 @@ aliases:
   elastic_init_users: accessory exec elastic --reuse /tmp/ops_scripts/init_kibana_and_triage_users.sh
   elastic_reindex: app exec -r worker -p -i --reuse "/docker-entrypoint.sh bin/rake zammad:searchindex:rebuild[8]"
   elastic_add_backoffice: accessory exec elastic -i --reuse /tmp/ops_scripts/add_backoffice_user.sh
-  rake: app exec -r worker -p --reuse "/docker-entrypoint.sh bin/rake"
+  rake: app exec -r worker -p -i --reuse "/docker-entrypoint.sh bin/rake"
 
 registry:
   server: registry.dev.slovensko.digital
