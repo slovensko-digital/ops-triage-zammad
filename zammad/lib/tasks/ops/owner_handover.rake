@@ -1,8 +1,7 @@
 # See Ops::OwnerHandover, Ops::OwnerConflicts and Ops::GroupRoutingCheck.
 #
-# GROUPS='Pezinok;Bratislava / Devín' limits triggers and tickets to some groups. Without APPLY=1 a dry run.
-# ALL_IDS=1 lists every ticket id, not only the 10 newest. TEST_LOGINS='ops-user-63745;...' sets the test customers,
-# whose tickets are never moved.
+# Every task takes ALL_IDS=1 to list every ticket id, not only the 10 newest, and TEST_LOGINS='ops-user-63745;...' to set
+# the test customers, whose tickets are left out and never moved.
 namespace :ops do
   namespace :owner_handover do
     list = ->(name) { ENV[name].presence&.split(';')&.map(&:strip) }
@@ -13,11 +12,14 @@ namespace :ops do
     reassign_options = ->(args) { { to: args.fetch(:new_email), groups: list.call('GROUPS'), dry_run: ENV['APPLY'] != '1' } }
     handover = ->(args) { Ops::OwnerHandover.new(args.fetch(:old_email), **options.call) }
 
+    # rake 'ops:owner_handover:report[old@example.org]'
     desc 'List the triggers routing tickets to an agent and the tickets they own'
     task :report, [:old_email] => :environment do |_task, args|
       handover.call(args).report
     end
 
+    # rake 'ops:owner_handover:triggers[old@example.org,new@example.org]' GROUPS='Pezinok;Bratislava / Devín' APPLY=1
+    # GROUPS limits it to some groups, named as the report shows them; without APPLY=1 a dry run
     desc 'Point the triggers routing tickets to the old agent to the new one'
     task :triggers, %i[old_email new_email] => :environment do |_task, args|
       handover.call(args).reassign_triggers!(**reassign_options.call(args))
@@ -33,6 +35,8 @@ namespace :ops do
       Ops::GroupRoutingCheck.new(**options.call).report
     end
 
+    # rake 'ops:owner_handover:tickets[old@example.org,new@example.org]' GROUPS='Pezinok;Bratislava / Devín' APPLY=1
+    # GROUPS limits it to some groups, named as the report shows them; without APPLY=1 a dry run
     desc 'Move the tickets of the old agent to the new one, closed ones too, silently'
     task :tickets, %i[old_email new_email] => :environment do |_task, args|
       handover.call(args).reassign_tickets!(**reassign_options.call(args))
