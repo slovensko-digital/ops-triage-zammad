@@ -156,7 +156,9 @@ module Ops::OwnerHandoverSupport
     group ? group_label(group) : group_id.inspect
   end
 
+  # flushed, rake run through docker or kubectl exec buffers stdout until it ends otherwise
   def say(line)
     @out.puts(line)
+    @out.flush
   end
 end

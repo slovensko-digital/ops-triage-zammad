@@ -147,8 +147,14 @@ class Ops::OwnerHandover
 
     # without Transaction.execute the changes stay in the EventBuffer and a later Transaction.execute in the same
     # console session would dispatch them, notifying the new owner after all
+    say ''
+    say "Moving #{delimited(selected.size)} tickets to #{describe(new_owner)}..."
     Transaction.execute(disable_notification: true, disable: %w[Transaction::Notification Transaction::Trigger]) do
-      selected.each { |ticket| ticket.update!(owner_id: new_owner.id) }
+      selected.each.with_index(1) do |ticket, done|
+        ticket.update!(owner_id: new_owner.id)
+        say_progress(done, selected.size)
+      end
+      say 'Finishing the transaction...'
     end
     say ''
     say "Moved #{selected.size} tickets, #{tickets.count} left with #{describe(old_owner)} " \
@@ -160,6 +166,19 @@ class Ops::OwnerHandover
 
   def say_plan(what, new_owner, count, dry_run:)
     say "#{dry_run ? '[DRY RUN] ' : ''}#{what} of #{describe(old_owner)} -> #{describe(new_owner)}: #{count}"
+  end
+
+  PROGRESS_EVERY = 100
+
+  # "  100 / 3_632 tickets (2.8%)"
+  def say_progress(done, total)
+    return unless (done % PROGRESS_EVERY).zero? || done == total
+
+    say "  #{delimited(done)} / #{delimited(total)} tickets (#{(100.0 * done / total).round(1)}%)"
+  end
+
+  def delimited(number)
+    ActiveSupport::NumberHelper.number_to_delimited(number, delimiter: '_')
   end
 
   def say_dry_run_hint
