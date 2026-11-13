@@ -44,6 +44,7 @@ class Ops::OwnerHandover
     all_triggers = triggers
     test_rows = test_tickets.pluck(:group_id, :id, :created_at)
     say "Old owner: #{describe(old_owner)}"
+    say ''
     say_test_tickets_note(test_rows.size)
     say ''
 
@@ -136,6 +137,7 @@ class Ops::OwnerHandover
       grant_group_access(new_owner, group_id, dry_run:)
     end
     test_rows = test_tickets(groups:).pluck(:id, :created_at)
+    say ''
     say_test_tickets_note(test_rows.size)
     say "  staying with the old owner | ticket ids #{ticket_ids(test_rows)}" if test_rows.any?
     if dry_run
@@ -148,6 +150,7 @@ class Ops::OwnerHandover
     Transaction.execute(disable_notification: true, disable: %w[Transaction::Notification Transaction::Trigger]) do
       selected.each { |ticket| ticket.update!(owner_id: new_owner.id) }
     end
+    say ''
     say "Moved #{selected.size} tickets, #{tickets.count} left with #{describe(old_owner)} " \
         "(and #{test_tickets.count} test tickets)."
     selected
@@ -160,6 +163,7 @@ class Ops::OwnerHandover
   end
 
   def say_dry_run_hint
+    say ''
     say 'Nothing changed, run again with dry_run: false to apply.'
   end
 

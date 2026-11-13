@@ -42,6 +42,7 @@ class Ops::OwnerConflicts
     commands = Hash.new { |hash, key| hash[key] = [] }
 
     say_test_tickets_note(only_test_tickets(owned_tickets).count)
+    say ''
     say "Groups with tickets not owned by the routed owner (#{found.size}):"
     found.each do |conflict|
       label = group_label(conflict.group)
