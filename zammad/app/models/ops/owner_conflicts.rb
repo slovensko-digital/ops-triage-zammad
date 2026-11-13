@@ -12,13 +12,16 @@
 #
 # Every other owner gets a command moving their tickets in the group to the current owner, one command per old and
 # new owner with all their groups in GROUPS. No command is printed (!!) for a group no active trigger routes, a group
-# active triggers route to several owners, or an old owner who is not an agent anymore (the handover refuses them).
+# active triggers route to several owners, or an old or routed owner who is not an agent (the handover refuses them).
 # Tickets without an owner and test tickets (the tickets of the customers with test_customer_logins:, by default
-# Ops::OwnerHandover::DEFAULT_TEST_CUSTOMER_LOGINS) are left out, the report says how many test tickets it omitted. Ticket ids are shortened unless all_ids: true, see Ops::OwnerHandover.ticket_ids.
+# Ops::OwnerHandoverSupport::DEFAULT_TEST_CUSTOMER_LOGINS) are left out, the report says how many test tickets it
+# omitted. Ticket ids are listed newest first, only the first TICKET_IDS_SHOWN of them unless all_ids: true.
 class Ops::OwnerConflicts
-  GROUP_SEPARATOR = Ops::OwnerHandover::GROUP_SEPARATOR
+  include Ops::OwnerHandoverSupport
+
   NO_OWNER_ID = 1
 
+  # tickets_by_owner: owner id => [[state id, ticket id, created_at]]
   Conflict = Struct.new(:group, :routed_owners, :tickets_by_owner, keyword_init: true) do
     def routed_owner
       routed_owners.keys.first if routed_owners.size == 1
@@ -29,116 +32,65 @@ class Ops::OwnerConflicts
     end
   end
 
-  def initialize(out: $stdout, all_ids: false, test_customer_logins: Ops::OwnerHandover::DEFAULT_TEST_CUSTOMER_LOGINS)
-    @out = out
-    @all_ids = all_ids
-    @test_customer_logins = Array(test_customer_logins)
-    @test_customer_ids, @unknown_test_logins = Ops::OwnerHandover.test_customers(@test_customer_logins)
+  def initialize(out: $stdout, all_ids: false, test_customer_logins: DEFAULT_TEST_CUSTOMER_LOGINS)
+    setup_handover_support(out:, all_ids:, test_customer_logins:)
   end
 
   def conflicts
-    rows = owned_tickets.pluck(:group_id, :owner_id, :id, :state_id, :created_at)
-    routes = Ops::OwnerHandover.routed_owners_by_group
+    rows = without_test_tickets(owned_tickets).pluck(:group_id, :owner_id, :state_id, :id, :created_at)
+    routes = routed_owners_by_group
 
-    rows.group_by(&:first).filter_map do |group_id, group_rows|
-      by_owner = group_rows.group_by { |row| row[1] }.transform_values { |owner_rows| owner_rows.map { |row| row.values_at(2, 3, 4) } }
+    by_group(rows).filter_map do |group_id, group_rows|
+      by_owner = group_rows.group_by { |row| row[1] }.transform_values { |owner_rows| owner_rows.map { |row| row.drop(2) } }
       routed = routes.fetch(group_id, {})
       next if routed.size == 1 && by_owner.keys == routed.keys
       next if routed.empty? && by_owner.size == 1
 
       Conflict.new(group: Group.find(group_id), routed_owners: routed, tickets_by_owner: by_owner)
-    end.sort_by { |conflict| group_label(conflict.group) }
+    end
   end
 
   def report
     found = conflicts
     commands = Hash.new { |hash, key| hash[key] = [] }
 
-    Ops::OwnerHandover.test_tickets_note(test_tickets.count, @test_customer_logins, @unknown_test_logins).each { |line| say line }
+    say_test_tickets_note(only_test_tickets(owned_tickets).count)
     say "Groups with tickets not owned by the routed owner (#{found.size}):"
     found.each do |conflict|
+      label = group_label(conflict.group)
       say ''
-      say "  #{group_label(conflict.group)} | #{describe_routing(conflict)}"
+      say "  #{label} | #{describe_routing(conflict.routed_owners)}"
       conflict.tickets_by_owner.sort_by { |owner_id, tickets| [owner_id == conflict.routed_owner ? 0 : 1, -tickets.size] }
         .each do |owner_id, tickets|
-        owner = user(owner_id)
         if owner_id == conflict.routed_owner
-          say "    #{describe(owner)}: #{count(tickets)} (routed owner)"
+          say "    #{describe_user_id(owner_id)}: #{count(tickets)} (routed owner)"
           next
         end
 
-        say "    #{describe(owner)}: #{count(tickets)} | ticket ids #{Ops::OwnerHandover.ticket_ids(tickets.map { |id, _state_id, created_at| [id, created_at] }, all: @all_ids)}"
-        if conflict.routed_owner.nil?
-          next
-        elsif !owner&.permissions?('ticket.agent')
-          say '      !! not an agent anymore, the handover refuses them, move these tickets by hand'
-        else
-          commands[[owner, user(conflict.routed_owner)]] << group_label(conflict.group)
-        end
+        say "    #{describe_user_id(owner_id)}: #{count(tickets)} | ticket ids #{ticket_ids(tickets)}"
+        next unless conflict.routed_owner
+
+        add_tickets_command(commands, user(owner_id), user(conflict.routed_owner), label, indent: '      ')
       end
     end
 
-    say ''
-    say "Commands (#{commands.size}), add APPLY=1 to apply:"
-    commands.each do |(old_owner, new_owner), group_labels|
-      say "  #{Ops::OwnerHandover.tickets_command(old_owner, new_owner, group_labels, @test_customer_logins)}"
-    end
-
+    say_tickets_commands('Commands', commands)
     found
   end
 
   private
 
-  # tickets with an owner and a group, without the test tickets
+  # tickets with an owner and a group, the test tickets too
   def owned_tickets
-    scope = Ticket.where.not(owner_id: NO_OWNER_ID).where.not(group_id: nil)
-    scope = scope.where.not(customer_id: @test_customer_ids) if @test_customer_ids.any?
-    scope
+    Ticket.where.not(owner_id: NO_OWNER_ID).where.not(group_id: nil)
   end
 
-  def test_tickets
-    return Ticket.none if @test_customer_ids.empty?
-
-    Ticket.where.not(owner_id: NO_OWNER_ID).where.not(group_id: nil).where(customer_id: @test_customer_ids)
-  end
-
-  def describe_routing(conflict)
-    case conflict.routed_owners.size
-    when 0
-      '!! no active trigger routes this group, pick the new owner by hand'
-    when 1
-      owner_id, trigger_ids = conflict.routed_owners.first
-      "routed to #{describe(user(owner_id))} by trigger #{trigger_ids.map { |id| "##{id}" }.join(', ')}"
-    else
-      routes = conflict.routed_owners.map { |owner_id, trigger_ids| "#{describe(user(owner_id))} by #{trigger_ids.map { |id| "##{id}" }.join(', ')}" }
-      "!! active triggers route it to several owners, fix the triggers first: #{routes.join('; ')}"
-    end
-  end
-
+  # tickets: [[state id, ticket id, created_at]]
   def count(tickets)
-    "#{tickets.size} (#{tickets.count { |_id, state_id, _created_at| open_state_ids.include?(state_id) }} open)"
+    "#{tickets.size} (#{tickets.count { |state_id, _id, _created_at| open_state_ids.include?(state_id) }} open)"
   end
 
   def open_state_ids
     @open_state_ids ||= Ticket::State.by_category(:open).pluck(:id)
-  end
-
-  def user(id)
-    @users ||= {}
-    @users.fetch(id) { @users[id] = User.find_by(id:) }
-  end
-
-  def describe(user)
-    return 'unknown user' unless user
-
-    "#{[user.firstname, user.lastname].compact_blank.join(' ')} <#{user.email}> (##{user.id})"
-  end
-
-  def group_label(group)
-    group.name.split('::').join(GROUP_SEPARATOR)
-  end
-
-  def say(line)
-    @out.puts(line)
   end
 end
