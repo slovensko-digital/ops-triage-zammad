@@ -218,23 +218,6 @@ class Ops::OwnerHandover
     perform.merge('ticket.owner_id' => owner)
   end
 
-  def trigger_municipalities(trigger)
-    conditions_of(trigger.condition)
-      .select { |name, spec| name == 'ticket.address_municipality' && spec['operator'] == 'is' }
-      .flat_map { |_name, spec| Array(spec['value']) }
-      .uniq
-  end
-
-  # [name, spec] of every condition, flat as the portal creates it ({ name => spec }) or nested as the admin UI saves it
-  # in expert mode ({ 'operator' => 'OR', 'conditions' => [{ 'name' => name, ... }] })
-  def conditions_of(condition)
-    return [] unless condition.is_a?(Hash)
-    return Array(condition['conditions']).flat_map { |child| conditions_of(child) } if condition.key?('conditions')
-    return [[condition['name'], condition]] if condition.key?('name')
-
-    condition.map { |name, spec| [name, spec] }
-  end
-
   def other_triggers_mentioning_old_owner(owner_triggers)
     old_id = old_owner.id.to_s
     (Trigger.all - owner_triggers).select do |trigger|

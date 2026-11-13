@@ -1,5 +1,6 @@
-# See Ops::OwnerHandover and Ops::OwnerConflicts.
+# See Ops::OwnerHandover, Ops::OwnerConflicts and Ops::GroupRoutingCheck.
 #
+#   rake ops:owner_handover:routing_check
 #   rake ops:owner_handover:conflicts
 #   rake 'ops:owner_handover:report[old@example.org]'
 #   rake 'ops:owner_handover:triggers[old@example.org,new@example.org]' GROUPS='Pezinok;Bratislava / Devín' APPLY=1
@@ -30,6 +31,11 @@ namespace :ops do
     desc 'List the groups with tickets not owned by the agent the group is routed to, with the commands fixing them'
     task conflicts: :environment do
       Ops::OwnerConflicts.new(**options.call).report
+    end
+
+    desc "Check that the tickets of each group have the municipality and responsible subject of the group's 700 trigger"
+    task routing_check: :environment do
+      Ops::GroupRoutingCheck.new(**options.call).report
     end
 
     desc 'Move the tickets of the old agent to the new one, closed ones too, silently'
