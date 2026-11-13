@@ -1,13 +1,8 @@
 # See Ops::OwnerHandover, Ops::OwnerConflicts and Ops::GroupRoutingCheck.
 #
-#   rake ops:owner_handover:routing_check
-#   rake ops:owner_handover:conflicts
-#   rake 'ops:owner_handover:report[old@example.org]'
-#   rake 'ops:owner_handover:triggers[old@example.org,new@example.org]' GROUPS='Pezinok;Bratislava / Devín' APPLY=1
-#   rake 'ops:owner_handover:tickets[old@example.org,new@example.org]' GROUPS='Pezinok;Bratislava / Devín' APPLY=1
-#
-# Without APPLY=1 a dry run. ALL_IDS=1 lists every ticket id, not only the 10 newest. TEST_LOGINS='ops-user-63745;...'
-# sets the test customers, whose tickets are never moved.
+# GROUPS='Pezinok;Bratislava / Devín' limits triggers and tickets to some groups. Without APPLY=1 a dry run.
+# ALL_IDS=1 lists every ticket id, not only the 10 newest. TEST_LOGINS='ops-user-63745;...' sets the test customers,
+# whose tickets are never moved.
 namespace :ops do
   namespace :owner_handover do
     list = ->(name) { ENV[name].presence&.split(';')&.map(&:strip) }
