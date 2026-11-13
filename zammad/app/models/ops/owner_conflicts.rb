@@ -13,7 +13,8 @@
 # Every other owner gets a command moving their tickets in the group to the current owner, one command per old and
 # new owner with all their groups in GROUPS. No command is printed (!!) for a group no active trigger routes, a group
 # active triggers route to several owners, or an old owner who is not an agent anymore (the handover refuses them).
-# Tickets without an owner are left out. Ticket ids are shortened unless all_ids: true, see Ops::OwnerHandover.ticket_ids.
+# Tickets without an owner and test tickets (the tickets of the customers with test_customer_logins:, by default
+# Ops::OwnerHandover::DEFAULT_TEST_CUSTOMER_LOGINS) are left out, the report says how many test tickets it omitted. Ticket ids are shortened unless all_ids: true, see Ops::OwnerHandover.ticket_ids.
 class Ops::OwnerConflicts
   GROUP_SEPARATOR = Ops::OwnerHandover::GROUP_SEPARATOR
   NO_OWNER_ID = 1
@@ -28,14 +29,16 @@ class Ops::OwnerConflicts
     end
   end
 
-  def initialize(out: $stdout, all_ids: false)
+  def initialize(out: $stdout, all_ids: false, test_customer_logins: Ops::OwnerHandover::DEFAULT_TEST_CUSTOMER_LOGINS)
     @out = out
     @all_ids = all_ids
+    @test_customer_logins = Array(test_customer_logins)
+    @test_customer_ids, @unknown_test_logins = Ops::OwnerHandover.test_customers(@test_customer_logins)
   end
 
   def conflicts
-    rows = Ticket.where.not(owner_id: NO_OWNER_ID).where.not(group_id: nil).pluck(:group_id, :owner_id, :id, :state_id, :created_at)
-    routes = routed_owners_by_group
+    rows = owned_tickets.pluck(:group_id, :owner_id, :id, :state_id, :created_at)
+    routes = Ops::OwnerHandover.routed_owners_by_group
 
     rows.group_by(&:first).filter_map do |group_id, group_rows|
       by_owner = group_rows.group_by { |row| row[1] }.transform_values { |owner_rows| owner_rows.map { |row| row.values_at(2, 3, 4) } }
@@ -51,6 +54,7 @@ class Ops::OwnerConflicts
     found = conflicts
     commands = Hash.new { |hash, key| hash[key] = [] }
 
+    Ops::OwnerHandover.test_tickets_note(test_tickets.count, @test_customer_logins, @unknown_test_logins).each { |line| say line }
     say "Groups with tickets not owned by the routed owner (#{found.size}):"
     found.each do |conflict|
       say ''
@@ -77,7 +81,7 @@ class Ops::OwnerConflicts
     say ''
     say "Commands (#{commands.size}), add APPLY=1 to apply:"
     commands.each do |(old_owner, new_owner), group_labels|
-      say "  rake 'ops:owner_handover:tickets[#{old_owner.email},#{new_owner.email}]' GROUPS='#{group_labels.join(';')}'"
+      say "  #{Ops::OwnerHandover.tickets_command(old_owner, new_owner, group_labels, @test_customer_logins)}"
     end
 
     found
@@ -85,15 +89,17 @@ class Ops::OwnerConflicts
 
   private
 
-  # group id => { owner id => [trigger ids] } of the active triggers setting both the group and the owner
-  def routed_owners_by_group
-    Trigger.where(active: true).order(:id).each_with_object({}) do |trigger, routes|
-      group_id = trigger.perform&.dig('ticket.group_id', 'value').presence&.to_i
-      owner_id = trigger.perform&.dig('ticket.owner_id', 'value').presence&.to_i
-      next unless group_id && owner_id
+  # tickets with an owner and a group, without the test tickets
+  def owned_tickets
+    scope = Ticket.where.not(owner_id: NO_OWNER_ID).where.not(group_id: nil)
+    scope = scope.where.not(customer_id: @test_customer_ids) if @test_customer_ids.any?
+    scope
+  end
 
-      ((routes[group_id] ||= {})[owner_id] ||= []) << trigger.id
-    end
+  def test_tickets
+    return Ticket.none if @test_customer_ids.empty?
+
+    Ticket.where.not(owner_id: NO_OWNER_ID).where.not(group_id: nil).where(customer_id: @test_customer_ids)
   end
 
   def describe_routing(conflict)

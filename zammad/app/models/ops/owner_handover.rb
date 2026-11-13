@@ -4,7 +4,9 @@
 # <municipality> <agent name>", created by the portal's responsible_subjects:activate_basic). The handover works by
 # group: a trigger moves as a whole, never split, and the tickets move with the group they are in.
 #
-#   1. report             lists the triggers routing to the old owner and the tickets they own, by group,
+#   1. report             lists the triggers routing to the old owner and the tickets they own, by group, with the
+#                         reassign_tickets! commands moving each group's tickets to the owner its active trigger
+#                         routes the group to now (the same as Ops::OwnerConflicts),
 #   2. reassign_triggers! points the triggers to the new owner, so no new tickets reach the old owner,
 #   3. reassign_tickets!  moves the old owner's tickets to the new owner, closed ones too: a closed ticket can be
 #                         reopened and the new owner is then in charge of it.
@@ -12,6 +14,9 @@
 # A group's tickets cannot be moved while an active trigger still routes tickets to the group and the old owner.
 # The new owner gets full access to the groups, the same access the portal gives the agent when it activates a
 # municipality. Tickets move silently: no notifications to the new owner, no triggers.
+#
+# Test tickets, the tickets of the customers with test_customer_logins: (by default DEFAULT_TEST_CUSTOMER_LOGINS, the
+# portal's anonymous user), are never moved: the report and reassign_tickets! say how many were omitted and list them.
 #
 # Both reassign methods only print the plan unless called with dry_run: false. Pass groups: to split the old owner's
 # groups between several new owners, without it all of them go to the one new owner. A group is named with its
@@ -29,6 +34,9 @@
 class Ops::OwnerHandover
   GROUP_SEPARATOR = ' / '.freeze
   TICKET_IDS_SHOWN = 10
+  # the portal creates the Triage customer of portal user <id> with login "ops-user-<id>" (ZammadApiClient#create_customer!);
+  # portal user 63745 is the anonymous user all test tickets were created with
+  DEFAULT_TEST_CUSTOMER_LOGINS = %w[ops-user-63745].freeze
 
   attr_reader :old_owner
 
@@ -40,10 +48,44 @@ class Ops::OwnerHandover
     "#{ids.first(TICKET_IDS_SHOWN).join(', ')}, ... (#{ids.size - TICKET_IDS_SHOWN} more)"
   end
 
-  def initialize(old_owner_email, out: $stdout, all_ids: false)
+  # [user ids, logins with no user] of the test tickets' customers
+  def self.test_customers(logins)
+    logins = Array(logins).map { |login| login.to_s.strip.downcase }.compact_blank.uniq
+    found = User.where(login: logins).pluck(:login, :id).to_h
+    [found.values, logins - found.keys]
+  end
+
+  # "Test tickets omitted: 3 (customers ops-user-63745)", and a warning for each login with no user
+  def self.test_tickets_note(count, logins, unknown_logins)
+    lines = ["Test tickets omitted: #{count} (customers #{logins.presence&.join(', ') || 'none'})"]
+    lines + unknown_logins.map { |login| "  !! no user with login #{login.inspect}, nothing omitted for it" }
+  end
+
+  # group id => { owner id => [trigger ids] } of the active triggers setting both the group and the owner
+  def self.routed_owners_by_group
+    Trigger.where(active: true).order(:id).each_with_object({}) do |trigger, routes|
+      group_id = trigger.perform&.dig('ticket.group_id', 'value').presence&.to_i
+      owner_id = trigger.perform&.dig('ticket.owner_id', 'value').presence&.to_i
+      next unless group_id && owner_id
+
+      ((routes[group_id] ||= {})[owner_id] ||= []) << trigger.id
+    end
+  end
+
+  # with TEST_LOGINS when the test customers are not the default ones, so the command omits the same test tickets
+  def self.tickets_command(old_owner, new_owner, group_labels, test_customer_logins)
+    command = "rake 'ops:owner_handover:tickets[#{old_owner.email},#{new_owner.email}]' GROUPS='#{group_labels.join(';')}'"
+    return command if Array(test_customer_logins).sort == DEFAULT_TEST_CUSTOMER_LOGINS.sort
+
+    "#{command} TEST_LOGINS='#{Array(test_customer_logins).join(';')}'"
+  end
+
+  def initialize(old_owner_email, out: $stdout, all_ids: false, test_customer_logins: DEFAULT_TEST_CUSTOMER_LOGINS)
     @old_owner = find_agent!(old_owner_email)
     @out = out
     @all_ids = all_ids
+    @test_customer_logins = Array(test_customer_logins)
+    @test_customer_ids, @unknown_test_logins = self.class.test_customers(@test_customer_logins)
   end
 
   # triggers setting the old owner as the ticket owner, the 700 routing triggers and any other
@@ -55,15 +97,25 @@ class Ops::OwnerHandover
     selected.select { |trigger| ids.include?(trigger_group_id(trigger)) }
   end
 
+  # the old owner's tickets without the test tickets
   def tickets(groups: nil)
-    scope = Ticket.where(owner_id: old_owner.id)
-    scope = scope.where(group_id: find_groups!(groups).map(&:id)) if groups
+    scope = owned_tickets(groups:)
+    scope = scope.where.not(customer_id: @test_customer_ids) if @test_customer_ids.any?
     scope.order(:id)
+  end
+
+  # the old owner's test tickets, never moved
+  def test_tickets(groups: nil)
+    return Ticket.none if @test_customer_ids.empty?
+
+    owned_tickets(groups:).where(customer_id: @test_customer_ids).order(:id)
   end
 
   def report
     all_triggers = triggers
+    test_rows = test_tickets.pluck(:group_id, :id, :created_at)
     say "Old owner: #{describe(old_owner)}"
+    say_test_tickets_note(test_rows.size)
     say ''
 
     say "Triggers setting the old owner as the ticket owner (#{all_triggers.size}):"
@@ -80,17 +132,49 @@ class Ops::OwnerHandover
 
     say ''
     rows = tickets.pluck(:group_id, :ops_state, :id, :created_at)
-    say "Tickets owned by the old owner (#{rows.size}), by group and ops_state:"
-    routed = routed_group_ids(all_triggers)
+    say "Tickets owned by the old owner (#{rows.size}, #{test_rows.size} test tickets omitted), by group and ops_state, with the owner the group is routed to now:"
+    routes = self.class.routed_owners_by_group
+    commands = Hash.new { |hash, key| hash[key] = [] }
+    still_routed = []
     rows.group_by(&:first).sort_by { |group_id, _rows| group_name(group_id) }.each do |group_id, group_rows|
-      note = routed.include?(group_id) ? ' (still routed to the old owner)' : ''
-      say "  #{group_name(group_id)}: #{group_rows.size}#{note}"
+      label = group_name(group_id)
+      routed = routes.fetch(group_id, {})
+      say "  #{label}: #{group_rows.size} | #{describe_routing(routed)}"
       group_rows.group_by { |_g, state, _id, _created_at| state.presence || '(empty)' }.sort.each do |state, state_rows|
         say "    #{state}: #{state_rows.size} | ticket ids #{ticket_ids(state_rows.map { |row| row.last(2) })}"
       end
+
+      next unless routed.size == 1
+
+      new_owner = User.find_by(id: routed.keys.first)
+      if new_owner == old_owner
+        still_routed << label
+      elsif new_owner&.permissions?('ticket.agent')
+        commands[new_owner] << label
+      else
+        say '    !! the routed owner is not an agent, the handover refuses them, fix the trigger first'
+      end
     end
 
-    { triggers: all_triggers, tickets: rows }
+    if test_rows.any?
+      say ''
+      say "Test tickets owned by the old owner, omitted, never moved (#{test_rows.size}):"
+      test_rows.group_by(&:first).sort_by { |group_id, _rows| group_name(group_id) }.each do |group_id, group_rows|
+        say "  #{group_name(group_id)}: #{group_rows.size} | ticket ids #{ticket_ids(group_rows.map { |row| row.last(2) })}"
+      end
+    end
+
+    if still_routed.any?
+      say ''
+      say 'Groups still routed to the old owner, hand over their triggers first (pick NEW_EMAIL), then run the report again:'
+      say "  rake 'ops:owner_handover:triggers[#{old_owner.email},NEW_EMAIL]' GROUPS='#{still_routed.join(';')}'"
+    end
+
+    say ''
+    say "Commands moving the tickets to the routed owner (#{commands.size}), add APPLY=1 to apply:"
+    commands.each { |new_owner, labels| say "  #{self.class.tickets_command(old_owner, new_owner, labels, @test_customer_logins)}" }
+
+    { triggers: all_triggers, tickets: rows, test_tickets: test_rows }
   end
 
   def reassign_triggers!(to:, groups: nil, dry_run: true)
@@ -128,6 +212,9 @@ class Ops::OwnerHandover
       say "  group #{group_name(group_id)}: #{group_tickets.size} | ticket ids #{ticket_ids(group_tickets.map { |t| [t.id, t.created_at] })}"
       grant_group_access(new_owner, group_id, dry_run:)
     end
+    test_rows = test_tickets(groups:).pluck(:id, :created_at)
+    say_test_tickets_note(test_rows.size)
+    say "  staying with the old owner | ticket ids #{ticket_ids(test_rows)}" if test_rows.any?
     if dry_run
       say 'Nothing changed, run again with dry_run: false to apply.' if selected.any?
       return selected
@@ -138,7 +225,8 @@ class Ops::OwnerHandover
     Transaction.execute(disable_notification: true, disable: %w[Transaction::Notification Transaction::Trigger]) do
       selected.each { |ticket| ticket.update!(owner_id: new_owner.id) }
     end
-    say "Moved #{selected.size} tickets, #{tickets.count} left with #{describe(old_owner)}."
+    say "Moved #{selected.size} tickets, #{tickets.count} left with #{describe(old_owner)} " \
+        "(and #{test_tickets.count} test tickets)."
     selected
   end
 
@@ -146,6 +234,37 @@ class Ops::OwnerHandover
 
   def ticket_ids(rows)
     self.class.ticket_ids(rows, all: @all_ids)
+  end
+
+  def say_test_tickets_note(count)
+    self.class.test_tickets_note(count, @test_customer_logins, @unknown_test_logins).each { |line| say line }
+  end
+
+  def owned_tickets(groups: nil)
+    scope = Ticket.where(owner_id: old_owner.id)
+    scope = scope.where(group_id: find_groups!(groups).map(&:id)) if groups
+    scope
+  end
+
+  # routed: owner id => [trigger ids], see routed_owners_by_group
+  def describe_routing(routed)
+    by = ->(trigger_ids) { trigger_ids.map { |id| "##{id}" }.join(', ') }
+    case routed.size
+    when 0
+      '!! no active trigger routes this group, pick the new owner by hand'
+    when 1
+      owner_id, trigger_ids = routed.first
+      return "still routed to the old owner by trigger #{by.call(trigger_ids)}" if owner_id == old_owner.id
+
+      owner = User.find_by(id: owner_id)
+      "routed to #{owner ? describe(owner) : "unknown user ##{owner_id}"} by trigger #{by.call(trigger_ids)}"
+    else
+      routes = routed.map do |owner_id, trigger_ids|
+        owner = User.find_by(id: owner_id)
+        "#{owner ? describe(owner) : "unknown user ##{owner_id}"} by #{by.call(trigger_ids)}"
+      end
+      "!! active triggers route it to several owners, fix the triggers first: #{routes.join('; ')}"
+    end
   end
 
   def find_agent!(email)
