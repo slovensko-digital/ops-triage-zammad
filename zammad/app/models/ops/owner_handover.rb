@@ -6,7 +6,8 @@
 #
 #   1. report             lists the triggers routing to the old owner and the tickets they own, by group,
 #   2. reassign_triggers! points the triggers to the new owner, so no new tickets reach the old owner,
-#   3. reassign_tickets!  moves the old owner's tickets to the new owner.
+#   3. reassign_tickets!  moves the old owner's tickets to the new owner, closed ones too: a closed ticket can be
+#                         reopened and the new owner is then in charge of it.
 #
 # A group's tickets cannot be moved while an active trigger still routes tickets to the group and the old owner.
 # The new owner gets full access to the groups, the same access the portal gives the agent when it activates a

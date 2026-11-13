@@ -23,7 +23,7 @@ namespace :ops do
         .reassign_triggers!(to: args.fetch(:new_email), groups: groups.call, dry_run: dry_run.call)
     end
 
-    desc 'Move the tickets of the old agent to the new one, silently'
+    desc 'Move the tickets of the old agent to the new one, closed ones too, silently'
     task :tickets, %i[old_email new_email] => :environment do |_task, args|
       Ops::OwnerHandover.new(args.fetch(:old_email))
         .reassign_tickets!(to: args.fetch(:new_email), groups: groups.call, dry_run: dry_run.call)
