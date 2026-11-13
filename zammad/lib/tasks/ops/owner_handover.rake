@@ -46,5 +46,12 @@ namespace :ops do
     task :tickets, %i[old_email new_email] => :environment do |_task, args|
       handover.call(args).reassign_tickets!(**reassign_options.call(args))
     end
+
+    # rake 'ops:owner_handover:reindex[new@example.org]' GROUPS='Pezinok;Bratislava / Devín'
+    # after a tickets task stopped while reindexing; GROUPS limits it to some groups
+    desc "Reindex the agent's tickets in the search index"
+    task :reindex, [:email] => :environment do |_task, args|
+      Ops::OwnerHandover.new(args.fetch(:email), **options.call).reindex_tickets!(groups: list.call('GROUPS'))
+    end
   end
 end
