@@ -4,8 +4,9 @@
 #   1. report             the old owner's triggers and tickets by group, with commands moving them to the routed owner
 #   2. reassign_triggers! points the triggers to the new owner, who gets full access to the groups
 #   3. reassign_tickets!  moves the tickets, closed ones too (they can be reopened), without notifications or triggers,
-#                         one transaction per group in the order listed;
+#                         one transaction per group in the order listed, then reindexes the group's tickets itself;
 #                         refused while an active trigger still routes the group to the old owner
+#   4. reindex_tickets!   reindexes the agent's tickets, after a reassign_tickets! stopped while reindexing
 #
 # Test tickets (customers in test_customer_logins:) are never moved. The reassign methods are dry runs unless
 # dry_run: false; groups: limits them to some groups, named as the report shows them ("Bratislava / Devín").
@@ -14,6 +15,7 @@
 #   h.report
 #   h.reassign_triggers!(to: 'new@example.org', groups: ['Pezinok'], dry_run: false)
 #   h.reassign_tickets!(to: 'new@example.org', groups: ['Pezinok'], dry_run: false)
+#   Ops::OwnerHandover.new('new@example.org').reindex_tickets!(groups: ['Pezinok'])
 class Ops::OwnerHandover
   include Ops::OwnerHandoverSupport
 
@@ -156,6 +158,7 @@ class Ops::OwnerHandover
       move_tickets(group_tickets, new_owner)
       moved += group_tickets.size
       say "  Committed, #{delimited(moved)} / #{delimited(selected.size)} tickets moved"
+      reindex(group_tickets.map(&:id), owner: new_owner)
     end
     say ''
     say "Moved #{selected.size} tickets, #{tickets.count} left with #{describe(old_owner)} " \
@@ -163,19 +166,57 @@ class Ops::OwnerHandover
     selected
   end
 
+  # the tickets of the agent this handover was created with, test tickets too, for the new owner after a
+  # reassign_tickets! stopped while reindexing; safe to run again
+  def reindex_tickets!(groups: nil)
+    rows = owned_tickets(groups:).order(:id).pluck(:id, :group_id)
+    warn_about_groups(groups, rows.map(&:last), 'tickets')
+    say "Reindexing #{delimited(rows.size)} tickets of #{describe(old_owner)}"
+    reindex(rows.map(&:first))
+  end
+
   private
 
-  # one transaction, so a failure rolls back only these tickets and the groups moved before stay moved;
-  # without Transaction.execute the changes stay in the EventBuffer and a later Transaction.execute in the same
-  # console session would dispatch them, notifying the new owner after all
+  # one transaction, so a failure rolls back only these tickets and the groups moved before stay moved.
+  # TransactionDispatcher.reset drops the ticket changes from the EventBuffer: no trigger runs and no TransactionJob
+  # is queued per ticket (left there, a later Transaction.execute in the same console session would dispatch them,
+  # notifying the new owner after all). No search index job is queued either, reindex does it right after the commit.
   def move_tickets(tickets, new_owner)
-    Transaction.execute(disable_notification: true, disable: %w[Transaction::Notification Transaction::Trigger]) do
-      tickets.each.with_index(1) do |ticket, done|
-        ticket.update!(owner_id: new_owner.id)
-        say_progress(done, tickets.size)
+    Ops::TicketExtensions.without_search_index_update do
+      Transaction.execute(disable_notification: true, disable: %w[Transaction::Notification Transaction::Trigger]) do
+        tickets.each.with_index(1) do |ticket, done|
+          ticket.update!(owner_id: new_owner.id)
+          say_progress(done, tickets.size)
+        end
+        TransactionDispatcher.reset
+        say '  Finishing the transaction...'
       end
-      say '  Finishing the transaction...'
     end
+  end
+
+  # what SearchIndexJob does for each ticket, in this process instead of 2 queued jobs per ticket; a failed ticket
+  # is reported and skipped, reindex_tickets! retries
+  def reindex(ids, owner: old_owner)
+    unless SearchIndexBackend.enabled?
+      say '  Search index off, nothing to reindex'
+      return
+    end
+
+    say "  Reindexing #{delimited(ids.size)} tickets..."
+    failed = []
+    Ticket.where(id: ids).find_each.with_index(1) do |ticket, done|
+      begin
+        ticket.search_index_update_backend
+      rescue => e
+        failed << ticket.id
+        say "  !! ticket #{ticket.id} not reindexed: #{e.class} #{e.message.truncate(200)}"
+      end
+      say_progress(done, ids.size)
+    end
+    return say('  Reindexed') if failed.empty?
+
+    say "  !! #{delimited(failed.size)} tickets not reindexed, ids #{failed.join(', ')}; retry with " \
+        "rake 'ops:owner_handover:reindex[#{owner.email}]'"
   end
 
   def say_plan(what, new_owner, count, dry_run:)
