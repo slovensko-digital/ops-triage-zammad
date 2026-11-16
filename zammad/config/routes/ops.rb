@@ -1,7 +1,7 @@
 # Ops admin pages, rendered by Rails next to the Zammad app, for admins logged in to Triage.
 #
 #   GET  /ops/owner_handovers                  owner_handovers#index, ?owner_id= of the owner leaving redirects to show
-#   GET  /ops/owner_handovers/conflicts        owner_handovers#conflicts
+#   GET  /ops/owner_handovers/mismatches       owner_handovers#mismatches
 #   GET  /ops/owner_handovers/:id              owner_handovers#show, the handover of the owner (user id) leaving
 #   POST /ops/owner_handovers/:id/preview      owner_handovers#preview
 #   GET  /ops/owner_handovers/runs             owner_handover_runs#index
@@ -15,7 +15,7 @@ Zammad::Application.routes.draw do
       get :statuses, on: :collection
     end
     resources :owner_handovers, only: %i[index show] do
-      get :conflicts, on: :collection
+      get :mismatches, on: :collection
       post :preview, on: :member
     end
   end

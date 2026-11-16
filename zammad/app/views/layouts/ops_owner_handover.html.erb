@@ -2,7 +2,7 @@
 <% content_for :tabs do %>
   <nav class="tabs">
     <% { hand_over: ['Hand over an owner', ops_owner_handovers_path],
-         conflicts: ['Conflicts', conflicts_ops_owner_handovers_path],
+         mismatches: ['Owner mismatches', mismatches_ops_owner_handovers_path],
          runs: ['Jobs', ops_owner_handover_runs_path] }.each do |name, (title, path)| %>
       <%= link_to title, path, class: ('active' if tab == name) %>
     <% end %>

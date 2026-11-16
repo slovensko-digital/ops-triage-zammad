@@ -1,4 +1,4 @@
-# The owner handover for admins, in tabs: an agent's report, the conflicts and the runs (Ops::OwnerHandoverRunsController).
+# The owner handover for admins, in tabs: an agent's report, the mismatches and the runs (Ops::OwnerHandoverRunsController).
 # Dry runs right away and the steps applied by Ops::OwnerHandoverJob right away. The same classes as the
 # ops:owner_handover rake tasks, with their default test customers.
 #
@@ -16,8 +16,8 @@ class Ops::OwnerHandoversController < Ops::BaseController
     redirect_to ops_owner_handover_path(params[:owner_id]) if params[:owner_id].present?
   end
 
-  def conflicts
-    @conflicts = Ops::OwnerConflicts.new(out: StringIO.new).conflicts
+  def mismatches
+    @mismatches = Ops::OwnerMismatches.new(out: StringIO.new).mismatches
     @open_state_ids = Ticket::State.by_category(:open).pluck(:id)
   end
 
@@ -54,7 +54,7 @@ class Ops::OwnerHandoversController < Ops::BaseController
   private
 
   def tab
-    action_name == 'conflicts' ? :conflicts : :hand_over
+    action_name == 'mismatches' ? :mismatches : :hand_over
   end
 
   # the owner leaving, by user id

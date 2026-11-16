@@ -1,30 +1,30 @@
-<% content_for :title, 'Conflicts' %>
-<p>Groups with tickets not owned by their owner by trigger: <%= @conflicts.size %></p>
+<% content_for :title, 'Owner mismatches' %>
+<p>Groups with tickets not owned by their owner by trigger: <%= @mismatches.size %></p>
 <p class="muted">"Preview move" is a dry run, nothing changes before you apply it.</p>
-<% if @conflicts.empty? %>
-  <p>No conflicts.</p>
+<% if @mismatches.empty? %>
+  <p>No mismatches.</p>
 <% else %>
   <table>
     <tr>
       <th>Group</th><th>Owner by trigger</th><th>Other owner</th>
       <th>Tickets (open)</th><th></th>
     </tr>
-    <% @conflicts.sort_by { |conflict| conflict.group.name }.each do |conflict| %>
-      <% routed = conflict.routed_owner && User.find_by(id: conflict.routed_owner) %>
-      <% label = conflict.group.name.split('::').join(' / ') %>
-      <% strays = conflict.stray_owners.sort_by { |owner_id| -conflict.tickets_by_owner[owner_id].size } %>
-      <% strays.each_with_index do |owner_id, index| %>
+    <% @mismatches.sort_by { |mismatch| mismatch.group.name }.each do |mismatch| %>
+      <% routed = mismatch.routed_owner && User.find_by(id: mismatch.routed_owner) %>
+      <% label = mismatch.group.name.split('::').join(' / ') %>
+      <% mismatched = mismatch.mismatched_owners.sort_by { |owner_id| -mismatch.tickets_by_owner[owner_id].size } %>
+      <% mismatched.each_with_index do |owner_id, index| %>
         <% owner = User.find_by(id: owner_id) %>
-        <% tickets = conflict.tickets_by_owner[owner_id] %>
+        <% tickets = mismatch.tickets_by_owner[owner_id] %>
         <tr>
           <% if index.zero? %>
-            <td rowspan="<%= strays.size %>"><%= label %></td>
-            <td rowspan="<%= strays.size %>">
+            <td rowspan="<%= mismatched.size %>"><%= label %></td>
+            <td rowspan="<%= mismatched.size %>">
               <% if routed %>
                 <%= describe_user(routed) %>
-                <% if conflict.tickets_by_owner[routed.id] %><br><span class="muted">owns <%= conflict.tickets_by_owner[routed.id].size %> here</span><% end %>
+                <% if mismatch.tickets_by_owner[routed.id] %><br><span class="muted">owns <%= mismatch.tickets_by_owner[routed.id].size %> here</span><% end %>
               <% else %>
-                <span class="warn"><%= routing_text(conflict.routed_owners) %></span>
+                <span class="warn"><%= routing_text(mismatch.routed_owners) %></span>
               <% end %>
             </td>
           <% end %>

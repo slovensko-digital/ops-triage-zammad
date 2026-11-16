@@ -1,4 +1,4 @@
-# See Ops::OwnerHandover, Ops::OwnerConflicts and Ops::GroupRoutingCheck.
+# See Ops::OwnerHandover, Ops::OwnerMismatches and Ops::GroupRoutingCheck.
 #
 # Every task takes ALL_IDS=1 to list every ticket id, not only the 10 newest, and TEST_LOGINS='ops-user-63745;...' to set
 # the test customers, whose tickets are left out and never moved.
@@ -31,8 +31,8 @@ namespace :ops do
     end
 
     desc 'List the groups with tickets not owned by the agent the group is routed to, with the commands fixing them'
-    task conflicts: :environment do
-      Ops::OwnerConflicts.new(**options.call).report
+    task mismatches: :environment do
+      Ops::OwnerMismatches.new(**options.call).report
     end
 
     desc "Check that the tickets of each group have the municipality and responsible subject of the group's 700 trigger"
