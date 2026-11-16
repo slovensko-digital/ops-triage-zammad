@@ -10,7 +10,7 @@ sk:
         language: Jazyk
       tabs:
         hand_over: Odovzdať vlastníka
-        conflicts: Konflikty
+        conflicts: Nezrovnalosti
         runs: Zmeny
       columns:
         group: Skupina
@@ -132,9 +132,9 @@ sk:
         output: Výstup
         nothing_yet: (zatiaľ nič)
       conflicts:
-        title: Konflikty
+        title: Nezrovnalosti
         count: "Skupiny s tiketmi, ktoré nevlastní vlastník podľa spúšťača: %{count}"
         help: Bez tiketov bez vlastníka a testovacích tiketov. „Náhľad presunu“ nič nemení.
-        none: Žiadne konflikty.
+        none: Žiadne nezrovnalosti.
         owns_here: tu vlastní %{count}
         preview_move: Náhľad presunu vlastníkovi podľa spúšťača
