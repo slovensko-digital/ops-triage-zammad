@@ -2,7 +2,7 @@
 <h1>Dry run: <%= @run.step %></h1>
 <table>
   <tr><th>From</th><td><%= link_to @run.old_owner_email, ops_owner_handover_report_path(email: @run.old_owner_email) %></td></tr>
-  <% if @run.step != 'reindex' %><tr><th>To</th><td><%= @run.new_owner_email %></td></tr><% end %>
+  <tr><th>To</th><td><%= @run.new_owner_email %></td></tr>
   <tr><th>Groups</th><td><%= @run.groups.presence&.join(', ') || 'all' %></td></tr>
 </table>
 
@@ -21,9 +21,7 @@
       <%= hidden_field_tag :old_email, @run.old_owner_email %>
       <%= hidden_field_tag :new_email, @run.new_owner_email %>
       <% Array(@run.groups).each do |group| %><%= hidden_field_tag 'groups[]', group, id: nil %><% end %>
-      <label>Run at <input type="datetime-local" name="run_at"></label>
-      <span class="muted">empty: now; Bratislava time. Checked again when it runs, the result can differ from this dry run.</span>
-      <br><br>
+      <p class="muted">Runs right away, in the background. Checked again when it runs, the result can differ from this dry run.</p>
       <button type="submit" class="danger">Apply</button>
     <% end %>
   </fieldset>

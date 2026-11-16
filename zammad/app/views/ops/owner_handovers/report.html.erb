@@ -39,10 +39,8 @@
       <%= hidden_field_tag :old_email, @old_owner.email %>
       <label><%= radio_button_tag :step, 'triggers', true %> move triggers</label>
       <label><%= radio_button_tag :step, 'tickets' %> move tickets</label>
-      <label><%= radio_button_tag :step, 'reindex' %> reindex the agent's tickets</label>
       <br><br>
-      <label>New owner <%= render 'agent_field', name: 'new_email' %></label>
-      <span class="muted">(not needed to reindex)</span>
+      <label>New owner <%= render 'agent_field', name: 'new_email', required: true %></label>
       <br><br>
       <button type="submit">Preview (dry run)</button>
     <% end %>

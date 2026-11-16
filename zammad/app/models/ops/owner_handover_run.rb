@@ -1,35 +1,61 @@
-# One step of an owner handover queued from the admin page /ops/owner_handover, run by Ops::OwnerHandoverJob at
-# run_at with dry_run: false. The step's output goes to log line by line, so the page shows its progress.
+# One step of an owner handover queued from the admin page /ops/owner_handover, run right away by
+# Ops::OwnerHandoverJob with dry_run: false. The step's output goes to log line by line, so the page shows its progress.
 #
 #   triggers  Ops::OwnerHandover#reassign_triggers!
 #   tickets   Ops::OwnerHandover#reassign_tickets!
-#   reindex   Ops::OwnerHandover#reindex_tickets! (old_owner_email is the agent whose tickets are reindexed)
 class Ops::OwnerHandoverRun < ActiveRecord::Base
   self.table_name = 'ops_owner_handover_runs'
 
-  STEPS = %w[triggers tickets reindex].freeze
+  STEPS = %w[triggers tickets].freeze
   ACTIVE = %w[queued running].freeze
 
   validates :step, inclusion: { in: STEPS }
-  validates :old_owner_email, :run_at, :created_by_id, presence: true
-  validates :new_owner_email, presence: true, unless: -> { step == 'reindex' }
+  validates :old_owner_email, :new_owner_email, :created_by_id, presence: true
 
   scope :active, -> { where(status: ACTIVE) }
   scope :recent, -> { order(id: :desc) }
 
   belongs_to :created_by, class_name: 'User'
 
+  # the Postgres advisory lock held by the one runner, see with_runner_lock
+  RUNNER_LOCK_KEY = 7_316_001
+
+  # Yields while this process is the one runner, false without yielding when another runner holds the lock. A session
+  # advisory lock on the job's connection: Postgres drops it when the connection closes, so a worker killed mid-run
+  # (deploy, OOM) frees it, and a run still 'running' then is abandoned, see fail_abandoned!. Uncached: the query cache
+  # would answer a repeated lock or unlock SELECT without asking Postgres.
+  def self.with_runner_lock
+    with_connection do |connection|
+      lock = ->(function) { uncached { connection.select_value("SELECT #{function}(#{RUNNER_LOCK_KEY})") } }
+      return false unless lock.call('pg_try_advisory_lock')
+
+      begin
+        yield
+      ensure
+        lock.call('pg_advisory_unlock')
+      end
+      true
+    end
+  end
+
+  ABANDONED = 'The runner stopped mid-run (worker restarted or killed). Check the log, then queue the step again: ' \
+              'what was committed stays.'.freeze
+
+  # only while holding the runner lock: no runner is alive then, a 'running' run is left from a dead one
+  def self.fail_abandoned!
+    where(status: 'running').find_each do |run|
+      run.log_writer.puts("!! #{ABANDONED}")
+      run.finish!(error: ABANDONED)
+    end
+  end
+
   def active?
     ACTIVE.include?(status)
   end
 
-  # queued -> running, false when it was cancelled or started by another worker meanwhile
+  # queued -> running, false when another worker started it meanwhile
   def start!
     self.class.where(id:, status: 'queued').update_all(status: 'running', started_at: Time.zone.now, updated_at: Time.zone.now) == 1
-  end
-
-  def cancel!
-    self.class.where(id:, status: 'queued').update_all(status: 'cancelled', finished_at: Time.zone.now, updated_at: Time.zone.now) == 1
   end
 
   def finish!(error: nil)

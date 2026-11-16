@@ -6,5 +6,4 @@ Zammad::Application.routes.draw do
   post '/ops/owner_handover/preview', to: "#{handover}#preview", as: :ops_owner_handover_preview
   post '/ops/owner_handover/runs', to: "#{handover}#create_run", as: :ops_owner_handover_runs
   get '/ops/owner_handover/runs/:id', to: "#{handover}#show_run", as: :ops_owner_handover_run
-  post '/ops/owner_handover/runs/:id/cancel', to: "#{handover}#cancel_run", as: :ops_owner_handover_cancel_run
 end

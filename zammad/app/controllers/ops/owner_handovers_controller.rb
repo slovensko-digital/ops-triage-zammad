@@ -1,5 +1,5 @@
 # The owner handover for admins: the conflicts, an agent's report, dry runs right away and the steps applied by
-# Ops::OwnerHandoverJob, now or later. The same classes as the ops:owner_handover rake tasks, with their default test
+# Ops::OwnerHandoverJob right away. The same classes as the ops:owner_handover rake tasks, with their default test
 # customers.
 class Ops::OwnerHandoversController < ApplicationController
   prepend_before_action :authenticate_and_authorize!
@@ -42,20 +42,13 @@ class Ops::OwnerHandoversController < ApplicationController
 
   def create_run
     run = build_run
-    run.run_at = parse_run_at(params[:run_at]) || Time.zone.now
     run.save!
-    Ops::OwnerHandoverJob.set(wait_until: run.run_at).perform_later(run.id)
+    Ops::OwnerHandoverJob.perform_later(run.id)
     redirect_to ops_owner_handover_run_path(run)
   end
 
   def show_run
     @run = Ops::OwnerHandoverRun.find(params[:id])
-  end
-
-  def cancel_run
-    run = Ops::OwnerHandoverRun.find(params[:id])
-    flash[:alert] = "Run ##{run.id} is #{run.status}, it can't be cancelled anymore" unless run.cancel!
-    redirect_to ops_owner_handover_run_path(run)
   end
 
   private
@@ -68,9 +61,8 @@ class Ops::OwnerHandoversController < ApplicationController
     Ops::OwnerHandoverRun.new(
       step: params[:step],
       old_owner_email: params[:old_email].to_s.strip,
-      new_owner_email: params[:step] == 'reindex' ? nil : params[:new_email].to_s.strip.presence,
+      new_owner_email: params[:new_email].to_s.strip.presence,
       groups: Array(params[:groups]).compact_blank.presence,
-      run_at: Time.zone.now,
       created_by_id: current_user.id
     )
   end
@@ -80,19 +72,11 @@ class Ops::OwnerHandoversController < ApplicationController
     case run.step
     when 'triggers' then handover.reassign_triggers!(to: run.new_owner_email, groups: run.groups)
     when 'tickets' then handover.reassign_tickets!(to: run.new_owner_email, groups: run.groups)
-    when 'reindex' then out.puts("Reindexes #{handover.tickets(groups: run.groups).count + handover.test_tickets(groups: run.groups).count} tickets of #{describe_user(handover.old_owner)}, changes nothing else.")
     end
   end
 
   # the agents' time, not Zammad's timezone_default (UTC in a fresh install)
   ZONE = ActiveSupport::TimeZone['Europe/Bratislava']
-
-  # the datetime-local field
-  def parse_run_at(value)
-    return if value.blank?
-
-    ZONE.parse(value)
-  end
 
   def time_in_zone(time)
     time&.in_time_zone(ZONE)&.strftime('%Y-%m-%d %H:%M:%S')
