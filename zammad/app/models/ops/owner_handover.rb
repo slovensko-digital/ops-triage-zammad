@@ -107,14 +107,15 @@ class Ops::OwnerHandover
   end
 
   # what report says by group, for the admin page: routes are { owner id => trigger ids } of the active triggers of the
-  # group, routed_owner the agent they route it to when there is a single one, still_routed when that is the old owner. status is the handover step the group is at:
+  # group, routed_owner the agent they route it to when there is a single one other than the old owner. status is the
+  # handover step the group is at:
   #
   #   triggers   the old owner's trigger is still there, hand it over to the new owner first
   #   tickets    the trigger routes the group to someone else, the old owner's tickets go to them
   #   attention  tickets left but no single active trigger routes the group, fix the triggers in Zammad
   #   done       only test tickets left, they stay with the old owner
-  GroupOverview = Struct.new(:group_id, :label, :triggers, :tickets, :test_tickets, :routing, :routes, :routed_owner,
-                             :still_routed, keyword_init: true) do
+  GroupOverview = Struct.new(:group_id, :label, :triggers, :tickets, :test_tickets, :routes, :routed_owner,
+                             keyword_init: true) do
     def status
       if triggers.any? then :triggers
       elsif tickets.zero? then :done
@@ -139,10 +140,8 @@ class Ops::OwnerHandover
         triggers: triggers_by_group.fetch(group_id, []),
         tickets: ticket_counts.fetch(group_id, 0),
         test_tickets: test_counts.fetch(group_id, 0),
-        routing: describe_routing(routed, old_owner_id: old_owner.id),
         routes: routed,
-        routed_owner: routed_owner_id && routed_owner_id != old_owner.id ? user(routed_owner_id) : nil,
-        still_routed: routed_owner_id == old_owner.id
+        routed_owner: routed_owner_id && routed_owner_id != old_owner.id ? user(routed_owner_id) : nil
       )
     end.sort_by(&:label)
   end
@@ -217,7 +216,7 @@ class Ops::OwnerHandover
 
     if skipped.any?
       say "Skipped, hand over the trigger or fix the routing first (#{skipped.size}):"
-      skipped.each { |group| say "  #{group.label}: #{group.routing}" }
+      skipped.each { |group| say "  #{group.label}: #{describe_routing(group.routes, old_owner_id: old_owner.id)}" }
       say ''
     end
     if ready.empty?
