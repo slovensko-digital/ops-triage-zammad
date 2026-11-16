@@ -156,7 +156,9 @@ class Ops::OwnerHandover
       new_name = renamed(trigger.name, new_owner)
       say "  ##{trigger.id} #{trigger.name}"
       say "    -> #{new_name}" if new_name != trigger.name
-      say "    !! the name does not end with #{agent_name(old_owner).inspect}, it stays as it is" if new_name == trigger.name
+      if new_name == trigger.name && mentions_old_owner?(trigger.name)
+        say "    !! the name does not end with #{agent_name(old_owner).inspect}, it stays as it is"
+      end
       grant_group_access(new_owner, trigger_group_id(trigger), dry_run:)
       next if dry_run
 
@@ -343,11 +345,14 @@ class Ops::OwnerHandover
 
   # ignores case and diacritics and matches the last part: "Devin" finds "Bratislava / Devín"
   def suggest_groups(name)
-    normalize = ->(value) { ActiveSupport::Inflector.transliterate(value.to_s).downcase.gsub(/\s+/, ' ').strip }
-    wanted = normalize.call(name.to_s.gsub('::', GROUP_SEPARATOR))
+    wanted = normalized(name.to_s.gsub('::', GROUP_SEPARATOR))
     Group.all.map { |group| group_label(group) }.select do |label|
-      normalize.call(label) == wanted || normalize.call(label.split(GROUP_SEPARATOR).last) == wanted
+      normalized(label) == wanted || normalized(label.split(GROUP_SEPARATOR).last) == wanted
     end
+  end
+
+  def normalized(value)
+    ActiveSupport::Inflector.transliterate(value.to_s).downcase.gsub(/\s+/, ' ').strip
   end
 
   # keep the trigger's format: the admin UI saves string ids with value_completion, the portal integers without it
@@ -380,6 +385,13 @@ class Ops::OwnerHandover
     return name unless name.end_with?(old_suffix)
 
     "#{name.delete_suffix(old_suffix)} #{agent_name(new_owner)}"
+  end
+
+  # the name has the old owner's first or last name, ignoring case and diacritics, so it likely meant to end with
+  # their name ("Anna Zelená"); a name without an agent in it ("... Magistrát na základe ulíc") does not
+  def mentions_old_owner?(name)
+    words = normalized(name).split
+    [old_owner.firstname, old_owner.lastname].compact_blank.any? { |part| (normalized(part).split - words).empty? }
   end
 
   def grant_group_access(user, group_id, dry_run:)
