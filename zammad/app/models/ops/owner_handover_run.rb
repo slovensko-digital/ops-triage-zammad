@@ -1,16 +1,18 @@
 # One step of an owner handover queued from the admin page /ops/owner_handover, run right away by
 # Ops::OwnerHandoverJob with dry_run: false. The step's output goes to log line by line, so the page shows its progress.
 #
-#   triggers  Ops::OwnerHandover#reassign_triggers!
-#   tickets   Ops::OwnerHandover#reassign_tickets!
+#   triggers        Ops::OwnerHandover#reassign_triggers!
+#   tickets         Ops::OwnerHandover#reassign_tickets!
+#   tickets_routed  Ops::OwnerHandover#reassign_tickets_to_routed_owners!, no new owner
 class Ops::OwnerHandoverRun < ActiveRecord::Base
   self.table_name = 'ops_owner_handover_runs'
 
-  STEPS = %w[triggers tickets].freeze
+  STEPS = %w[triggers tickets tickets_routed].freeze
   ACTIVE = %w[queued running].freeze
 
   validates :step, inclusion: { in: STEPS }
-  validates :old_owner_email, :new_owner_email, :created_by_id, presence: true
+  validates :old_owner_email, :created_by_id, presence: true
+  validates :new_owner_email, presence: true, unless: :routed?
 
   scope :active, -> { where(status: ACTIVE) }
   scope :recent, -> { order(id: :desc) }
@@ -51,6 +53,20 @@ class Ops::OwnerHandoverRun < ActiveRecord::Base
 
   def active?
     ACTIVE.include?(status)
+  end
+
+  def routed?
+    step == 'tickets_routed'
+  end
+
+  # the step through Ops::OwnerHandover, a dry run unless dry_run: false; ArgumentError for an unknown agent or group
+  def perform(out:, dry_run: true)
+    handover = Ops::OwnerHandover.new(old_owner_email, out:)
+    case step
+    when 'triggers' then handover.reassign_triggers!(to: new_owner_email, groups: groups.presence, dry_run:)
+    when 'tickets' then handover.reassign_tickets!(to: new_owner_email, groups: groups.presence, dry_run:)
+    when 'tickets_routed' then handover.reassign_tickets_to_routed_owners!(groups: groups.presence, dry_run:)
+    end
   end
 
   # queued -> running, false when another worker started it meanwhile

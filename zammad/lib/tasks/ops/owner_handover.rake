@@ -47,6 +47,13 @@ namespace :ops do
       handover.call(args).reassign_tickets!(**reassign_options.call(args))
     end
 
+    # rake 'ops:owner_handover:tickets_routed[old@example.org]' GROUPS='Pezinok;Bratislava / Devín' APPLY=1
+    # each group's tickets to the agent its trigger routes it to now; GROUPS limits it to some groups
+    desc 'Move the tickets of the old agent to the agents their groups are routed to, closed ones too, silently'
+    task :tickets_routed, [:old_email] => :environment do |_task, args|
+      handover.call(args).reassign_tickets_to_routed_owners!(groups: list.call('GROUPS'), dry_run: ENV['APPLY'] != '1')
+    end
+
     # rake 'ops:owner_handover:reindex[new@example.org]' GROUPS='Pezinok;Bratislava / Devín'
     # after a tickets task stopped while reindexing; GROUPS limits it to some groups
     desc "Reindex the agent's tickets in the search index"

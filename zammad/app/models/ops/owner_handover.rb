@@ -5,7 +5,8 @@
 #   2. reassign_triggers! points the triggers to the new owner, who gets full access to the groups
 #   3. reassign_tickets!  moves the tickets, closed ones too (they can be reopened), without notifications or triggers,
 #                         one transaction per group in the order listed, then reindexes the group's tickets itself;
-#                         refused while an active trigger still routes the group to the old owner
+#                         refused while an active trigger still routes the group to the old owner;
+#                         reassign_tickets_to_routed_owners! does it for each group to the agent it is routed to now
 #   4. reindex_tickets!   reindexes the agent's tickets, after a reassign_tickets! stopped while reindexing
 #
 # Test tickets (customers in test_customer_logins:) are never moved. The reassign methods are dry runs unless
@@ -15,6 +16,7 @@
 #   h.report
 #   h.reassign_triggers!(to: 'new@example.org', groups: ['Pezinok'], dry_run: false)
 #   h.reassign_tickets!(to: 'new@example.org', groups: ['Pezinok'], dry_run: false)
+#   h.reassign_tickets_to_routed_owners!(dry_run: false)
 #   Ops::OwnerHandover.new('new@example.org').reindex_tickets!(groups: ['Pezinok'])
 class Ops::OwnerHandover
   include Ops::OwnerHandoverSupport
@@ -105,20 +107,34 @@ class Ops::OwnerHandover
   end
 
   # what report says by group, for the admin page: routed_owner is the agent the group's active trigger routes it to
-  # when there is a single one, still_routed when that is the old owner
-  GroupOverview = Struct.new(:label, :triggers, :tickets, :test_tickets, :routing, :routed_owner, :still_routed,
-                             keyword_init: true)
+  # when there is a single one, still_routed when that is the old owner. status is the handover step the group is at:
+  #
+  #   triggers   the old owner's trigger is still there, hand it over to the new owner first
+  #   tickets    the trigger routes the group to someone else, the old owner's tickets go to them
+  #   attention  tickets left but no single active trigger routes the group, fix the triggers in Zammad
+  #   done       only test tickets left, they stay with the old owner
+  GroupOverview = Struct.new(:group_id, :label, :triggers, :tickets, :test_tickets, :routing, :routed_owner,
+                             :still_routed, keyword_init: true) do
+    def status
+      if triggers.any? then :triggers
+      elsif tickets.zero? then :done
+      elsif routed_owner then :tickets
+      else :attention
+      end
+    end
+  end
 
-  def groups_overview
-    triggers_by_group = triggers.group_by { |trigger| trigger_group_id(trigger) }
-    ticket_counts = without_test_tickets(owned_tickets).group(:group_id).count
-    test_counts = only_test_tickets(owned_tickets).group(:group_id).count
+  def groups_overview(groups: nil)
+    triggers_by_group = triggers(groups:).group_by { |trigger| trigger_group_id(trigger) }
+    ticket_counts = without_test_tickets(owned_tickets(groups:)).group(:group_id).count
+    test_counts = only_test_tickets(owned_tickets(groups:)).group(:group_id).count
     routes = routed_owners_by_group
 
     (triggers_by_group.keys | ticket_counts.keys | test_counts.keys).compact.map do |group_id|
       routed = routes.fetch(group_id, {})
       routed_owner_id = single_routed_owner_id(routed)
       GroupOverview.new(
+        group_id:,
         label: group_name(group_id),
         triggers: triggers_by_group.fetch(group_id, []),
         tickets: ticket_counts.fetch(group_id, 0),
@@ -190,6 +206,30 @@ class Ops::OwnerHandover
     say "Moved #{selected.size} tickets, #{tickets.count} left with #{describe(old_owner)} " \
         "(and #{test_tickets.count} test tickets)."
     selected
+  end
+
+  # reassign_tickets! for each group to the agent its trigger routes it to now, read when it runs; the groups not routed
+  # to a single other agent are skipped and listed
+  def reassign_tickets_to_routed_owners!(groups: nil, dry_run: true)
+    overview = groups_overview(groups:).select { |group| group.tickets.positive? }
+    ready, skipped = overview.partition { |group| group.status == :tickets }
+
+    if skipped.any?
+      say "Skipped, hand over the trigger or fix the routing first (#{skipped.size}):"
+      skipped.each { |group| say "  #{group.label}: #{group.routing}" }
+      say ''
+    end
+    if ready.empty?
+      say 'No group with tickets ready to move to its routed owner.'
+      return []
+    end
+
+    ready.group_by(&:routed_owner).flat_map do |owner, owner_groups|
+      say "== #{owner_groups.size} #{owner_groups.one? ? 'group' : 'groups'} routed to #{describe(owner)}"
+      moved = reassign_tickets!(to: owner.email, groups: owner_groups.map(&:label), dry_run:)
+      say ''
+      moved
+    end
   end
 
   # the tickets of the agent this handover was created with, test tickets too, for the new owner after a

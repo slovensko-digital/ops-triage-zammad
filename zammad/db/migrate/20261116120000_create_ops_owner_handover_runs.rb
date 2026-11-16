@@ -4,7 +4,7 @@ class CreateOpsOwnerHandoverRuns < ActiveRecord::Migration[7.2]
     create_table :ops_owner_handover_runs do |t|
       t.string :step, null: false, limit: 20
       t.string :old_owner_email, null: false
-      t.string :new_owner_email, null: false
+      t.string :new_owner_email
       t.json :groups
       t.string :status, null: false, default: 'queued', limit: 20
       t.text :log, null: false, default: ''

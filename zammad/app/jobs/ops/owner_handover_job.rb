@@ -23,13 +23,7 @@ class Ops::OwnerHandoverJob < ApplicationJob
 
   def execute(run)
     out = run.log_writer
-    handover = Ops::OwnerHandover.new(run.old_owner_email, out:)
-    groups = run.groups.presence
-
-    case run.step
-    when 'triggers' then handover.reassign_triggers!(to: run.new_owner_email, groups:, dry_run: false)
-    when 'tickets' then handover.reassign_tickets!(to: run.new_owner_email, groups:, dry_run: false)
-    end
+    run.perform(out:, dry_run: false)
     run.finish!
   rescue => e
     out&.puts("!! #{e.class}: #{e.message}")

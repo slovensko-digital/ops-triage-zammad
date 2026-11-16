@@ -6,6 +6,7 @@
   <%= csrf_meta_tags %>
   <%= yield :head %>
   <script src="/assets/ops-user-autocomplete.js?v<%= Rails.public_path.join('assets/ops-user-autocomplete.js').mtime.to_i %>" defer></script>
+  <script src="/assets/ops-run-watch.js?v<%= Rails.public_path.join('assets/ops-run-watch.js').mtime.to_i %>" defer></script>
   <style>
     body { font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; color: #1f2328; background: #f6f8fa; }
     header { background: #24292f; color: #fff; padding: 10px 24px; }
@@ -41,6 +42,8 @@
     .user-autocomplete-results li.active, .user-autocomplete-results li[data-index]:hover { background: #ddf4ff; }
     .user-autocomplete-results li.empty { color: #656d76; cursor: default; }
     .user-autocomplete-results .email { color: #656d76; margin-left: 8px; }
+    .next { background: #fff; border: 1px solid #d0d7de; border-left: 4px solid #0969da; padding: 10px 14px; margin: 12px 0; }
+    .step { margin: 10px 0; }
     button.danger { background: #cf222e; color: #fff; border: 1px solid #a40e26; padding: 4px 12px; }
   </style>
 </head>

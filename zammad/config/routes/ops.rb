@@ -7,5 +7,6 @@ Zammad::Application.routes.draw do
   post '/ops/owner_handover/preview', to: "#{handover}#preview", as: :ops_owner_handover_preview
   get '/ops/owner_handover/runs', to: "#{handover}#runs", as: :ops_owner_handover_runs
   post '/ops/owner_handover/runs', to: "#{handover}#create_run"
+  get '/ops/owner_handover/runs/statuses', to: "#{handover}#run_statuses", as: :ops_owner_handover_run_statuses
   get '/ops/owner_handover/runs/:id', to: "#{handover}#show_run", as: :ops_owner_handover_run
 end

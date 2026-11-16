@@ -1,50 +1,146 @@
-<% content_for :title, "Report #{@old_owner.email}" %>
+<% content_for :title, "Hand over #{@old_owner.email}" %>
+<%
+  to_hand_over = @groups.fetch(:triggers, [])
+  to_move = @groups.fetch(:tickets, [])
+  attention = @groups.fetch(:attention, [])
+  done = @groups.fetch(:done, [])
+  ready = to_move.reject { |group| busy_run(group.label) }
+  active_runs = @runs.select(&:active?)
+%>
 <h1>Hand over <%= describe_user(@old_owner) %></h1>
-<p class="muted">
-  1. move the triggers of the groups to the new owner, 2. move the tickets to the owner the group is routed to then.
-  Every button here is a dry run first, nothing changes before you apply it on the next page.
-</p>
 
-<h2>Groups (<%= @groups.size %>)</h2>
-<% if @groups.empty? %>
-  <p>No triggers or tickets of this agent.</p>
-<% else %>
+<div class="next">
+  <% if active_runs.any? %>
+    <strong>Running:</strong> <%= active_runs.map { |run| "##{run.id} #{run.step}" }.join(', ') %>. This page updates when it ends.
+  <% elsif to_hand_over.any? %>
+    <strong>Next: 1. hand over the triggers</strong> of <%= pluralize(to_hand_over.size, 'group') %>, pick the new owner of each below.
+  <% elsif to_move.any? %>
+    <strong>Next: 2. move the tickets</strong> of <%= pluralize(to_move.size, 'group') %> to the agents they are routed to.
+  <% elsif attention.any? %>
+    <strong>Next: fix the triggers</strong> of <%= pluralize(attention.size, 'group') %> in Zammad, see below.
+  <% else %>
+    <strong>Handover complete.</strong>
+    <%= "#{done.sum(&:test_tickets)} test tickets stay with the agent." if done.any? %>
+  <% end %>
+  <span class="muted">
+    · triggers to hand over <%= to_hand_over.size %> · tickets to move <%= to_move.size %>
+    <%= "· needs attention #{attention.size}" if attention.any? %>
+  </span>
+</div>
+
+<% if @runs.any? %>
+  <h2>Runs for this agent</h2>
+  <div id="runs-finished" class="notice" hidden>
+    A run ended. <a href="">Reload the page</a> to see where the groups are now (the new owners you picked are kept only until then).
+  </div>
   <table>
-    <tr><th></th><th>Group</th><th>Triggers routing to the agent</th><th>Tickets</th><th>Test tickets</th><th>Routing now</th><th></th></tr>
-    <% @groups.each do |group| %>
+    <tr><th>#</th><th>Step</th><th>To</th><th>Groups</th><th>Status</th><th>Queued</th><th>By</th></tr>
+    <% @runs.first(5).each do |run| %>
       <tr>
-        <td><input type="checkbox" name="groups[]" value="<%= group.label %>" form="step-form"></td>
+        <td><%= link_to "##{run.id}", ops_owner_handover_run_path(run) %></td>
+        <td><%= run.step %></td>
+        <td><%= run.routed? ? 'routed owners' : run.new_owner_email %></td>
+        <td><%= run.groups.presence&.join(', ') || 'all' %></td>
+        <td class="status-<%= run.status %>" <%= "data-run-id=#{run.id}".html_safe if run.active? %>><%= run.status %></td>
+        <td><%= time_in_zone(run.created_at) %></td>
+        <td><%= run.created_by&.email %></td>
+      </tr>
+    <% end %>
+  </table>
+  <p class="muted"><%= link_to 'All runs', ops_owner_handover_runs_path %></p>
+<% end %>
+
+<h2>1. Triggers (<%= to_hand_over.size %>)</h2>
+<% if to_hand_over.empty? %>
+  <p class="muted">No trigger routes a group to this agent anymore.</p>
+<% else %>
+  <p class="muted">
+    Pick the new owner of each group, groups left empty stay as they are. The new owner gets access to the group and
+    the new tickets of the group go to them. The tickets already there move in step 2.
+  </p>
+  <table>
+    <tr><th>Group</th><th>Trigger</th><th>Tickets</th><th>New owner</th></tr>
+    <% to_hand_over.each do |group| %>
+      <tr>
         <td><%= group.label %></td>
         <td>
           <% group.triggers.each do |trigger| %>
             #<%= trigger.id %> <span class="<%= trigger.active ? '' : 'muted' %>"><%= trigger.active ? '' : 'INACTIVE ' %><%= trigger.name %></span><br>
           <% end %>
+          <% if group.triggers.size > 1 %><span class="warn">several triggers, a group should have one: all move to the new owner</span><% end %>
         </td>
-        <td><%= group.tickets %></td>
-        <td class="muted"><%= group.test_tickets.nonzero? %></td>
-        <td class="<%= group.routing.start_with?('!!') || group.still_routed ? 'warn' : '' %>"><%= group.routing %></td>
+        <td><%= group.tickets %><%= " + #{group.test_tickets} test" if group.test_tickets.positive? %></td>
         <td>
-          <% if group.routed_owner && group.tickets.positive? %>
-            <%= render 'preview_button', step: 'tickets', old_email: @old_owner.email, new_email: group.routed_owner.email,
-                                         groups: [group.label], label: "Preview tickets → #{group.routed_owner.email}" %>
+          <% if (run = busy_run(group.label)) %>
+            <%= link_to "run ##{run.id} #{run.status}", ops_owner_handover_run_path(run) %>
+          <% else %>
+            <%= render 'agent_field', name: "owners[#{group.label}]", form: 'triggers-form' %>
           <% end %>
         </td>
       </tr>
     <% end %>
   </table>
+  <%= form_with url: ops_owner_handover_preview_path, method: :post, id: 'triggers-form', class: 'step' do %>
+    <%= hidden_field_tag :step, 'triggers' %>
+    <%= hidden_field_tag :old_email, @old_owner.email %>
+    <button type="submit">Preview the trigger handover (dry run)</button>
+  <% end %>
+<% end %>
 
-  <fieldset>
-    <legend>Dry run for the checked groups (none checked: all groups)</legend>
-    <%= form_with url: ops_owner_handover_preview_path, method: :post, id: 'step-form' do %>
-      <%= hidden_field_tag :old_email, @old_owner.email %>
-      <label><%= radio_button_tag :step, 'triggers', true %> move triggers</label>
-      <label><%= radio_button_tag :step, 'tickets' %> move tickets</label>
-      <br><br>
-      <label>New owner <%= render 'agent_field', name: 'new_email', required: true %></label>
-      <br><br>
-      <button type="submit">Preview (dry run)</button>
+<h2>2. Tickets (<%= to_move.size %>)</h2>
+<% if to_move.empty? %>
+  <p class="muted">
+    <%= to_hand_over.any? ? 'The groups come here once their trigger is handed over.' : 'No tickets to move.' %>
+  </p>
+<% else %>
+  <p class="muted">
+    The tickets go to the agent the group's trigger routes it to, closed ones too, without notifications.
+    Test tickets stay with this agent.
+  </p>
+  <table>
+    <tr><th>Group</th><th>Tickets</th><th>Goes to</th><th></th></tr>
+    <% to_move.each do |group| %>
+      <tr>
+        <td><%= group.label %></td>
+        <td><%= group.tickets %><%= " + #{group.test_tickets} test" if group.test_tickets.positive? %></td>
+        <td><%= describe_user(group.routed_owner) %></td>
+        <td>
+          <% if (run = busy_run(group.label)) %>
+            <%= link_to "run ##{run.id} #{run.status}", ops_owner_handover_run_path(run) %>
+          <% else %>
+            <%= render 'preview_button', step: 'tickets_routed', old_email: @old_owner.email, new_email: nil,
+                                         groups: [group.label], label: 'Preview this group' %>
+          <% end %>
+        </td>
+      </tr>
     <% end %>
-  </fieldset>
+  </table>
+  <% if ready.any? %>
+    <div class="step">
+      <%= render 'preview_button', step: 'tickets_routed', old_email: @old_owner.email, new_email: nil,
+                                   groups: ready.map(&:label),
+                                   label: "Preview moving the tickets of #{pluralize(ready.size, 'group')} (dry run)" %>
+    </div>
+  <% end %>
+<% end %>
+
+<% if attention.any? %>
+  <h2 class="warn">Needs attention (<%= attention.size %>)</h2>
+  <p class="muted">
+    Tickets left, but no single active trigger routes the group to another agent. Fix the group's trigger in Zammad,
+    then reload this page.
+  </p>
+  <table>
+    <tr><th>Group</th><th>Tickets</th><th>Routing now</th></tr>
+    <% attention.each do |group| %>
+      <tr><td><%= group.label %></td><td><%= group.tickets %></td><td class="warn"><%= group.routing %></td></tr>
+    <% end %>
+  </table>
+<% end %>
+
+<% if done.any? %>
+  <h2>Done (<%= done.size %>)</h2>
+  <p class="muted">Only test tickets left, they stay with this agent: <%= done.map { |group| "#{group.label} (#{group.test_tickets})" }.join(', ') %></p>
 <% end %>
 
 <details>
