@@ -11,15 +11,9 @@ class Ops::OwnerHandoversController < Ops::BaseController
 
   helper_method :busy_run, :routing_text
 
-  # the form of the owner leaving asks with their email, as the agent field gives it
+  # the form of the owner leaving asks with their user id, as the agent field gives it
   def index
-    email = params[:email].to_s.strip.downcase
-    return if email.blank?
-
-    user = User.find_by(email:)
-    return redirect_to(ops_owner_handover_path(user)) if user
-
-    flash.now[:alert] = ot('index.no_user', email:)
+    redirect_to ops_owner_handover_path(params[:owner_id]) if params[:owner_id].present?
   end
 
   def conflicts
@@ -33,7 +27,7 @@ class Ops::OwnerHandoversController < Ops::BaseController
     @groups = handover.groups_overview.group_by(&:status)
     handover.report
     @report = out.string
-    @runs = Ops::OwnerHandoverRun.where(old_owner_email: @old_owner.email).recent.limit(10).to_a
+    @runs = Ops::OwnerHandoverRun.where(old_owner: @old_owner).includes(:new_owner, :created_by).recent.limit(10).to_a
   rescue ArgumentError => e
     redirect_to ops_owner_handovers_path, alert: e.message
   end

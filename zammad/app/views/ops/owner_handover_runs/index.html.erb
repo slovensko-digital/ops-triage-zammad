@@ -13,8 +13,8 @@
       <tr>
         <td><%= link_to "##{run.id}", ops_owner_handover_run_path(run) %></td>
         <td><%= step_name(run.step) %></td>
-        <td><%= link_to_if handover_path_for(run.old_owner_email), run.old_owner_email, handover_path_for(run.old_owner_email) %></td>
-        <td><%= run.routed? ? ot('routed_owners') : run.new_owner_email %></td>
+        <td><%= link_to run.old_owner.email, ops_owner_handover_path(run.old_owner) %></td>
+        <td><%= run.routed? ? ot('routed_owners') : run.new_owner.email %></td>
         <td><%= run.groups.presence&.join(', ') || ot('all_groups') %></td>
         <td class="status-<%= run.status %>" <%= "data-run-id=#{run.id}".html_safe if run.active? %>><%= status_name(run.status) %></td>
         <td><%= run.created_at %></td>

@@ -4,7 +4,7 @@ class Ops::OwnerHandoverRunsController < Ops::BaseController
   include Ops::OwnerHandoverPages
 
   def index
-    @runs = Ops::OwnerHandoverRun.recent.includes(:created_by).limit(30)
+    @runs = Ops::OwnerHandoverRun.recent.includes(:old_owner, :new_owner, :created_by).limit(30)
   end
 
   def show

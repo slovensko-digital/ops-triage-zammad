@@ -38,7 +38,7 @@
           <td><%= tickets.size %> (<%= tickets.count { |state_id, _id, _created_at| @open_state_ids.include?(state_id) } %>)</td>
           <td>
             <% if routed && owner %>
-              <%= render 'preview_button', step: 'tickets', old_owner: owner, new_email: routed.email,
+              <%= render 'preview_button', step: 'tickets', old_owner: owner, new_owner_id: routed.id,
                                            groups: [label], label: ot('conflicts.preview_move') %>
             <% end %>
           </td>

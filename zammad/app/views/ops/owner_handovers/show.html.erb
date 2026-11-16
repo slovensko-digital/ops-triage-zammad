@@ -39,7 +39,7 @@
       <tr>
         <td><%= link_to "##{run.id}", ops_owner_handover_run_path(run) %></td>
         <td><%= step_name(run.step) %></td>
-        <td><%= run.routed? ? ot('routed_owners') : run.new_owner_email %></td>
+        <td><%= run.routed? ? ot('routed_owners') : run.new_owner.email %></td>
         <td><%= run.groups.presence&.join(', ') || ot('all_groups') %></td>
         <td class="status-<%= run.status %>" <%= "data-run-id=#{run.id}".html_safe if run.active? %>><%= status_name(run.status) %></td>
         <td><%= run.created_at %></td>
@@ -104,7 +104,7 @@
           <% if (run = busy_run(group.label)) %>
             <%= busy_link.call(run) %>
           <% else %>
-            <%= render 'preview_button', step: 'tickets_routed', old_owner: @old_owner, new_email: nil,
+            <%= render 'preview_button', step: 'tickets_routed', old_owner: @old_owner, new_owner_id: nil,
                                          groups: [group.label], label: ot('report.preview_group') %>
           <% end %>
         </td>
@@ -113,7 +113,7 @@
   </table>
   <% if ready.any? %>
     <div class="step">
-      <%= render 'preview_button', step: 'tickets_routed', old_owner: @old_owner, new_email: nil,
+      <%= render 'preview_button', step: 'tickets_routed', old_owner: @old_owner, new_owner_id: nil,
                                    groups: ready.map(&:label), label: ot('report.preview_tickets', count: ready.size) %>
     </div>
   <% end %>

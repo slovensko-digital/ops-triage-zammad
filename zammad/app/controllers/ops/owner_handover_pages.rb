@@ -5,7 +5,7 @@ module Ops::OwnerHandoverPages
 
   included do
     layout 'ops_owner_handover'
-    helper_method :tab, :ot, :step_name, :status_name, :handover_path_for
+    helper_method :tab, :ot, :step_name, :status_name
   end
 
   private
@@ -26,16 +26,9 @@ module Ops::OwnerHandoverPages
     ot("statuses.#{status}", default: status.to_s)
   end
 
-  # the handover page of the owner with the email, nil when no user has it (runs keep the emails)
-  def handover_path_for(email)
-    @users_by_email ||= {}
-    user = @users_by_email.fetch(email) { @users_by_email[email] = User.find_by(email:) }
-    user && ops_owner_handover_path(user)
-  end
-
-  # the runs of the step the preview form posts (step, new_email, groups[], owners[]) for the owner leaving
+  # the runs of the step the preview form posts (step, new_owner_id, groups[], owners[]) for the owner leaving
   def build_runs(old_owner)
-    form = params.slice(:step, :new_email, :groups, :owners).permit(:step, :new_email, groups: [], owners: {})
+    form = params.slice(:step, :new_owner_id, :groups, :owners).permit(:step, :new_owner_id, groups: [], owners: {})
     Ops::OwnerHandoverRun.build_for(old_owner, form.to_h.symbolize_keys, created_by: current_user)
   end
 end

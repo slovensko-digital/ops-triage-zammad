@@ -1,17 +1,18 @@
-# The owner handover runs queued from the admin page /ops/owner_handover (Ops::OwnerHandoverRun).
+# The owner handover runs queued from the admin page /ops/owner_handovers (Ops::OwnerHandoverRun). Deleting a user
+# deletes the runs naming them.
 class CreateOpsOwnerHandoverRuns < ActiveRecord::Migration[7.2]
   def change
     create_table :ops_owner_handover_runs do |t|
       t.string :step, null: false, limit: 20
-      t.string :old_owner_email, null: false
-      t.string :new_owner_email
+      t.references :old_owner, null: false, foreign_key: { to_table: :users, on_delete: :cascade }
+      t.references :new_owner, foreign_key: { to_table: :users, on_delete: :cascade }
       t.json :groups
       t.string :status, null: false, default: 'queued', limit: 20
       t.text :log, null: false, default: ''
       t.text :error
       t.datetime :started_at
       t.datetime :finished_at
-      t.integer :created_by_id, null: false
+      t.references :created_by, null: false, foreign_key: { to_table: :users, on_delete: :cascade }
       t.timestamps null: false
     end
     add_index :ops_owner_handover_runs, :status

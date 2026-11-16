@@ -61,7 +61,6 @@ en:
         intro: Shows the groups where the owner has triggers or tickets, and hands them over to other owners step by step.
         agent_leaving: Owner leaving
         show_report: Show report
-        no_user: No user with email %{email}
       report:
         title: Hand over %{email}
         heading: Hand over %{user}

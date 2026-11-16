@@ -10,14 +10,16 @@ class Ops::OwnerHandoverRun < ActiveRecord::Base
   STEPS = %w[triggers tickets tickets_routed].freeze
   ACTIVE = %w[queued running].freeze
 
+  belongs_to :old_owner, class_name: 'User'
+  belongs_to :new_owner, class_name: 'User', optional: true
+  belongs_to :created_by, class_name: 'User'
+
   validates :step, inclusion: { in: STEPS }
-  validates :old_owner_email, :created_by_id, presence: true
-  validates :new_owner_email, presence: true, unless: :routed?
+  validates :old_owner, :created_by, presence: true
+  validates :new_owner, presence: true, unless: :routed?
 
   scope :active, -> { where(status: ACTIVE) }
   scope :recent, -> { order(id: :desc) }
-
-  belongs_to :created_by, class_name: 'User'
 
   # the Postgres advisory lock held by the one runner, see with_runner_lock
   RUNNER_LOCK_KEY = 7_316_001
@@ -51,25 +53,20 @@ class Ops::OwnerHandoverRun < ActiveRecord::Base
     end
   end
 
-  # The unsaved runs of a step for the owner leaving, as the admin page's preview form posts it (step, new_email,
-  # groups[], owners[]): the triggers step is a run for each new owner in owners { group label => email }, the groups
-  # left empty stay as they are; the tickets steps are one run, to new_email or the owners by trigger, for the groups.
+  # The unsaved runs of a step for the owner leaving, as the admin page's preview form posts it (step, new_owner_id,
+  # groups[], owners[]): the triggers step is a run for each new owner in owners { group label => user id }, the groups
+  # left empty stay as they are; the tickets steps are one run, to new_owner_id or the owners by trigger, for the groups.
   def self.build_for(old_owner, form, created_by:)
-    attributes = { step: form[:step], old_owner_email: old_owner.email, created_by_id: created_by.id }
+    attributes = { step: form[:step], old_owner:, created_by: }
     return build_trigger_runs(attributes, form[:owners].to_h) if form[:step] == 'triggers'
 
-    [new(**attributes, new_owner_email: normalize_email(form[:new_email]),
-                       groups: Array(form[:groups]).compact_blank.presence)]
+    [new(**attributes, new_owner_id: form[:new_owner_id].presence, groups: Array(form[:groups]).compact_blank.presence)]
   end
 
   def self.build_trigger_runs(attributes, owners)
-    owners.transform_values { |email| normalize_email(email) }.compact.group_by(&:last).map do |email, pairs|
-      new(**attributes, new_owner_email: email, groups: pairs.map(&:first).sort)
+    owners.compact_blank.group_by(&:last).map do |new_owner_id, pairs|
+      new(**attributes, new_owner_id:, groups: pairs.map(&:first).sort)
     end
-  end
-
-  def self.normalize_email(email)
-    email.to_s.strip.downcase.presence
   end
 
   def active?
@@ -82,10 +79,10 @@ class Ops::OwnerHandoverRun < ActiveRecord::Base
 
   # the step through Ops::OwnerHandover, a dry run unless dry_run: false; ArgumentError for an unknown agent or group
   def perform(out:, dry_run: true)
-    handover = Ops::OwnerHandover.new(old_owner_email, out:)
+    handover = Ops::OwnerHandover.new(old_owner.email, out:)
     case step
-    when 'triggers' then handover.reassign_triggers!(to: new_owner_email, groups: groups.presence, dry_run:)
-    when 'tickets' then handover.reassign_tickets!(to: new_owner_email, groups: groups.presence, dry_run:)
+    when 'triggers' then handover.reassign_triggers!(to: new_owner.email, groups: groups.presence, dry_run:)
+    when 'tickets' then handover.reassign_tickets!(to: new_owner.email, groups: groups.presence, dry_run:)
     when 'tickets_routed' then handover.reassign_tickets_to_routed_owners!(groups: groups.presence, dry_run:)
     end
   end

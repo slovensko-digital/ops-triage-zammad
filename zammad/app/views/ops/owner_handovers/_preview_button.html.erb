@@ -1,7 +1,7 @@
-<%# a dry run of one step: step, old_owner (a user), new_email, groups, label %>
+<%# a dry run of one step: step, old_owner (a user), new_owner_id, groups, label %>
 <%= form_with url: preview_ops_owner_handover_path(old_owner), method: :post, class: 'inline' do %>
   <%= hidden_field_tag :step, step %>
-  <%= hidden_field_tag :new_email, new_email %>
+  <%= hidden_field_tag :new_owner_id, new_owner_id %>
   <% Array(groups).each do |group| %><%= hidden_field_tag 'groups[]', group, id: nil %><% end %>
   <button type="submit"><%= label %></button>
 <% end %>

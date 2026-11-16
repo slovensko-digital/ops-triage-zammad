@@ -1,9 +1,9 @@
 // Agent autocomplete for the Ops admin pages (/ops/...), like the owner field of the Trigger UI: searches the agents
-// through Zammad's /api/v1/users/search as the logged in admin and puts the picked agent's email in the hidden input.
+// through Zammad's /api/v1/users/search as the logged in admin and puts the picked agent's user id in the hidden input.
 //
 //   <span class="user-autocomplete">
 //     <input type="text" class="user-autocomplete-query">
-//     <input type="hidden" name="new_email">
+//     <input type="hidden" name="new_owner_id">
 //     <ul class="user-autocomplete-results" hidden></ul>
 //   </span>
 (function () {
@@ -50,7 +50,7 @@
     }
 
     function pick(user) {
-      value.value = user.email;
+      value.value = user.id;
       query.value = label(user);
       query.setCustomValidity('');
       close();
@@ -101,9 +101,9 @@
     }
 
     query.addEventListener('input', function () {
-      // typed over the picked agent: an email typed in full still counts, anything else has to be picked
+      // typed over the picked agent: it has to be picked again
       var typed = query.value.trim();
-      value.value = /^[^\s<>@]+@[^\s<>@]+$/.test(typed) ? typed : '';
+      value.value = '';
       clearTimeout(timer);
       if (!typed) { close(); return; }
       timer = setTimeout(function () { search(typed); }, DELAY);
