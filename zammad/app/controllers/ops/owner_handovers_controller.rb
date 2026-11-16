@@ -32,7 +32,8 @@ class Ops::OwnerHandoversController < Ops::BaseController
     redirect_to ops_owner_handovers_path, alert: e.message
   end
 
-  # the dry run of a step, with the form queueing it (Ops::OwnerHandoverRunsController#create)
+  # the dry run of a step, with the form queueing it (Ops::OwnerHandoverRunsController#create); @outputs are
+  # [run, output, error, tickets it moves], the tickets nil for the triggers step
   def preview
     @runs = build_runs(@old_owner)
     @error = 'Pick the new owner of at least one group.' if @runs.empty?
@@ -41,13 +42,12 @@ class Ops::OwnerHandoversController < Ops::BaseController
 
     @outputs = @runs.map do |run|
       out = StringIO.new
-      error = begin
-        run.perform(out:)
-        nil
+      moved, error = begin
+        [run.perform(out:), nil]
       rescue ArgumentError => e
-        e.message
+        [nil, e.message]
       end
-      [run, out.string, error]
+      [run, out.string, error, run.step == 'triggers' ? nil : moved&.size]
     end
   end
 

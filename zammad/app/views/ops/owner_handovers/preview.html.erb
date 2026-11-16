@@ -6,11 +6,14 @@
 <% if @error %>
   <div class="alert"><%= @error %></div>
 <% else %>
-  <% @outputs.each do |run, output, error| %>
+  <% @outputs.each do |run, output, error, tickets| %>
     <table>
       <tr><th>From</th><td><%= describe_user(run.old_owner) %></td></tr>
       <tr><th>To</th><td><%= run.routed? ? 'the owner each group\'s trigger routes it to' : describe_user(run.new_owner) %></td></tr>
       <tr><th>Groups</th><td><%= run.groups.presence&.join(', ') || 'all' %></td></tr>
+      <% if tickets %>
+        <tr><th>Tickets</th><td><%= number_with_delimiter(tickets, delimiter: ' ') %></td></tr>
+      <% end %>
     </table>
     <% if error %><div class="alert"><%= error %></div><% end %>
     <% if output.present? %><pre><%= output %></pre><% end %>
