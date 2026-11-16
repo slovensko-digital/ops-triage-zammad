@@ -134,7 +134,7 @@ en:
       conflicts:
         title: Conflicts
         count: "Groups with tickets not owned by their owner by trigger: %{count}"
-        help: Unowned and test tickets left out. "Preview move" is a dry run, nothing changes before you apply it.
+        help: '"Preview move" is a dry run, nothing changes before you apply it.'
         none: No conflicts.
         owns_here: owns %{count} here
         preview_move: Preview move to the owner by trigger
