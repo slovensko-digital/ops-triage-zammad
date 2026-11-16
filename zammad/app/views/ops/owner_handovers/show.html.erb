@@ -80,9 +80,8 @@
       </tr>
     <% end %>
   </table>
-  <%= form_with url: ops_owner_handover_preview_path, method: :post, id: 'triggers-form', class: 'step' do %>
+  <%= form_with url: preview_ops_owner_handover_path(@old_owner), method: :post, id: 'triggers-form', class: 'step' do %>
     <%= hidden_field_tag :step, 'triggers' %>
-    <%= hidden_field_tag :old_email, @old_owner.email %>
     <button type="submit"><%= ot('report.preview_triggers') %></button>
   <% end %>
 <% end %>
@@ -105,7 +104,7 @@
           <% if (run = busy_run(group.label)) %>
             <%= busy_link.call(run) %>
           <% else %>
-            <%= render 'preview_button', step: 'tickets_routed', old_email: @old_owner.email, new_email: nil,
+            <%= render 'preview_button', step: 'tickets_routed', old_owner: @old_owner, new_email: nil,
                                          groups: [group.label], label: ot('report.preview_group') %>
           <% end %>
         </td>
@@ -114,7 +113,7 @@
   </table>
   <% if ready.any? %>
     <div class="step">
-      <%= render 'preview_button', step: 'tickets_routed', old_email: @old_owner.email, new_email: nil,
+      <%= render 'preview_button', step: 'tickets_routed', old_owner: @old_owner, new_email: nil,
                                    groups: ready.map(&:label), label: ot('report.preview_tickets', count: ready.size) %>
     </div>
   <% end %>

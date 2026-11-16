@@ -1,7 +1,7 @@
 <% step = params[:step].to_s %>
 <% content_for :title, ot('preview.title', step: step_name(step)) %>
 <h1><%= ot('preview.title', step: step_name(step)) %></h1>
-<p><%= link_to ot('back_to_handover', email: params[:old_email]), ops_owner_handover_report_path(email: params[:old_email]) %></p>
+<p><%= link_to ot('back_to_handover', email: @old_owner.email), ops_owner_handover_path(@old_owner) %></p>
 
 <% if @error %>
   <div class="alert"><%= @error %></div>
@@ -20,8 +20,8 @@
     <fieldset>
       <legend><%= ot('preview.apply') %></legend>
       <%= form_with url: ops_owner_handover_runs_path, method: :post do %>
+        <%= hidden_field_tag :old_owner_id, @old_owner.id %>
         <%= hidden_field_tag :step, step %>
-        <%= hidden_field_tag :old_email, params[:old_email] %>
         <%= hidden_field_tag :new_email, params[:new_email] %>
         <% Array(params[:groups]).each do |group| %><%= hidden_field_tag 'groups[]', group, id: nil %><% end %>
         <% @runs.select { |run| run.step == 'triggers' }.each do |run| %>

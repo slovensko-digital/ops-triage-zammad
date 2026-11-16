@@ -1,4 +1,4 @@
-# Runs an Ops::OwnerHandoverRun queued from /ops/owner_handover, with dry_run: false. One runner at a time
+# Runs an Ops::OwnerHandoverRun queued from /ops/owner_handovers, with dry_run: false. One runner at a time
 # (Ops::OwnerHandoverRun.with_runner_lock): while another one runs, it waits and tries again. Never retried, a failed
 # run is queued again from the page.
 #

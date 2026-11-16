@@ -19,7 +19,7 @@
   }
 
   function poll(cells) {
-    var url = '/ops/owner_handover/runs/statuses?' + cells.map(function (cell) {
+    var url = '/ops/owner_handovers/runs/statuses?' + cells.map(function (cell) {
       return 'ids%5B%5D=' + encodeURIComponent(cell.dataset.runId);
     }).join('&');
 

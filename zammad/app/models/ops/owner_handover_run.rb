@@ -1,4 +1,4 @@
-# One step of an owner handover queued from the admin page /ops/owner_handover, run right away by
+# One step of an owner handover queued from the admin page /ops/owner_handovers, run right away by
 # Ops::OwnerHandoverJob with dry_run: false. The step's output goes to log line by line, so the page shows its progress.
 #
 #   triggers        Ops::OwnerHandover#reassign_triggers!

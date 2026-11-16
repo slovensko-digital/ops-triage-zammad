@@ -1,6 +1,6 @@
 <% content_for :title, ot('index.title') %>
 
-<%= form_with url: ops_owner_handover_report_path, method: :get do %>
+<%= form_with url: ops_owner_handovers_path, method: :get do %>
   <p class="muted"><%= ot('index.intro') %></p>
   <label><%= ot('index.agent_leaving') %> <%= render 'agent_field', name: 'email', required: true %></label>
   <button type="submit"><%= ot('index.show_report') %></button>

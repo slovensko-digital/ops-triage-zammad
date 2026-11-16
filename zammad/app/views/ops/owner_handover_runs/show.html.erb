@@ -2,13 +2,13 @@
 <% if @run.active? %>
   <% content_for :head do %><meta http-equiv="refresh" content="3"><% end %>
 <% end %>
-<p><%= link_to ot('back_to_handover', email: @run.old_owner_email), ops_owner_handover_report_path(email: @run.old_owner_email) %></p>
+<p><%= link_to_if handover_path_for(@run.old_owner_email), ot('back_to_handover', email: @run.old_owner_email), handover_path_for(@run.old_owner_email) %></p>
 <h1>
   <%= ot('show_run.heading', id: @run.id, step: step_name(@run.step)) %>
   <span class="status-<%= @run.status %>"><%= status_name(@run.status) %></span>
 </h1>
 <table>
-  <tr><th><%= ot('columns.from') %></th><td><%= link_to @run.old_owner_email, ops_owner_handover_report_path(email: @run.old_owner_email) %></td></tr>
+  <tr><th><%= ot('columns.from') %></th><td><%= link_to_if handover_path_for(@run.old_owner_email), @run.old_owner_email, handover_path_for(@run.old_owner_email) %></td></tr>
   <tr><th><%= ot('columns.to') %></th><td><%= @run.routed? ? ot('routed_owners_long') : @run.new_owner_email %></td></tr>
   <tr><th><%= ot('columns.groups') %></th><td><%= @run.groups.presence&.join(', ') || ot('all_groups') %></td></tr>
   <tr><th><%= ot('columns.started') %></th><td><%= time_in_zone(@run.started_at) %></td></tr>

@@ -1,12 +1,22 @@
 # Ops admin pages, rendered by Rails next to the Zammad app, for admins logged in to Triage.
+#
+#   GET  /ops/owner_handovers                  owner_handovers#index, ?email= of the owner leaving redirects to show
+#   GET  /ops/owner_handovers/conflicts        owner_handovers#conflicts
+#   GET  /ops/owner_handovers/:id              owner_handovers#show, the handover of the owner (user id) leaving
+#   POST /ops/owner_handovers/:id/preview      owner_handovers#preview
+#   GET  /ops/owner_handovers/runs             owner_handover_runs#index
+#   POST /ops/owner_handovers/runs             owner_handover_runs#create
+#   GET  /ops/owner_handovers/runs/statuses    owner_handover_runs#statuses
+#   GET  /ops/owner_handovers/runs/:id         owner_handover_runs#show
 Zammad::Application.routes.draw do
-  handover = 'ops/owner_handovers'
-  get '/ops/owner_handover', to: "#{handover}#index", as: :ops_owner_handover
-  get '/ops/owner_handover/conflicts', to: "#{handover}#conflicts", as: :ops_owner_handover_conflicts
-  get '/ops/owner_handover/report', to: "#{handover}#report", as: :ops_owner_handover_report
-  post '/ops/owner_handover/preview', to: "#{handover}#preview", as: :ops_owner_handover_preview
-  get '/ops/owner_handover/runs', to: "#{handover}#runs", as: :ops_owner_handover_runs
-  post '/ops/owner_handover/runs', to: "#{handover}#create_run"
-  get '/ops/owner_handover/runs/statuses', to: "#{handover}#run_statuses", as: :ops_owner_handover_run_statuses
-  get '/ops/owner_handover/runs/:id', to: "#{handover}#show_run", as: :ops_owner_handover_run
+  namespace :ops do
+    # before owner_handovers, whose /:id would take runs
+    resources :owner_handover_runs, path: 'owner_handovers/runs', only: %i[index show create] do
+      get :statuses, on: :collection
+    end
+    resources :owner_handovers, only: %i[index show] do
+      get :conflicts, on: :collection
+      post :preview, on: :member
+    end
+  end
 end

@@ -30,7 +30,7 @@
           <% end %>
           <td>
             <% if owner %>
-              <%= link_to describe_user(owner), ops_owner_handover_report_path(email: owner.email) %>
+              <%= link_to describe_user(owner), ops_owner_handover_path(owner) %>
             <% else %>
               <%= ot('unknown_user', id: owner_id) %>
             <% end %>
@@ -38,7 +38,7 @@
           <td><%= tickets.size %> (<%= tickets.count { |state_id, _id, _created_at| @open_state_ids.include?(state_id) } %>)</td>
           <td>
             <% if routed && owner %>
-              <%= render 'preview_button', step: 'tickets', old_email: owner.email, new_email: routed.email,
+              <%= render 'preview_button', step: 'tickets', old_owner: owner, new_email: routed.email,
                                            groups: [label], label: ot('conflicts.preview_move') %>
             <% end %>
           </td>

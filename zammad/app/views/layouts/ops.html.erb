@@ -53,10 +53,10 @@
 <body>
   <header>
     <a href="/#"><%= ot('layout.back_to_triage') %></a>
-    <a href="<%= ops_owner_handover_path %>"><%= ot('layout.owner_handover') %></a>
+    <a href="<%= ops_owner_handovers_path %>"><%= ot('layout.owner_handover') %></a>
     <% if request.get? %>
       <span class="language" title="<%= ot('layout.language') %>">
-        <% Ops::OwnerHandoversController::LOCALES.each do |locale| %>
+        <% Ops::BaseController::LOCALES.each do |locale| %>
           <%= link_to locale.upcase, request.query_parameters.merge(locale:), class: ('active' if I18n.locale.to_s == locale) %>
         <% end %>
       </span>
@@ -64,7 +64,7 @@
   </header>
   <main>
     <nav class="tabs">
-      <% { hand_over: ops_owner_handover_path, conflicts: ops_owner_handover_conflicts_path,
+      <% { hand_over: ops_owner_handovers_path, conflicts: conflicts_ops_owner_handovers_path,
            runs: ops_owner_handover_runs_path }.each do |name, path| %>
         <%= link_to ot("tabs.#{name}"), path, class: ('active' if tab == name) %>
       <% end %>

@@ -62,6 +62,7 @@ sk:
         intro: Ukáže skupiny, v ktorých má vlastník spúšťače alebo tikety, a krok za krokom ich odovzdá iným vlastníkom.
         agent_leaving: Odchádzajúci vlastník
         show_report: Ukázať prehľad
+        no_user: Žiadny používateľ s e-mailom %{email}
       report:
         title: Odovzdanie %{email}
         heading: Odovzdanie %{user}

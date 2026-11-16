@@ -6,7 +6,7 @@
 
   if (!window.App || !App.ControllerSubContent) return;
 
-  var PAGES = ['/ops/owner_handover'];
+  var PAGES = ['/ops/owner_handovers'];
 
   App.Config.set('OpsOwnerHandover', {
     prio: 3800,
