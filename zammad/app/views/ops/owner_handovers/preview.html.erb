@@ -1,6 +1,6 @@
 <% step = params[:step].to_s %>
-<% content_for :title, "Dry run: #{step_name(step)}" %>
-<h1>Dry run: <%= step_name(step) %></h1>
+<% content_for :title, "Preview: #{step_name(step)}" %>
+<h1>Preview: <%= step_name(step) %></h1>
 <p><%= link_to "← Back to the handover of #{@old_owner.email}", ops_owner_handover_path(@old_owner) %></p>
 
 <% if @error %>
@@ -32,7 +32,7 @@
         <% end %>
         <p class="muted">
           Runs right away in the background<%= ", as #{@runs.size} jobs one after another" if @runs.size > 1 %>, then back
-          to the handover page. Checked again when it runs, the result can differ from this dry run.
+          to the handover page. Checked again when it runs, the result can differ from this preview.
         </p>
         <button type="submit" class="danger">Apply</button>
       <% end %>

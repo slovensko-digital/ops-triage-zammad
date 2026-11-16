@@ -1,6 +1,6 @@
 <% content_for :title, 'Owner mismatches' %>
 <p>Groups with tickets not owned by their owner by trigger: <%= @mismatches.size %></p>
-<p class="muted">"Preview move" is a dry run, nothing changes before you apply it.</p>
+<p class="muted">"Preview move" changes nothing, only shows what the move does before you apply it.</p>
 <% if @mismatches.empty? %>
   <p>No mismatches.</p>
 <% else %>

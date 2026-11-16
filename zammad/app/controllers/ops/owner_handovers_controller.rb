@@ -1,5 +1,5 @@
 # The owner handover for admins, in tabs: an agent's report, the mismatches and the runs (Ops::OwnerHandoverRunsController).
-# Dry runs right away and the steps applied by Ops::OwnerHandoverJob right away. The same classes as the
+# Previews (dry runs) right away and the steps applied by Ops::OwnerHandoverJob right away. The same classes as the
 # ops:owner_handover rake tasks, with their default test customers.
 #
 # The agent's report leads the handover: 1. the triggers, a new owner picked for each group, 2. the tickets, moved to
@@ -32,7 +32,7 @@ class Ops::OwnerHandoversController < Ops::BaseController
     redirect_to ops_owner_handovers_path, alert: e.message
   end
 
-  # the dry run of a step, with the form queueing it (Ops::OwnerHandoverRunsController#create); @outputs are
+  # the preview (dry run) of a step, with the form queueing it (Ops::OwnerHandoverRunsController#create); @outputs are
   # [run, output, error, tickets it moves], the tickets nil for the triggers step
   def preview
     @runs = build_runs(@old_owner)

@@ -1,4 +1,4 @@
-<%# a dry run of one step: step, old_owner (a user), new_owner_id, groups, label %>
+<%# a preview of one step: step, old_owner (a user), new_owner_id, groups, label %>
 <%= form_with url: preview_ops_owner_handover_path(old_owner), method: :post, class: 'inline' do %>
   <%= hidden_field_tag :step, step %>
   <%= hidden_field_tag :new_owner_id, new_owner_id %>

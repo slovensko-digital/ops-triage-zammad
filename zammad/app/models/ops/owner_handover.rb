@@ -11,6 +11,7 @@
 #
 # Test tickets (customers in test_customer_logins:) are never moved. The reassign methods are dry runs unless
 # dry_run: false; groups: limits them to some groups, named as the report shows them ("Bratislava / Devín").
+# preview: true words the dry runs for the Ops pages, as a preview applied from the page.
 #
 #   h = Ops::OwnerHandover.new('old@example.org')
 #   h.report
@@ -23,8 +24,10 @@ class Ops::OwnerHandover
 
   attr_reader :old_owner
 
-  def initialize(old_owner_email, out: $stdout, all_ids: false, test_customer_logins: DEFAULT_TEST_CUSTOMER_LOGINS)
+  def initialize(old_owner_email, out: $stdout, all_ids: false, test_customer_logins: DEFAULT_TEST_CUSTOMER_LOGINS,
+                 preview: false)
     setup_handover_support(out:, all_ids:, test_customer_logins:)
+    @preview = preview
     @old_owner = find_agent!(old_owner_email)
   end
 
@@ -288,7 +291,8 @@ class Ops::OwnerHandover
   end
 
   def say_plan(what, new_owner, count, dry_run:)
-    say "#{dry_run ? '[DRY RUN] ' : ''}#{what} of #{describe(old_owner)} -> #{describe(new_owner)}: #{count}"
+    prefix = @preview ? '[PREVIEW] ' : '[DRY RUN] '
+    say "#{dry_run ? prefix : ''}#{what} of #{describe(old_owner)} -> #{describe(new_owner)}: #{count}"
   end
 
   PROGRESS_EVERY = 100
@@ -306,7 +310,7 @@ class Ops::OwnerHandover
 
   def say_dry_run_hint
     say ''
-    say 'Nothing changed, run again with dry_run: false to apply.'
+    say @preview ? 'Nothing changed, apply it below.' : 'Nothing changed, run again with dry_run: false to apply.'
   end
 
   def owned_tickets(groups: nil)

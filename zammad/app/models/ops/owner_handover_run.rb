@@ -77,9 +77,9 @@ class Ops::OwnerHandoverRun < ActiveRecord::Base
     step == 'tickets_routed'
   end
 
-  # the step through Ops::OwnerHandover, a dry run unless dry_run: false; ArgumentError for an unknown agent or group
+  # the step through Ops::OwnerHandover, a preview unless dry_run: false; ArgumentError for an unknown agent or group
   def perform(out:, dry_run: true)
-    handover = Ops::OwnerHandover.new(old_owner.email, out:)
+    handover = Ops::OwnerHandover.new(old_owner.email, out:, preview: dry_run)
     case step
     when 'triggers' then handover.reassign_triggers!(to: new_owner.email, groups: groups.presence, dry_run:)
     when 'tickets' then handover.reassign_tickets!(to: new_owner.email, groups: groups.presence, dry_run:)
