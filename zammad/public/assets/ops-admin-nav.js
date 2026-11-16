@@ -1,6 +1,7 @@
 // Adds the Ops admin pages (/ops/..., rendered by Rails) to Zammad's admin menu, under System, for admins only, as the
 // server allows them. hacks/hacks.rb loads it into the app layout right after application.js, which has started the app
-// by then; the admin menu reads NavBarAdmin only when it renders and the existing system/:target route opens the item.
+// by then; the admin menu reads NavBarAdmin when it renders (redrawn below if it already has) and the existing
+// system/:target route opens the item.
 (function () {
   'use strict';
 
@@ -29,4 +30,19 @@
     controller: embeddedPage('Owner handover', '/ops/owner_handover'),
     permission: ['admin'],
   }, 'NavBarAdmin');
+
+  // application.js starts the app as it loads, so on a reload of an admin page the menu may have rendered before this
+  // script ran: redraw its sidebar, and open the page if the URL points at it (Zammad fell back to the first item).
+  var manage = App.TaskManager && App.TaskManager.worker('Manage');
+  if (!manage) return;
+
+  var groups = manage.groupsSorted();
+  manage.$('.sidebar').html(App.view('generic/navbar_level2/navbar')({
+    groups: groups,
+    className: manage.configKey,
+    selectedItem: manage.selectedItem(groups),
+  }));
+  var lastTarget = manage.lastTarget;
+  manage.updateNavigation(false, {});
+  if (manage.shown && manage.lastTarget !== lastTarget) manage.activeController.show();
 })();
