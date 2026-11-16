@@ -14,8 +14,8 @@
 
   // the page's language, <html lang> of layouts/ops.html.erb
   var TEXTS = {
-    en: { none: 'No agent found', inactive: ' (inactive)', pick: 'Pick an agent from the list' },
-    sk: { none: 'Žiaden agent sa nenašiel', inactive: ' (neaktívny)', pick: 'Vyberte agenta zo zoznamu' },
+    en: { none: 'No owner found', inactive: ' (inactive)', pick: 'Pick an owner from the list' },
+    sk: { none: 'Žiaden vlastník sa nenašiel', inactive: ' (neaktívny)', pick: 'Vyberte vlastníka zo zoznamu' },
   };
   var TEXT = TEXTS[document.documentElement.lang] || TEXTS.en;
 
