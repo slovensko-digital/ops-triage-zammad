@@ -1,25 +1,25 @@
-<% content_for :title, ot('show_run.title', id: @run.id) %>
+<% content_for :title, "Job ##{@run.id}" %>
 <% if @run.active? %>
   <% content_for :head do %><meta http-equiv="refresh" content="3"><% end %>
 <% end %>
-<p><%= link_to ot('back_to_handover', email: @run.old_owner.email), ops_owner_handover_path(@run.old_owner) %></p>
+<p><%= link_to "← Back to the handover of #{@run.old_owner.email}", ops_owner_handover_path(@run.old_owner) %></p>
 <h1>
-  <%= ot('show_run.heading', id: @run.id, step: step_name(@run.step)) %>
-  <span class="status-<%= @run.status %>"><%= status_name(@run.status) %></span>
+  Job #<%= @run.id %>: <%= step_name(@run.step) %>
+  <span class="status-<%= @run.status %>"><%= @run.status %></span>
 </h1>
 <table>
-  <tr><th><%= ot('columns.from') %></th><td><%= link_to describe_user(@run.old_owner), ops_owner_handover_path(@run.old_owner) %></td></tr>
-  <tr><th><%= ot('columns.to') %></th><td><%= @run.routed? ? ot('routed_owners_long') : describe_user(@run.new_owner) %></td></tr>
-  <tr><th><%= ot('columns.groups') %></th><td><%= @run.groups.presence&.join(', ') || ot('all_groups') %></td></tr>
-  <tr><th><%= ot('columns.started') %></th><td><%= @run.started_at %></td></tr>
-  <tr><th><%= ot('columns.finished') %></th><td><%= @run.finished_at %></td></tr>
-  <tr><th><%= ot('columns.queued_by') %></th><td><%= describe_user(@run.created_by) %> <%= ot('at') %> <%= @run.created_at %></td></tr>
+  <tr><th>From</th><td><%= link_to describe_user(@run.old_owner), ops_owner_handover_path(@run.old_owner) %></td></tr>
+  <tr><th>To</th><td><%= @run.routed? ? 'the owner each group\'s trigger routes it to' : describe_user(@run.new_owner) %></td></tr>
+  <tr><th>Groups</th><td><%= @run.groups.presence&.join(', ') || 'all' %></td></tr>
+  <tr><th>Started</th><td><%= @run.started_at %></td></tr>
+  <tr><th>Finished</th><td><%= @run.finished_at %></td></tr>
+  <tr><th>Queued by</th><td><%= describe_user(@run.created_by) %> at <%= @run.created_at %></td></tr>
 </table>
 
 <% if @run.status == 'queued' %>
-  <p class="muted"><%= ot('show_run.waits') %></p>
+  <p class="muted">Waits for another job to finish.</p>
 <% end %>
 
 <% if @run.error %><div class="alert"><%= @run.error %></div><% end %>
-<h2><%= ot('show_run.output') %></h2>
-<pre><%= @run.log.presence || ot('show_run.nothing_yet') %></pre>
+<h2>Output</h2>
+<pre><%= @run.log.presence || '(nothing yet)' %></pre>

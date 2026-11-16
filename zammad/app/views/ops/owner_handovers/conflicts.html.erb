@@ -1,13 +1,13 @@
-<% content_for :title, ot('conflicts.title') %>
-<p><%= ot('conflicts.count', count: @conflicts.size) %></p>
-<p class="muted"><%= ot('conflicts.help') %></p>
+<% content_for :title, 'Conflicts' %>
+<p>Groups with tickets not owned by their owner by trigger: <%= @conflicts.size %></p>
+<p class="muted">"Preview move" is a dry run, nothing changes before you apply it.</p>
 <% if @conflicts.empty? %>
-  <p><%= ot('conflicts.none') %></p>
+  <p>No conflicts.</p>
 <% else %>
   <table>
     <tr>
-      <th><%= ot('columns.group') %></th><th><%= ot('columns.routed_owner') %></th><th><%= ot('columns.other_owner') %></th>
-      <th><%= ot('columns.tickets_open') %></th><th></th>
+      <th>Group</th><th>Owner by trigger</th><th>Other owner</th>
+      <th>Tickets (open)</th><th></th>
     </tr>
     <% @conflicts.sort_by { |conflict| conflict.group.name }.each do |conflict| %>
       <% routed = conflict.routed_owner && User.find_by(id: conflict.routed_owner) %>
@@ -22,7 +22,7 @@
             <td rowspan="<%= strays.size %>">
               <% if routed %>
                 <%= describe_user(routed) %>
-                <% if conflict.tickets_by_owner[routed.id] %><br><span class="muted"><%= ot('conflicts.owns_here', count: conflict.tickets_by_owner[routed.id].size) %></span><% end %>
+                <% if conflict.tickets_by_owner[routed.id] %><br><span class="muted">owns <%= conflict.tickets_by_owner[routed.id].size %> here</span><% end %>
               <% else %>
                 <span class="warn"><%= routing_text(conflict.routed_owners) %></span>
               <% end %>
@@ -32,14 +32,14 @@
             <% if owner %>
               <%= link_to describe_user(owner), ops_owner_handover_path(owner) %>
             <% else %>
-              <%= ot('unknown_user', id: owner_id) %>
+              unknown user #<%= owner_id %>
             <% end %>
           </td>
           <td><%= tickets.size %> (<%= tickets.count { |state_id, _id, _created_at| @open_state_ids.include?(state_id) } %>)</td>
           <td>
             <% if routed && owner %>
               <%= render 'preview_button', step: 'tickets', old_owner: owner, new_owner_id: routed.id,
-                                           groups: [label], label: ot('conflicts.preview_move') %>
+                                           groups: [label], label: 'Preview move to the owner by trigger' %>
             <% end %>
           </td>
         </tr>

@@ -1,4 +1,4 @@
-<% content_for :title, ot('report.title', email: @old_owner.email) %>
+<% content_for :title, "Hand over #{@old_owner.email}" %>
 <%
   to_hand_over = @groups.fetch(:triggers, [])
   to_move = @groups.fetch(:tickets, [])
@@ -7,67 +7,70 @@
   ready = to_move.reject { |group| busy_run(group.label) }
   active_runs = @runs.select(&:active?)
   tickets_cell = lambda do |group|
-    group.test_tickets.positive? ? ot('with_test', tickets: group.tickets, test: group.test_tickets) : group.tickets
+    group.test_tickets.positive? ? "#{group.tickets} + #{group.test_tickets} test" : group.tickets
   end
-  busy_link = ->(run) { link_to ot('run_link', id: run.id, status: status_name(run.status)), ops_owner_handover_run_path(run) }
+  busy_link = ->(run) { link_to "job ##{run.id} #{run.status}", ops_owner_handover_run_path(run) }
 %>
-<h1><%= ot('report.heading', user: describe_user(@old_owner)) %></h1>
+<h1>Hand over <%= describe_user(@old_owner) %></h1>
 
 <div class="next">
   <% if active_runs.any? %>
-    <%= ot('report.running_html', runs: active_runs.map { |run| "##{run.id} #{step_name(run.step)}" }.join(', ')) %>
+    <strong>Running:</strong> <%= active_runs.map { |run| "##{run.id} #{step_name(run.step)}" }.join(', ') %>. This page updates when it ends.
   <% elsif to_hand_over.any? %>
-    <%= ot('report.next_triggers_html') %>
+    <strong>Next: 1. hand over the triggers</strong>, pick a new owner for each group below.
   <% elsif to_move.any? %>
-    <%= ot('report.next_tickets_html') %>
+    <strong>Next: 2. move the tickets</strong> below.
   <% elsif attention.any? %>
-    <%= ot('report.next_attention_html') %>
+    <strong>Next: fix the triggers</strong> of the groups below in Zammad.
   <% else %>
-    <%= ot('report.complete_html') %>
+    <strong>Handover complete.</strong>
   <% end %>
 </div>
 
 <% if @runs.any? %>
-  <h2><%= ot('report.runs_heading') %></h2>
-  <div id="runs-finished" class="notice" hidden><%= ot('report.run_ended_html') %></div>
+  <h2>Jobs for this owner</h2>
+  <div id="runs-finished" class="notice" hidden>A job ended. <a href="">Reload the page</a> to see where the groups are now (the new owners you picked are kept only until then).</div>
   <table>
     <tr>
-      <th>#</th><th><%= ot('columns.step') %></th><th><%= ot('columns.to') %></th><th><%= ot('columns.groups') %></th>
-      <th><%= ot('columns.status') %></th><th><%= ot('columns.queued') %></th><th><%= ot('columns.by') %></th>
+      <th>#</th><th>Type</th><th>To</th><th>Groups</th>
+      <th>Status</th><th>Queued</th><th>By</th>
     </tr>
     <% @runs.first(5).each do |run| %>
       <tr>
         <td><%= link_to "##{run.id}", ops_owner_handover_run_path(run) %></td>
         <td><%= step_name(run.step) %></td>
-        <td><%= run.routed? ? ot('routed_owners') : run.new_owner.email %></td>
-        <td><%= run.groups.presence&.join(', ') || ot('all_groups') %></td>
-        <td class="status-<%= run.status %>" <%= "data-run-id=#{run.id}".html_safe if run.active? %>><%= status_name(run.status) %></td>
+        <td><%= run.routed? ? 'owners by trigger' : run.new_owner.email %></td>
+        <td><%= run.groups.presence&.join(', ') || 'all' %></td>
+        <td class="status-<%= run.status %>" <%= "data-run-id=#{run.id}".html_safe if run.active? %>><%= run.status %></td>
         <td><%= run.created_at %></td>
         <td><%= run.created_by&.email %></td>
       </tr>
     <% end %>
   </table>
-  <p class="muted"><%= link_to ot('report.all_runs'), ops_owner_handover_runs_path %></p>
+  <p class="muted"><%= link_to 'All jobs', ops_owner_handover_runs_path %></p>
 <% end %>
 
-<h2><%= ot('report.triggers_heading', count: to_hand_over.size) %></h2>
+<h2>1. Triggers (<%= to_hand_over.size %>)</h2>
 <% if to_hand_over.empty? %>
-  <p class="muted"><%= ot('report.no_triggers') %></p>
+  <p class="muted">No trigger routes a group to this owner anymore.</p>
 <% else %>
-  <p class="muted"><%= ot('report.triggers_help') %></p>
+  <p class="muted">
+    Pick the new owner of each group, groups left empty stay as they are. The new owner gets access to the group and
+    the new tickets of the group go to them. The tickets already there move in step 2.
+  </p>
   <table>
     <tr>
-      <th><%= ot('columns.group') %></th><th><%= ot('columns.trigger') %></th><th><%= ot('columns.tickets') %></th>
-      <th><%= ot('columns.new_owner') %></th>
+      <th>Group</th><th>Trigger</th><th>Tickets</th>
+      <th>New owner</th>
     </tr>
     <% to_hand_over.each do |group| %>
       <tr>
         <td><%= group.label %></td>
         <td>
           <% group.triggers.each do |trigger| %>
-            #<%= trigger.id %> <span class="<%= trigger.active ? '' : 'muted' %>"><%= "#{ot('inactive')} " unless trigger.active %><%= trigger.name %></span><br>
+            #<%= trigger.id %> <span class="<%= trigger.active ? '' : 'muted' %>"><%= 'INACTIVE ' unless trigger.active %><%= trigger.name %></span><br>
           <% end %>
-          <% if group.triggers.size > 1 %><span class="warn"><%= ot('report.several_triggers') %></span><% end %>
+          <% if group.triggers.size > 1 %><span class="warn">several triggers, a group should have one: all move to the new owner</span><% end %>
         </td>
         <td><%= tickets_cell.call(group) %></td>
         <td>
@@ -82,18 +85,21 @@
   </table>
   <%= form_with url: preview_ops_owner_handover_path(@old_owner), method: :post, id: 'triggers-form', class: 'step' do %>
     <%= hidden_field_tag :step, 'triggers' %>
-    <button type="submit"><%= ot('report.preview_triggers') %></button>
+    <button type="submit">Preview the trigger handover (dry run)</button>
   <% end %>
 <% end %>
 
-<h2><%= ot('report.tickets_heading', count: to_move.size) %></h2>
+<h2>2. Tickets (<%= to_move.size %>)</h2>
 <% if to_move.empty? %>
-  <p class="muted"><%= to_hand_over.any? ? ot('report.tickets_wait') : ot('report.no_tickets') %></p>
+  <p class="muted"><%= to_hand_over.any? ? 'The groups come here once their trigger is handed over.' : 'No tickets to move.' %></p>
 <% else %>
-  <p class="muted"><%= ot('report.tickets_help') %></p>
+  <p class="muted">
+    The tickets go to the owner the group's trigger routes it to, closed ones too, without notifications. Test tickets
+    stay with this owner.
+  </p>
   <table>
     <tr>
-      <th><%= ot('columns.group') %></th><th><%= ot('columns.tickets') %></th><th><%= ot('columns.goes_to') %></th><th></th>
+      <th>Group</th><th>Tickets</th><th>Goes to</th><th></th>
     </tr>
     <% to_move.each do |group| %>
       <tr>
@@ -105,7 +111,7 @@
             <%= busy_link.call(run) %>
           <% else %>
             <%= render 'preview_button', step: 'tickets_routed', old_owner: @old_owner, new_owner_id: nil,
-                                         groups: [group.label], label: ot('report.preview_group') %>
+                                         groups: [group.label], label: 'Preview this group' %>
           <% end %>
         </td>
       </tr>
@@ -114,16 +120,19 @@
   <% if ready.any? %>
     <div class="step">
       <%= render 'preview_button', step: 'tickets_routed', old_owner: @old_owner, new_owner_id: nil,
-                                   groups: ready.map(&:label), label: ot('report.preview_tickets', count: ready.size) %>
+                                   groups: ready.map(&:label), label: "Preview moving the tickets of #{pluralize(ready.size, 'group')} (dry run)" %>
     </div>
   <% end %>
 <% end %>
 
 <% if attention.any? %>
-  <h2 class="warn"><%= ot('report.attention_heading', count: attention.size) %></h2>
-  <p class="muted"><%= ot('report.attention_help') %></p>
+  <h2 class="warn">Needs attention (<%= attention.size %>)</h2>
+  <p class="muted">
+    Tickets left, but no single active trigger routes the group to another owner. Fix the group's trigger in Zammad,
+    then reload this page.
+  </p>
   <table>
-    <tr><th><%= ot('columns.group') %></th><th><%= ot('columns.tickets') %></th><th><%= ot('columns.routing_now') %></th></tr>
+    <tr><th>Group</th><th>Tickets</th><th>Routing now</th></tr>
     <% attention.each do |group| %>
       <tr><td><%= group.label %></td><td><%= group.tickets %></td><td class="warn"><%= routing_text(group.routes) %></td></tr>
     <% end %>
@@ -131,11 +140,11 @@
 <% end %>
 
 <% if done.any? %>
-  <h2><%= ot('report.done_heading', count: done.size) %></h2>
-  <p class="muted"><%= ot('report.done_help', groups: done.map { |group| "#{group.label} (#{group.test_tickets})" }.join(', ')) %></p>
+  <h2>Done (<%= done.size %>)</h2>
+  <p class="muted">Only test tickets left, they stay with this owner: <%= done.map { |group| "#{group.label} (#{group.test_tickets})" }.join(', ') %></p>
 <% end %>
 
 <details>
-  <summary><%= ot('report.full_report_html') %></summary>
+  <summary>Full text report (the same as <code>rake ops:owner_handover:report</code>)</summary>
   <pre><%= @report %></pre>
 </details>

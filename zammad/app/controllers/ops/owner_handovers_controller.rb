@@ -35,7 +35,7 @@ class Ops::OwnerHandoversController < Ops::BaseController
   # the dry run of a step, with the form queueing it (Ops::OwnerHandoverRunsController#create)
   def preview
     @runs = build_runs(@old_owner)
-    @error = ot('preview.no_owner') if @runs.empty?
+    @error = 'Pick the new owner of at least one group.' if @runs.empty?
     @error ||= @runs.flat_map { |run| run.errors.full_messages if run.invalid? }.compact.uniq.join("\n").presence
     return render(:preview, status: :unprocessable_content) if @error
 
@@ -64,14 +64,13 @@ class Ops::OwnerHandoversController < Ops::BaseController
 
   # routes { owner id => trigger ids } of a group, when not a single other agent
   def routing_text(routes)
-    return ot('routing.none') if routes.empty?
+    return 'no active trigger routes this group' if routes.empty?
 
     described = routes.map do |owner_id, trigger_ids|
       user = User.find_by(id: owner_id)
-      ot('routing.by', user: user ? describe_user(user) : ot('unknown_user', id: owner_id),
-                       triggers: trigger_ids.map { |id| "##{id}" }.join(', '))
+      "#{user ? describe_user(user) : "unknown user ##{owner_id}"} by #{trigger_ids.map { |id| "##{id}" }.join(', ')}"
     end
-    routes.size > 1 ? ot('routing.several', routes: described.join('; ')) : described.first
+    routes.size > 1 ? "several triggers route it: #{described.join('; ')}" : described.first
   end
 
   # the queued or running run of the report touching the group, if any

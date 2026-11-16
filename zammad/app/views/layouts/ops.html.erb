@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="<%= I18n.locale %>">
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title><%= content_for?(:title) ? "#{yield(:title)} · " : '' %><%= t('ops.layout.site') %></title>
+  <title><%= content_for?(:title) ? "#{yield(:title)} · " : '' %>Ops · Triage</title>
   <%= csrf_meta_tags %>
   <%= yield :head %>
   <script src="/assets/ops-user-autocomplete.js?v<%= Rails.public_path.join('assets/ops-user-autocomplete.js').mtime.to_i %>" defer></script>
@@ -49,8 +49,8 @@
 </head>
 <body>
   <header>
-    <a href="/#"><%= t('ops.layout.back_to_triage') %></a>
-    <a href="<%= ops_owner_handovers_path %>"><%= t('ops.layout.owner_handover') %></a>
+    <a href="/#">← Triage</a>
+    <a href="<%= ops_owner_handovers_path %>">Handover</a>
   </header>
   <main>
     <%= yield :tabs %>

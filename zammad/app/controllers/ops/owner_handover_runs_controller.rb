@@ -16,13 +16,14 @@ class Ops::OwnerHandoverRunsController < Ops::BaseController
     old_owner = User.find(params[:old_owner_id])
     runs = build_runs(old_owner)
     if runs.empty? || runs.any?(&:invalid?)
-      return redirect_to(ops_owner_handover_path(old_owner), alert: ot('create_run.nothing'))
+      return redirect_to(ops_owner_handover_path(old_owner), alert: 'Nothing to apply, preview the step again.')
     end
 
     Ops::OwnerHandoverRun.transaction { runs.each(&:save!) }
     runs.each { |run| Ops::OwnerHandoverJob.perform_later(run.id) }
     redirect_to ops_owner_handover_path(old_owner),
-                notice: ot('create_run.queued', runs: runs.map { |run| "##{run.id}" }.join(', '))
+                notice: "Queued #{runs.map { |run| "##{run.id}" }.join(', ')}. It runs in the background, " \
+                        'this page follows it and updates when it ends.'
   end
 
   # { id => status } of the runs asked for

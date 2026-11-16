@@ -1,6 +1,6 @@
 # Ops admin pages, rendered by Rails next to the Zammad app, for admins logged in to Triage.
 #
-#   GET  /ops/owner_handovers                  owner_handovers#index, ?email= of the owner leaving redirects to show
+#   GET  /ops/owner_handovers                  owner_handovers#index, ?owner_id= of the owner leaving redirects to show
 #   GET  /ops/owner_handovers/conflicts        owner_handovers#conflicts
 #   GET  /ops/owner_handovers/:id              owner_handovers#show, the handover of the owner (user id) leaving
 #   POST /ops/owner_handovers/:id/preview      owner_handovers#preview

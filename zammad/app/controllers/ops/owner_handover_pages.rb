@@ -5,7 +5,7 @@ module Ops::OwnerHandoverPages
 
   included do
     layout 'ops_owner_handover'
-    helper_method :tab, :ot, :step_name, :status_name
+    helper_method :tab, :step_name
   end
 
   private
@@ -14,16 +14,10 @@ module Ops::OwnerHandoverPages
     raise NotImplementedError
   end
 
-  def ot(key, **)
-    t("ops.owner_handover.#{key}", **)
-  end
+  STEP_NAMES = { 'tickets_routed' => 'tickets to the owners by trigger' }.freeze
 
   def step_name(step)
-    ot("steps.#{step}", default: step.to_s)
-  end
-
-  def status_name(status)
-    ot("statuses.#{status}", default: status.to_s)
+    STEP_NAMES.fetch(step.to_s, step.to_s)
   end
 
   # the runs of the step the preview form posts (step, new_owner_id, groups[], owners[]) for the owner leaving
