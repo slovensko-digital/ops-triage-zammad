@@ -1,0 +1,48 @@
+<% content_for :title, 'Conflicts' %>
+<p>Groups with tickets not owned by the routed owner: <%= @conflicts.size %></p>
+<p class="muted">Unowned and test tickets left out. "Preview move" is a dry run, nothing changes before you apply it.</p>
+<% if @conflicts.empty? %>
+  <p>No conflicts.</p>
+<% else %>
+  <table>
+    <tr><th>Group</th><th>Routed owner</th><th>Other owner</th><th>Tickets (open)</th><th></th></tr>
+    <% @conflicts.sort_by { |conflict| conflict.group.name }.each do |conflict| %>
+      <% routed = conflict.routed_owner && User.find_by(id: conflict.routed_owner) %>
+      <% label = conflict.group.name.split('::').join(' / ') %>
+      <% strays = conflict.stray_owners.sort_by { |owner_id| -conflict.tickets_by_owner[owner_id].size } %>
+      <% strays.each_with_index do |owner_id, index| %>
+        <% owner = User.find_by(id: owner_id) %>
+        <% tickets = conflict.tickets_by_owner[owner_id] %>
+        <tr>
+          <% if index.zero? %>
+            <td rowspan="<%= strays.size %>"><%= label %></td>
+            <td rowspan="<%= strays.size %>">
+              <% if routed %>
+                <%= describe_user(routed) %>
+                <% if conflict.tickets_by_owner[routed.id] %><br><span class="muted">owns <%= conflict.tickets_by_owner[routed.id].size %> here</span><% end %>
+              <% elsif conflict.routed_owners.empty? %>
+                <span class="warn">no active trigger routes this group</span>
+              <% else %>
+                <span class="warn">several triggers route it: <%= conflict.routed_owners.map { |id, trigger_ids| "#{describe_user(User.find_by(id:))} by #{trigger_ids.map { |t| "##{t}" }.join(', ')}" }.join('; ') %></span>
+              <% end %>
+            </td>
+          <% end %>
+          <td>
+            <% if owner %>
+              <%= link_to describe_user(owner), ops_owner_handover_report_path(email: owner.email) %>
+            <% else %>
+              unknown user #<%= owner_id %>
+            <% end %>
+          </td>
+          <td><%= tickets.size %> (<%= tickets.count { |state_id, _id, _created_at| @open_state_ids.include?(state_id) } %>)</td>
+          <td>
+            <% if routed && owner %>
+              <%= render 'preview_button', step: 'tickets', old_email: owner.email, new_email: routed.email,
+                                           groups: [label], label: 'Preview move to the routed owner' %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    <% end %>
+  </table>
+<% end %>

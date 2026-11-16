@@ -1,16 +1,21 @@
-# The owner handover for admins: the conflicts, an agent's report, dry runs right away and the steps applied by
-# Ops::OwnerHandoverJob right away. The same classes as the ops:owner_handover rake tasks, with their default test
-# customers.
+# The owner handover for admins, in tabs: an agent's report, the conflicts and the runs. Dry runs right away and the
+# steps applied by Ops::OwnerHandoverJob right away. The same classes as the ops:owner_handover rake tasks, with their
+# default test customers.
 class Ops::OwnerHandoversController < ApplicationController
   prepend_before_action :authenticate_and_authorize!
   prepend_before_action :redirect_to_login, unless: -> { authentication_check_only }
 
   layout 'ops'
-  helper_method :describe_user, :time_in_zone
+  helper_method :describe_user, :time_in_zone, :tab
 
-  def index
+  def index; end
+
+  def conflicts
     @conflicts = Ops::OwnerConflicts.new(out: StringIO.new).conflicts
     @open_state_ids = Ticket::State.by_category(:open).pluck(:id)
+  end
+
+  def runs
     @runs = Ops::OwnerHandoverRun.recent.includes(:created_by).limit(30)
   end
 
@@ -52,6 +57,15 @@ class Ops::OwnerHandoversController < ApplicationController
   end
 
   private
+
+  # the tab of the layout the page shows under
+  def tab
+    case action_name
+    when 'conflicts' then 'Conflicts'
+    when 'runs', 'show_run' then 'Runs'
+    else 'Hand over an agent'
+    end
+  end
 
   def redirect_to_login
     redirect_to '/#login'

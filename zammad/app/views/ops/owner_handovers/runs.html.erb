@@ -1,0 +1,22 @@
+<% content_for :title, 'Runs' %>
+<p class="muted">The steps applied, the last 30.</p>
+<% if @runs.empty? %>
+  <p class="muted">No runs yet.</p>
+<% else %>
+  <table>
+    <tr><th>#</th><th>Step</th><th>From</th><th>To</th><th>Groups</th><th>Status</th><th>Queued</th><th>Finished</th><th>By</th></tr>
+    <% @runs.each do |run| %>
+      <tr>
+        <td><%= link_to "##{run.id}", ops_owner_handover_run_path(run) %></td>
+        <td><%= run.step %></td>
+        <td><%= run.old_owner_email %></td>
+        <td><%= run.new_owner_email %></td>
+        <td><%= run.groups.presence&.join(', ') || 'all' %></td>
+        <td class="status-<%= run.status %>"><%= run.status %></td>
+        <td><%= time_in_zone(run.created_at) %></td>
+        <td><%= time_in_zone(run.finished_at) %></td>
+        <td><%= run.created_by&.email %></td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>

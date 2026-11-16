@@ -4,10 +4,6 @@
   <meta charset="utf-8">
   <title><%= content_for?(:title) ? "#{yield(:title)} · " : '' %>Ops · Triage</title>
   <%= csrf_meta_tags %>
-  <%# shown in Zammad's admin menu (public/assets/ops-admin-nav.js) the page drops its own header %>
-  <%= javascript_tag nonce: true do %>
-    if (window.top !== window.self) document.documentElement.classList.add('embedded');
-  <% end %>
   <%= yield :head %>
   <script src="/assets/ops-user-autocomplete.js?v<%= Rails.public_path.join('assets/ops-user-autocomplete.js').mtime.to_i %>" defer></script>
   <style>
@@ -15,8 +11,11 @@
     header { background: #24292f; color: #fff; padding: 10px 24px; }
     header a { color: #fff; text-decoration: none; margin-right: 16px; }
     main { padding: 16px 24px 48px; max-width: 1400px; }
-    .embedded header { display: none; }
-    .embedded body { background: #fff; }
+    nav.tabs { display: flex; gap: 4px; border-bottom: 1px solid #d0d7de; margin-bottom: 16px; }
+    nav.tabs a { padding: 8px 14px; color: #1f2328; text-decoration: none; border: 1px solid transparent; border-bottom: 0;
+      border-radius: 6px 6px 0 0; margin-bottom: -1px; }
+    nav.tabs a:hover { background: #eaeef2; }
+    nav.tabs a.active { background: #fff; border-color: #d0d7de; font-weight: 600; }
     h1 { font-size: 20px; } h2 { font-size: 16px; margin-top: 28px; }
     table { border-collapse: collapse; background: #fff; width: 100%; }
     th, td { border: 1px solid #d0d7de; padding: 5px 8px; text-align: left; vertical-align: top; }
@@ -47,10 +46,16 @@
 </head>
 <body>
   <header>
-    <a href="/#" target="_top">← Triage</a>
+    <a href="/#">← Triage</a>
     <a href="<%= ops_owner_handover_path %>">Owner handover</a>
   </header>
   <main>
+    <nav class="tabs">
+      <% { 'Hand over an agent' => ops_owner_handover_path, 'Conflicts' => ops_owner_handover_conflicts_path,
+           'Runs' => ops_owner_handover_runs_path }.each do |name, path| %>
+        <%= link_to name, path, class: ('active' if tab == name) %>
+      <% end %>
+    </nav>
     <% if flash[:alert] %><div class="alert"><%= flash[:alert] %></div><% end %>
     <% if flash[:notice] %><div class="notice"><%= flash[:notice] %></div><% end %>
     <%= yield %>
