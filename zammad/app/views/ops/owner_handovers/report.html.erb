@@ -17,19 +17,14 @@
   <% if active_runs.any? %>
     <%= ot('report.running_html', runs: active_runs.map { |run| "##{run.id} #{step_name(run.step)}" }.join(', ')) %>
   <% elsif to_hand_over.any? %>
-    <%= ot('report.next_triggers_html', count: to_hand_over.size) %>
+    <%= ot('report.next_triggers_html') %>
   <% elsif to_move.any? %>
-    <%= ot('report.next_tickets_html', count: to_move.size) %>
+    <%= ot('report.next_tickets_html') %>
   <% elsif attention.any? %>
-    <%= ot('report.next_attention_html', count: attention.size) %>
+    <%= ot('report.next_attention_html') %>
   <% else %>
     <%= ot('report.complete_html') %>
-    <%= ot('report.test_tickets_stay', count: done.sum(&:test_tickets)) if done.any? %>
   <% end %>
-  <span class="muted">
-    · <%= ot('report.counts', triggers: to_hand_over.size, tickets: to_move.size) %>
-    <%= ot('report.counts_attention', count: attention.size) if attention.any? %>
-  </span>
 </div>
 
 <% if @runs.any? %>

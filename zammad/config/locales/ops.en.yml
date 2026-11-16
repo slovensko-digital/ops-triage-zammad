@@ -6,7 +6,7 @@ en:
       layout:
         site: Ops · Triage
         back_to_triage: ← Triage
-        owner_handover: Owner handover
+        owner_handover: Handover
         language: Language
       tabs:
         hand_over: Hand over an owner
@@ -58,7 +58,7 @@ en:
       agent_field:
         placeholder: Search…
       index:
-        title: Owner handover
+        title: Handover
         intro: Shows the groups where the owner has triggers or tickets, and hands them over to other owners step by step.
         agent_leaving: Owner leaving
         show_report: Show report
@@ -66,21 +66,10 @@ en:
         title: Hand over %{email}
         heading: Hand over %{user}
         running_html: "<strong>Running:</strong> %{runs}. This page updates when it ends."
-        next_triggers_html:
-          one: "<strong>Next: 1. hand over the trigger</strong> of 1 group, pick its new owner below."
-          other: "<strong>Next: 1. hand over the triggers</strong> of %{count} groups, pick the new owner of each below."
-        next_tickets_html:
-          one: "<strong>Next: 2. move the tickets</strong> of 1 group to the owner it is routed to."
-          other: "<strong>Next: 2. move the tickets</strong> of %{count} groups to the owners they are routed to."
-        next_attention_html:
-          one: "<strong>Next: fix the trigger</strong> of 1 group in Zammad, see below."
-          other: "<strong>Next: fix the triggers</strong> of %{count} groups in Zammad, see below."
+        next_triggers_html: "<strong>Next: 1. hand over the triggers</strong>, pick a new owner for each group below."
+        next_tickets_html: "<strong>Next: 2. move the tickets</strong> below."
+        next_attention_html: "<strong>Next: fix the triggers</strong> of the groups below in Zammad."
         complete_html: "<strong>Handover complete.</strong>"
-        test_tickets_stay:
-          one: 1 test ticket stays with the owner.
-          other: "%{count} test tickets stay with the owner."
-        counts: "triggers to hand over %{triggers} · tickets to move %{tickets}"
-        counts_attention: "· needs attention %{count}"
         runs_heading: Jobs for this owner
         run_ended_html: A job ended. <a href="">Reload the page</a> to see where the groups are now (the new owners you picked are kept only until then).
         all_runs: All jobs

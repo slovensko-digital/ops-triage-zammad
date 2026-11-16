@@ -10,7 +10,7 @@
 
   App.Config.set('OpsOwnerHandover', {
     prio: 3800,
-    name: 'Owner handover',
+    name: 'Handover',
     parent: '#system',
     target: PAGES[0],
     // the menu lists only items with a controller; never run, the link leaves the app

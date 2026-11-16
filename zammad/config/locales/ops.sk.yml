@@ -6,7 +6,7 @@ sk:
       layout:
         site: Ops · Triáž
         back_to_triage: ← Triáž
-        owner_handover: Odovzdanie vlastníka
+        owner_handover: Odovzdanie
         language: Jazyk
       tabs:
         hand_over: Odovzdať vlastníka
@@ -58,7 +58,7 @@ sk:
       agent_field:
         placeholder: Hľadať…
       index:
-        title: Odovzdanie vlastníka
+        title: Odovzdanie
         intro: Ukáže skupiny, v ktorých má vlastník spúšťače alebo tikety, a krok za krokom ich odovzdá iným vlastníkom.
         agent_leaving: Odchádzajúci vlastník
         show_report: Ukázať prehľad
@@ -66,21 +66,10 @@ sk:
         title: Odovzdanie %{email}
         heading: Odovzdanie %{user}
         running_html: "<strong>Beží:</strong> %{runs}. Stránka sa obnoví, keď skončí."
-        next_triggers_html:
-          one: "<strong>Ďalej: 1. odovzdajte spúšťač</strong> jednej skupiny, nižšie vyberte jej nového vlastníka."
-          other: "<strong>Ďalej: 1. odovzdajte spúšťače</strong>, skupín na odovzdanie: %{count}. Pri každej nižšie vyberte nového vlastníka."
-        next_tickets_html:
-          one: "<strong>Ďalej: 2. presuňte tikety</strong> jednej skupiny vlastníkovi, ku ktorému ju smeruje spúšťač."
-          other: "<strong>Ďalej: 2. presuňte tikety</strong> vlastníkom, ku ktorým skupiny smerujú spúšťače, skupín: %{count}."
-        next_attention_html:
-          one: "<strong>Ďalej: opravte spúšťač</strong> jednej skupiny v Zammade, pozri nižšie."
-          other: "<strong>Ďalej: opravte spúšťače</strong> v Zammade, skupín: %{count}, pozri nižšie."
+        next_triggers_html: "<strong>Ďalej: 1. odovzdajte spúšťače</strong>, pri každej skupine nižšie vyberte nového vlastníka."
+        next_tickets_html: "<strong>Ďalej: 2. presuňte tikety</strong> nižšie."
+        next_attention_html: "<strong>Ďalej: opravte v Zammade spúšťače</strong> skupín nižšie."
         complete_html: "<strong>Odovzdanie je hotové.</strong>"
-        test_tickets_stay:
-          one: Jeden testovací tiket zostáva vlastníkovi.
-          other: "Testovacie tikety zostávajú vlastníkovi: %{count}."
-        counts: "spúšťače na odovzdanie %{triggers} · tikety na presun %{tickets}"
-        counts_attention: "· treba vyriešiť %{count}"
         runs_heading: Zmeny pre tohto vlastníka
         run_ended_html: Zmena skončila. <a href="">Obnovte stránku</a>, aby ste videli, kde sú skupiny teraz (vybraní noví vlastníci sa pritom stratia).
         all_runs: Všetky zmeny
