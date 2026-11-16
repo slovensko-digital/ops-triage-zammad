@@ -8,6 +8,7 @@ end
 replace_file_with('app/views/layouts/application.html.erb') do |content|
   content.gsub(/<\/head>/, <<-HACK)
   <%= stylesheet_link_tag "/assets/ops-application.css?v#{content.hash}" %>
+  <%= javascript_include_tag "/assets/ops-admin-nav.js?v\#{Rails.public_path.join('assets/ops-admin-nav.js').mtime.to_i}", nonce: true, defer: 'defer', skip_pipeline: true %>
 </head>
   HACK
 end
