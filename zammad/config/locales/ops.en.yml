@@ -1,0 +1,140 @@
+# The Ops admin pages (/ops/...), see Ops::OwnerHandoversController; Slovak in ops.sk.yml. The step logs stay in English,
+# they are the same as the rake tasks print.
+en:
+  ops:
+    owner_handover:
+      layout:
+        site: Ops · Triage
+        back_to_triage: ← Triage
+        owner_handover: Owner handover
+        language: Language
+      tabs:
+        hand_over: Hand over an agent
+        conflicts: Conflicts
+        runs: Runs
+      columns:
+        group: Group
+        trigger: Trigger
+        tickets: Tickets
+        test_tickets: Test tickets
+        new_owner: New owner
+        goes_to: Goes to
+        step: Step
+        from: From
+        to: To
+        groups: Groups
+        status: Status
+        queued: Queued
+        started: Started
+        finished: Finished
+        by: By
+        queued_by: Queued by
+        routing_now: Routing now
+        routed_owner: Routed owner
+        other_owner: Other owner
+        tickets_open: Tickets (open)
+      steps:
+        triggers: triggers
+        tickets: tickets
+        tickets_routed: tickets to the routed owners
+      statuses:
+        queued: queued
+        running: running
+        done: done
+        failed: failed
+      routing:
+        none: no active trigger routes this group
+        several: "several triggers route it: %{routes}"
+        by: "%{user} by %{triggers}"
+      all_groups: all
+      routed_owners: routed owners
+      routed_owners_long: the agent each group's trigger routes it to
+      inactive: INACTIVE
+      with_test: "%{tickets} + %{test} test"
+      back_to_handover: ← Back to the handover of %{email}
+      run_link: "run #%{id} %{status}"
+      unknown_user: "unknown user #%{id}"
+      at: at
+      agent_field:
+        placeholder: Search…
+      index:
+        title: Owner handover
+        intro: Shows the groups the agent owns triggers or tickets in, and hands them over to other agents step by step.
+        agent_leaving: Agent leaving
+        show_report: Show report
+      report:
+        title: Hand over %{email}
+        heading: Hand over %{user}
+        running_html: "<strong>Running:</strong> %{runs}. This page updates when it ends."
+        next_triggers_html:
+          one: "<strong>Next: 1. hand over the trigger</strong> of 1 group, pick its new owner below."
+          other: "<strong>Next: 1. hand over the triggers</strong> of %{count} groups, pick the new owner of each below."
+        next_tickets_html:
+          one: "<strong>Next: 2. move the tickets</strong> of 1 group to the agent it is routed to."
+          other: "<strong>Next: 2. move the tickets</strong> of %{count} groups to the agents they are routed to."
+        next_attention_html:
+          one: "<strong>Next: fix the trigger</strong> of 1 group in Zammad, see below."
+          other: "<strong>Next: fix the triggers</strong> of %{count} groups in Zammad, see below."
+        complete_html: "<strong>Handover complete.</strong>"
+        test_tickets_stay:
+          one: 1 test ticket stays with the agent.
+          other: "%{count} test tickets stay with the agent."
+        counts: "triggers to hand over %{triggers} · tickets to move %{tickets}"
+        counts_attention: "· needs attention %{count}"
+        runs_heading: Runs for this agent
+        run_ended_html: A run ended. <a href="">Reload the page</a> to see where the groups are now (the new owners you picked are kept only until then).
+        all_runs: All runs
+        triggers_heading: 1. Triggers (%{count})
+        no_triggers: No trigger routes a group to this agent anymore.
+        triggers_help: >-
+          Pick the new owner of each group, groups left empty stay as they are. The new owner gets access to the group
+          and the new tickets of the group go to them. The tickets already there move in step 2.
+        several_triggers: "several triggers, a group should have one: all move to the new owner"
+        preview_triggers: Preview the trigger handover (dry run)
+        tickets_heading: 2. Tickets (%{count})
+        tickets_wait: The groups come here once their trigger is handed over.
+        no_tickets: No tickets to move.
+        tickets_help: >-
+          The tickets go to the agent the group's trigger routes it to, closed ones too, without notifications.
+          Test tickets stay with this agent.
+        preview_group: Preview this group
+        preview_tickets:
+          one: Preview moving the tickets of 1 group (dry run)
+          other: Preview moving the tickets of %{count} groups (dry run)
+        attention_heading: Needs attention (%{count})
+        attention_help: >-
+          Tickets left, but no single active trigger routes the group to another agent. Fix the group's trigger in
+          Zammad, then reload this page.
+        done_heading: Done (%{count})
+        done_help: "Only test tickets left, they stay with this agent: %{groups}"
+        full_report_html: Full text report (the same as <code>rake ops:owner_handover:report</code>)
+      preview:
+        title: "Dry run: %{step}"
+        no_owner: Pick the new owner of at least one group.
+        apply: Apply
+        apply_help: >-
+          Runs right away in the background, then back to the handover page. Checked again when it runs, the result
+          can differ from this dry run.
+        apply_help_several: >-
+          Runs right away in the background, as %{count} runs one after another, then back to the handover page.
+          Checked again when it runs, the result can differ from this dry run.
+      create_run:
+        nothing: Nothing to apply, preview the step again.
+        queued: "Queued %{runs}. It runs in the background, this page follows it and updates when it ends."
+      runs:
+        title: Runs
+        help: The steps applied, the last 30.
+        none: No runs yet.
+      show_run:
+        title: "Run #%{id}"
+        heading: "Run #%{id}: %{step}"
+        waits: Waits for another running run to finish.
+        output: Output
+        nothing_yet: (nothing yet)
+      conflicts:
+        title: Conflicts
+        count: "Groups with tickets not owned by the routed owner: %{count}"
+        help: Unowned and test tickets left out. "Preview move" is a dry run, nothing changes before you apply it.
+        none: No conflicts.
+        owns_here: owns %{count} here
+        preview_move: Preview move to the routed owner

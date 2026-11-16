@@ -1,16 +1,16 @@
 <% step = params[:step].to_s %>
-<% content_for :title, "Dry run: #{step}" %>
-<h1>Dry run: <%= step == 'tickets_routed' ? 'tickets to the routed owners' : step %></h1>
-<p><%= link_to "← Back to the handover of #{params[:old_email]}", ops_owner_handover_report_path(email: params[:old_email]) %></p>
+<% content_for :title, ot('preview.title', step: step_name(step)) %>
+<h1><%= ot('preview.title', step: step_name(step)) %></h1>
+<p><%= link_to ot('back_to_handover', email: params[:old_email]), ops_owner_handover_report_path(email: params[:old_email]) %></p>
 
 <% if @error %>
   <div class="alert"><%= @error %></div>
 <% else %>
   <% @outputs.each do |run, output, error| %>
     <table>
-      <tr><th>From</th><td><%= run.old_owner_email %></td></tr>
-      <tr><th>To</th><td><%= run.routed? ? "the agent each group's trigger routes it to" : run.new_owner_email %></td></tr>
-      <tr><th>Groups</th><td><%= run.groups.presence&.join(', ') || 'all' %></td></tr>
+      <tr><th><%= ot('columns.from') %></th><td><%= run.old_owner_email %></td></tr>
+      <tr><th><%= ot('columns.to') %></th><td><%= run.routed? ? ot('routed_owners_long') : run.new_owner_email %></td></tr>
+      <tr><th><%= ot('columns.groups') %></th><td><%= run.groups.presence&.join(', ') || ot('all_groups') %></td></tr>
     </table>
     <% if error %><div class="alert"><%= error %></div><% end %>
     <% if output.present? %><pre><%= output %></pre><% end %>
@@ -18,7 +18,7 @@
 
   <% if @outputs.none? { |_run, _output, error| error } %>
     <fieldset>
-      <legend>Apply</legend>
+      <legend><%= ot('preview.apply') %></legend>
       <%= form_with url: ops_owner_handover_runs_path, method: :post do %>
         <%= hidden_field_tag :step, step %>
         <%= hidden_field_tag :old_email, params[:old_email] %>
@@ -28,10 +28,9 @@
           <% run.groups.each do |group| %><%= hidden_field_tag "owners[#{group}]", run.new_owner_email, id: nil %><% end %>
         <% end %>
         <p class="muted">
-          Runs right away in the background<%= ", as #{@runs.size} runs one after another" if @runs.size > 1 %>, then
-          back to the handover page. Checked again when it runs, the result can differ from this dry run.
+          <%= @runs.size > 1 ? ot('preview.apply_help_several', count: @runs.size) : ot('preview.apply_help') %>
         </p>
-        <button type="submit" class="danger">Apply</button>
+        <button type="submit" class="danger"><%= ot('preview.apply') %></button>
       <% end %>
     </fieldset>
   <% end %>

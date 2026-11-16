@@ -1,6 +1,6 @@
 <%# an agent autocomplete (public/assets/ops-user-autocomplete.js) posting the agent's email: name, required, form %>
 <span class="user-autocomplete">
-  <input type="text" class="user-autocomplete-query" placeholder="Search…" autocomplete="off" <%= 'required' if local_assigns[:required] %>>
+  <input type="text" class="user-autocomplete-query" placeholder="<%= ot('agent_field.placeholder') %>" autocomplete="off" <%= 'required' if local_assigns[:required] %>>
   <input type="hidden" name="<%= name %>" <%= "form=\"#{ERB::Util.html_escape(form)}\"".html_safe if local_assigns[:form] %>>
   <ul class="user-autocomplete-results" hidden></ul>
 </span>

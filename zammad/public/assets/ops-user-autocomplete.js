@@ -12,6 +12,13 @@
   var LIMIT = 20;
   var DELAY = 200;
 
+  // the page's language, <html lang> of layouts/ops.html.erb
+  var TEXTS = {
+    en: { none: 'No agent found', inactive: ' (inactive)', pick: 'Pick an agent from the list' },
+    sk: { none: 'Žiaden agent sa nenašiel', inactive: ' (neaktívny)', pick: 'Vyberte agenta zo zoznamu' },
+  };
+  var TEXT = TEXTS[document.documentElement.lang] || TEXTS.en;
+
   function fullName(user) {
     return [user.firstname, user.lastname].filter(Boolean).join(' ') || user.login;
   }
@@ -54,7 +61,7 @@
       if (!users.length) {
         var empty = document.createElement('li');
         empty.className = 'empty';
-        empty.textContent = 'No agent found';
+        empty.textContent = TEXT.none;
         list.appendChild(empty);
       }
       users.forEach(function (user, index) {
@@ -62,7 +69,7 @@
         item.dataset.index = index;
         var name = document.createElement('span');
         name.className = 'name';
-        name.textContent = fullName(user) + (user.active ? '' : ' (inactive)');
+        name.textContent = fullName(user) + (user.active ? '' : TEXT.inactive);
         var email = document.createElement('span');
         email.className = 'email';
         email.textContent = user.email;
@@ -117,7 +124,7 @@
     if (query.required && query.form) {
       query.form.addEventListener('submit', function (event) {
         if (value.value) return;
-        query.setCustomValidity('Pick an agent from the list');
+        query.setCustomValidity(TEXT.pick);
         query.reportValidity();
         event.preventDefault();
       });

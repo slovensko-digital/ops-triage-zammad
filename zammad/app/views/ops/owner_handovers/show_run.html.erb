@@ -1,22 +1,25 @@
-<% content_for :title, "Run ##{@run.id}" %>
+<% content_for :title, ot('show_run.title', id: @run.id) %>
 <% if @run.active? %>
   <% content_for :head do %><meta http-equiv="refresh" content="3"><% end %>
 <% end %>
-<p><%= link_to "← Back to the handover of #{@run.old_owner_email}", ops_owner_handover_report_path(email: @run.old_owner_email) %></p>
-<h1>Run #<%= @run.id %>: <%= @run.step %> <span class="status-<%= @run.status %>"><%= @run.status %></span></h1>
+<p><%= link_to ot('back_to_handover', email: @run.old_owner_email), ops_owner_handover_report_path(email: @run.old_owner_email) %></p>
+<h1>
+  <%= ot('show_run.heading', id: @run.id, step: step_name(@run.step)) %>
+  <span class="status-<%= @run.status %>"><%= status_name(@run.status) %></span>
+</h1>
 <table>
-  <tr><th>From</th><td><%= link_to @run.old_owner_email, ops_owner_handover_report_path(email: @run.old_owner_email) %></td></tr>
-  <tr><th>To</th><td><%= @run.routed? ? "the agent each group's trigger routes it to" : @run.new_owner_email %></td></tr>
-  <tr><th>Groups</th><td><%= @run.groups.presence&.join(', ') || 'all' %></td></tr>
-  <tr><th>Started</th><td><%= time_in_zone(@run.started_at) %></td></tr>
-  <tr><th>Finished</th><td><%= time_in_zone(@run.finished_at) %></td></tr>
-  <tr><th>Queued by</th><td><%= describe_user(@run.created_by) %> at <%= time_in_zone(@run.created_at) %></td></tr>
+  <tr><th><%= ot('columns.from') %></th><td><%= link_to @run.old_owner_email, ops_owner_handover_report_path(email: @run.old_owner_email) %></td></tr>
+  <tr><th><%= ot('columns.to') %></th><td><%= @run.routed? ? ot('routed_owners_long') : @run.new_owner_email %></td></tr>
+  <tr><th><%= ot('columns.groups') %></th><td><%= @run.groups.presence&.join(', ') || ot('all_groups') %></td></tr>
+  <tr><th><%= ot('columns.started') %></th><td><%= time_in_zone(@run.started_at) %></td></tr>
+  <tr><th><%= ot('columns.finished') %></th><td><%= time_in_zone(@run.finished_at) %></td></tr>
+  <tr><th><%= ot('columns.queued_by') %></th><td><%= describe_user(@run.created_by) %> <%= ot('at') %> <%= time_in_zone(@run.created_at) %></td></tr>
 </table>
 
 <% if @run.status == 'queued' %>
-  <p class="muted">Waits for another running run to finish.</p>
+  <p class="muted"><%= ot('show_run.waits') %></p>
 <% end %>
 
 <% if @run.error %><div class="alert"><%= @run.error %></div><% end %>
-<h2>Output</h2>
-<pre><%= @run.log.presence || '(nothing yet)' %></pre>
+<h2><%= ot('show_run.output') %></h2>
+<pre><%= @run.log.presence || ot('show_run.nothing_yet') %></pre>

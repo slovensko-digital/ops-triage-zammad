@@ -5,6 +5,12 @@
 
   var EVERY = 3000;
   var ACTIVE = ['queued', 'running'];
+  // the statuses as config/locales/ops.*.yml names them, by <html lang>
+  var STATUSES = {
+    en: { queued: 'queued', running: 'running', done: 'done', failed: 'failed' },
+    sk: { queued: 'v poradí', running: 'beží', done: 'hotovo', failed: 'zlyhalo' },
+  };
+  var STATUS = STATUSES[document.documentElement.lang] || STATUSES.en;
 
   function picked() {
     return Array.prototype.some.call(document.querySelectorAll('.user-autocomplete input[type=hidden]'), function (input) {
@@ -24,7 +30,7 @@
         cells = cells.filter(function (cell) {
           var status = statuses[cell.dataset.runId];
           if (!status) return true;
-          cell.textContent = status;
+          cell.textContent = STATUS[status] || status;
           cell.className = 'status-' + status;
           if (ACTIVE.indexOf(status) !== -1) return true;
           ended = true;

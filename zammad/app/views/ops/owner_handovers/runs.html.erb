@@ -1,18 +1,22 @@
-<% content_for :title, 'Runs' %>
-<p class="muted">The steps applied, the last 30.</p>
+<% content_for :title, ot('runs.title') %>
+<p class="muted"><%= ot('runs.help') %></p>
 <% if @runs.empty? %>
-  <p class="muted">No runs yet.</p>
+  <p class="muted"><%= ot('runs.none') %></p>
 <% else %>
   <table>
-    <tr><th>#</th><th>Step</th><th>From</th><th>To</th><th>Groups</th><th>Status</th><th>Queued</th><th>Finished</th><th>By</th></tr>
+    <tr>
+      <th>#</th><th><%= ot('columns.step') %></th><th><%= ot('columns.from') %></th><th><%= ot('columns.to') %></th>
+      <th><%= ot('columns.groups') %></th><th><%= ot('columns.status') %></th><th><%= ot('columns.queued') %></th>
+      <th><%= ot('columns.finished') %></th><th><%= ot('columns.by') %></th>
+    </tr>
     <% @runs.each do |run| %>
       <tr>
         <td><%= link_to "##{run.id}", ops_owner_handover_run_path(run) %></td>
-        <td><%= run.step %></td>
+        <td><%= step_name(run.step) %></td>
         <td><%= link_to run.old_owner_email, ops_owner_handover_report_path(email: run.old_owner_email) %></td>
-        <td><%= run.routed? ? 'routed owners' : run.new_owner_email %></td>
-        <td><%= run.groups.presence&.join(', ') || 'all' %></td>
-        <td class="status-<%= run.status %>"><%= run.status %></td>
+        <td><%= run.routed? ? ot('routed_owners') : run.new_owner_email %></td>
+        <td><%= run.groups.presence&.join(', ') || ot('all_groups') %></td>
+        <td class="status-<%= run.status %>" <%= "data-run-id=#{run.id}".html_safe if run.active? %>><%= status_name(run.status) %></td>
         <td><%= time_in_zone(run.created_at) %></td>
         <td><%= time_in_zone(run.finished_at) %></td>
         <td><%= run.created_by&.email %></td>

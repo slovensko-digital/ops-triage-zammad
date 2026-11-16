@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= I18n.locale %>">
 <head>
   <meta charset="utf-8">
-  <title><%= content_for?(:title) ? "#{yield(:title)} · " : '' %>Ops · Triage</title>
+  <title><%= content_for?(:title) ? "#{yield(:title)} · " : '' %><%= ot('layout.site') %></title>
   <%= csrf_meta_tags %>
   <%= yield :head %>
   <script src="/assets/ops-user-autocomplete.js?v<%= Rails.public_path.join('assets/ops-user-autocomplete.js').mtime.to_i %>" defer></script>
@@ -11,6 +11,9 @@
     body { font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; color: #1f2328; background: #f6f8fa; }
     header { background: #24292f; color: #fff; padding: 10px 24px; }
     header a { color: #fff; text-decoration: none; margin-right: 16px; }
+    header .language { float: right; }
+    header .language a { margin: 0 0 0 8px; opacity: .7; }
+    header .language a.active { opacity: 1; font-weight: 600; }
     main { padding: 16px 24px 48px; max-width: 1400px; }
     nav.tabs { display: flex; gap: 4px; border-bottom: 1px solid #d0d7de; margin-bottom: 16px; }
     nav.tabs a { padding: 8px 14px; color: #1f2328; text-decoration: none; border: 1px solid transparent; border-bottom: 0;
@@ -49,14 +52,21 @@
 </head>
 <body>
   <header>
-    <a href="/#">← Triage</a>
-    <a href="<%= ops_owner_handover_path %>">Owner handover</a>
+    <a href="/#"><%= ot('layout.back_to_triage') %></a>
+    <a href="<%= ops_owner_handover_path %>"><%= ot('layout.owner_handover') %></a>
+    <% if request.get? %>
+      <span class="language" title="<%= ot('layout.language') %>">
+        <% Ops::OwnerHandoversController::LOCALES.each do |locale| %>
+          <%= link_to locale.upcase, request.query_parameters.merge(locale:), class: ('active' if I18n.locale.to_s == locale) %>
+        <% end %>
+      </span>
+    <% end %>
   </header>
   <main>
     <nav class="tabs">
-      <% { 'Hand over an agent' => ops_owner_handover_path, 'Conflicts' => ops_owner_handover_conflicts_path,
-           'Runs' => ops_owner_handover_runs_path }.each do |name, path| %>
-        <%= link_to name, path, class: ('active' if tab == name) %>
+      <% { hand_over: ops_owner_handover_path, conflicts: ops_owner_handover_conflicts_path,
+           runs: ops_owner_handover_runs_path }.each do |name, path| %>
+        <%= link_to ot("tabs.#{name}"), path, class: ('active' if tab == name) %>
       <% end %>
     </nav>
     <% if flash[:alert] %><div class="alert"><%= flash[:alert] %></div><% end %>

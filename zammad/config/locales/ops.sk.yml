@@ -1,0 +1,140 @@
+# The Ops admin pages (/ops/...) in Slovak, the keys of ops.en.yml. The words as Zammad's Slovak UI has them:
+# spúšťač (trigger), tiket, vlastník, skupina. Counts in parentheses or after a colon, the I18n backend has only one/other.
+sk:
+  ops:
+    owner_handover:
+      layout:
+        site: Ops · Triáž
+        back_to_triage: ← Triáž
+        owner_handover: Odovzdanie agenta
+        language: Jazyk
+      tabs:
+        hand_over: Odovzdať agenta
+        conflicts: Konflikty
+        runs: Spustenia
+      columns:
+        group: Skupina
+        trigger: Spúšťač
+        tickets: Tikety
+        test_tickets: Testovacie tikety
+        new_owner: Nový vlastník
+        goes_to: Prejdú na
+        step: Krok
+        from: Od
+        to: Komu
+        groups: Skupiny
+        status: Stav
+        queued: Zaradené
+        started: Začaté
+        finished: Skončené
+        by: Spustil
+        queued_by: Zaradil
+        routing_now: Smerovanie teraz
+        routed_owner: Vlastník podľa smerovania
+        other_owner: Iný vlastník
+        tickets_open: Tikety (otvorené)
+      steps:
+        triggers: spúšťače
+        tickets: tikety
+        tickets_routed: tikety vlastníkom podľa smerovania
+      statuses:
+        queued: v poradí
+        running: beží
+        done: hotovo
+        failed: zlyhalo
+      routing:
+        none: túto skupinu nesmeruje žiaden aktívny spúšťač
+        several: "smeruje ju viac spúšťačov: %{routes}"
+        by: "%{user} spúšťačom %{triggers}"
+      all_groups: všetky
+      routed_owners: vlastníci podľa smerovania
+      routed_owners_long: agent, ku ktorému skupinu smeruje jej spúšťač
+      inactive: NEAKTÍVNY
+      with_test: "%{tickets} + %{test} testovacích"
+      back_to_handover: ← Späť na odovzdanie %{email}
+      run_link: "spustenie #%{id} %{status}"
+      unknown_user: "neznámy používateľ #%{id}"
+      at: o
+      agent_field:
+        placeholder: Hľadať…
+      index:
+        title: Odovzdanie agenta
+        intro: Ukáže skupiny, v ktorých má agent spúšťače alebo tikety, a krok za krokom ich odovzdá iným agentom.
+        agent_leaving: Odchádzajúci agent
+        show_report: Ukázať prehľad
+      report:
+        title: Odovzdanie %{email}
+        heading: Odovzdanie %{user}
+        running_html: "<strong>Beží:</strong> %{runs}. Stránka sa obnoví, keď skončí."
+        next_triggers_html:
+          one: "<strong>Ďalej: 1. odovzdajte spúšťač</strong> jednej skupiny, nižšie vyberte jej nového vlastníka."
+          other: "<strong>Ďalej: 1. odovzdajte spúšťače</strong>, skupín na odovzdanie: %{count}. Pri každej nižšie vyberte nového vlastníka."
+        next_tickets_html:
+          one: "<strong>Ďalej: 2. presuňte tikety</strong> jednej skupiny agentovi, ku ktorému ju smeruje spúšťač."
+          other: "<strong>Ďalej: 2. presuňte tikety</strong> agentom, ku ktorým skupiny smerujú spúšťače, skupín: %{count}."
+        next_attention_html:
+          one: "<strong>Ďalej: opravte spúšťač</strong> jednej skupiny v Zammade, pozri nižšie."
+          other: "<strong>Ďalej: opravte spúšťače</strong> v Zammade, skupín: %{count}, pozri nižšie."
+        complete_html: "<strong>Odovzdanie je hotové.</strong>"
+        test_tickets_stay:
+          one: Jeden testovací tiket zostáva agentovi.
+          other: "Testovacie tikety zostávajú agentovi: %{count}."
+        counts: "spúšťače na odovzdanie %{triggers} · tikety na presun %{tickets}"
+        counts_attention: "· treba vyriešiť %{count}"
+        runs_heading: Spustenia pre tohto agenta
+        run_ended_html: Spustenie skončilo. <a href="">Obnovte stránku</a>, aby ste videli, kde sú skupiny teraz (vybraní noví vlastníci sa pritom stratia).
+        all_runs: Všetky spustenia
+        triggers_heading: 1. Spúšťače (%{count})
+        no_triggers: Žiaden spúšťač už nesmeruje skupinu k tomuto agentovi.
+        triggers_help: >-
+          Pri každej skupine vyberte nového vlastníka, skupiny bez vlastníka zostanú, ako sú. Nový vlastník dostane
+          prístup ku skupine a pôjdu mu nové tikety skupiny. Tikety, ktoré tam už sú, sa presunú v kroku 2.
+        several_triggers: "viac spúšťačov, skupina má mať jeden: všetky prejdú na nového vlastníka"
+        preview_triggers: Náhľad odovzdania spúšťačov (nič sa nezmení)
+        tickets_heading: 2. Tikety (%{count})
+        tickets_wait: Skupiny sa tu objavia, keď sa odovzdá ich spúšťač.
+        no_tickets: Žiadne tikety na presun.
+        tickets_help: >-
+          Tikety prejdú agentovi, ku ktorému skupinu smeruje jej spúšťač, aj uzavreté, bez notifikácií.
+          Testovacie tikety zostanú tomuto agentovi.
+        preview_group: Náhľad pre túto skupinu
+        preview_tickets:
+          one: Náhľad presunu tiketov jednej skupiny (nič sa nezmení)
+          other: "Náhľad presunu tiketov, skupín: %{count} (nič sa nezmení)"
+        attention_heading: Treba vyriešiť (%{count})
+        attention_help: >-
+          Tikety zostali, ale skupinu nesmeruje k inému agentovi práve jeden aktívny spúšťač. Opravte spúšťač skupiny
+          v Zammade a potom obnovte túto stránku.
+        done_heading: Hotové (%{count})
+        done_help: "Zostali len testovacie tikety, tie zostávajú tomuto agentovi: %{groups}"
+        full_report_html: Celý textový prehľad (rovnaký ako <code>rake ops:owner_handover:report</code>, po anglicky)
+      preview:
+        title: "Náhľad: %{step}"
+        no_owner: Vyberte nového vlastníka aspoň jednej skupiny.
+        apply: Vykonať
+        apply_help: >-
+          Spustí sa hneď na pozadí, potom sa vrátite na stránku odovzdania. Pri spustení sa všetko overí znova,
+          výsledok sa môže od tohto náhľadu líšiť.
+        apply_help_several: >-
+          Spustí sa hneď na pozadí, ako samostatné spustenia (%{count}) jedno po druhom, potom sa vrátite na stránku odovzdania.
+          Pri spustení sa všetko overí znova, výsledok sa môže od tohto náhľadu líšiť.
+      create_run:
+        nothing: Nie je čo vykonať, spravte náhľad kroku znova.
+        queued: "Zaradené: %{runs}. Beží na pozadí, táto stránka ho sleduje a obnoví sa, keď skončí."
+      runs:
+        title: Spustenia
+        help: Vykonané kroky, posledných 30.
+        none: Zatiaľ žiadne spustenia.
+      show_run:
+        title: "Spustenie #%{id}"
+        heading: "Spustenie #%{id}: %{step}"
+        waits: Čaká, kým skončí iné spustenie.
+        output: Výstup
+        nothing_yet: (zatiaľ nič)
+      conflicts:
+        title: Konflikty
+        count: "Skupiny s tiketmi, ktoré nevlastní vlastník podľa smerovania: %{count}"
+        help: Bez tiketov bez vlastníka a testovacích tiketov. „Náhľad presunu“ nič nezmení, kým ho nevykonáte.
+        none: Žiadne konflikty.
+        owns_here: tu vlastní %{count}
+        preview_move: Náhľad presunu vlastníkovi podľa smerovania
