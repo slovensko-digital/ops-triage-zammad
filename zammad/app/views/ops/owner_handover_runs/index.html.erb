@@ -17,8 +17,8 @@
         <td><%= run.routed? ? ot('routed_owners') : run.new_owner_email %></td>
         <td><%= run.groups.presence&.join(', ') || ot('all_groups') %></td>
         <td class="status-<%= run.status %>" <%= "data-run-id=#{run.id}".html_safe if run.active? %>><%= status_name(run.status) %></td>
-        <td><%= time_in_zone(run.created_at) %></td>
-        <td><%= time_in_zone(run.finished_at) %></td>
+        <td><%= format_time(run.created_at) %></td>
+        <td><%= format_time(run.finished_at) %></td>
         <td><%= run.created_by&.email %></td>
       </tr>
     <% end %>

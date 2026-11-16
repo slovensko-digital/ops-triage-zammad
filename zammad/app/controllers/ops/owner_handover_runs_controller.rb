@@ -1,6 +1,8 @@
 # The steps of owner handovers queued from Ops::OwnerHandoversController#preview and run by Ops::OwnerHandoverJob: the
 # Jobs tab, a run's log, and the statuses public/assets/ops-run-watch.js polls.
 class Ops::OwnerHandoverRunsController < Ops::BaseController
+  include Ops::OwnerHandoverPages
+
   def index
     @runs = Ops::OwnerHandoverRun.recent.includes(:created_by).limit(30)
   end

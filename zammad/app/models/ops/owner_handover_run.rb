@@ -51,6 +51,27 @@ class Ops::OwnerHandoverRun < ActiveRecord::Base
     end
   end
 
+  # The unsaved runs of a step for the owner leaving, as the admin page's preview form posts it (step, new_email,
+  # groups[], owners[]): the triggers step is a run for each new owner in owners { group label => email }, the groups
+  # left empty stay as they are; the tickets steps are one run, to new_email or the owners by trigger, for the groups.
+  def self.build_for(old_owner, form, created_by:)
+    attributes = { step: form[:step], old_owner_email: old_owner.email, created_by_id: created_by.id }
+    return build_trigger_runs(attributes, form[:owners].to_h) if form[:step] == 'triggers'
+
+    [new(**attributes, new_owner_email: normalize_email(form[:new_email]),
+                       groups: Array(form[:groups]).compact_blank.presence)]
+  end
+
+  def self.build_trigger_runs(attributes, owners)
+    owners.transform_values { |email| normalize_email(email) }.compact.group_by(&:last).map do |email, pairs|
+      new(**attributes, new_owner_email: email, groups: pairs.map(&:first).sort)
+    end
+  end
+
+  def self.normalize_email(email)
+    email.to_s.strip.downcase.presence
+  end
+
   def active?
     ACTIVE.include?(status)
   end

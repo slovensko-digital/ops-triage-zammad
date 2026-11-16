@@ -2,12 +2,11 @@
 # they are the same as the rake tasks print.
 en:
   ops:
+    layout:
+      site: Ops · Triage
+      back_to_triage: ← Triage
+      owner_handover: Handover
     owner_handover:
-      layout:
-        site: Ops · Triage
-        back_to_triage: ← Triage
-        owner_handover: Handover
-        language: Language
       tabs:
         hand_over: Hand over an owner
         conflicts: Conflicts

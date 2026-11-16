@@ -2,12 +2,11 @@
 # spúšťač (trigger), tiket, vlastník, skupina. Counts in parentheses or after a colon, the I18n backend has only one/other.
 sk:
   ops:
+    layout:
+      site: Ops · Triáž
+      back_to_triage: ← Triáž
+      owner_handover: Odovzdanie
     owner_handover:
-      layout:
-        site: Ops · Triáž
-        back_to_triage: ← Triáž
-        owner_handover: Odovzdanie
-        language: Jazyk
       tabs:
         hand_over: Odovzdať vlastníka
         conflicts: Nezrovnalosti

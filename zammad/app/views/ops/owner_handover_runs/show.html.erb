@@ -11,9 +11,9 @@
   <tr><th><%= ot('columns.from') %></th><td><%= link_to_if handover_path_for(@run.old_owner_email), @run.old_owner_email, handover_path_for(@run.old_owner_email) %></td></tr>
   <tr><th><%= ot('columns.to') %></th><td><%= @run.routed? ? ot('routed_owners_long') : @run.new_owner_email %></td></tr>
   <tr><th><%= ot('columns.groups') %></th><td><%= @run.groups.presence&.join(', ') || ot('all_groups') %></td></tr>
-  <tr><th><%= ot('columns.started') %></th><td><%= time_in_zone(@run.started_at) %></td></tr>
-  <tr><th><%= ot('columns.finished') %></th><td><%= time_in_zone(@run.finished_at) %></td></tr>
-  <tr><th><%= ot('columns.queued_by') %></th><td><%= describe_user(@run.created_by) %> <%= ot('at') %> <%= time_in_zone(@run.created_at) %></td></tr>
+  <tr><th><%= ot('columns.started') %></th><td><%= format_time(@run.started_at) %></td></tr>
+  <tr><th><%= ot('columns.finished') %></th><td><%= format_time(@run.finished_at) %></td></tr>
+  <tr><th><%= ot('columns.queued_by') %></th><td><%= describe_user(@run.created_by) %> <%= ot('at') %> <%= format_time(@run.created_at) %></td></tr>
 </table>
 
 <% if @run.status == 'queued' %>

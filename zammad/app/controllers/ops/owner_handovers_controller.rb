@@ -5,6 +5,8 @@
 # The agent's report leads the handover: 1. the triggers, a new owner picked for each group, 2. the tickets, moved to
 # the agent each group is routed to then. Applying a step comes back to the report, which follows its runs.
 class Ops::OwnerHandoversController < Ops::BaseController
+  include Ops::OwnerHandoverPages
+
   before_action :set_old_owner, only: %i[show preview]
 
   helper_method :busy_run, :routing_text
