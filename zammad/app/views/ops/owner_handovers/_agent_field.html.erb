@@ -1,0 +1,6 @@
+<%# an agent autocomplete (public/assets/ops-user-autocomplete.js) posting the agent's email: name, required %>
+<span class="user-autocomplete">
+  <input type="text" class="user-autocomplete-query" placeholder="Search…" autocomplete="off" <%= 'required' if local_assigns[:required] %>>
+  <input type="hidden" name="<%= name %>">
+  <ul class="user-autocomplete-results" hidden></ul>
+</span>

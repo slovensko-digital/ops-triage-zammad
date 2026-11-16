@@ -104,6 +104,32 @@ class Ops::OwnerHandover
     { triggers: all_triggers, tickets: rows, test_tickets: test_rows }
   end
 
+  # what report says by group, for the admin page: routed_owner is the agent the group's active trigger routes it to
+  # when there is a single one, still_routed when that is the old owner
+  GroupOverview = Struct.new(:label, :triggers, :tickets, :test_tickets, :routing, :routed_owner, :still_routed,
+                             keyword_init: true)
+
+  def groups_overview
+    triggers_by_group = triggers.group_by { |trigger| trigger_group_id(trigger) }
+    ticket_counts = without_test_tickets(owned_tickets).group(:group_id).count
+    test_counts = only_test_tickets(owned_tickets).group(:group_id).count
+    routes = routed_owners_by_group
+
+    (triggers_by_group.keys | ticket_counts.keys | test_counts.keys).compact.map do |group_id|
+      routed = routes.fetch(group_id, {})
+      routed_owner_id = single_routed_owner_id(routed)
+      GroupOverview.new(
+        label: group_name(group_id),
+        triggers: triggers_by_group.fetch(group_id, []),
+        tickets: ticket_counts.fetch(group_id, 0),
+        test_tickets: test_counts.fetch(group_id, 0),
+        routing: describe_routing(routed, old_owner_id: old_owner.id),
+        routed_owner: routed_owner_id && routed_owner_id != old_owner.id ? user(routed_owner_id) : nil,
+        still_routed: routed_owner_id == old_owner.id
+      )
+    end.sort_by(&:label)
+  end
+
   def reassign_triggers!(to:, groups: nil, dry_run: true)
     new_owner = find_agent!(to)
     selected = triggers(groups:)

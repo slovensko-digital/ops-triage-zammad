@@ -1,0 +1,27 @@
+<% content_for :title, "Run ##{@run.id}" %>
+<% if @run.active? %>
+  <% content_for :head do %><meta http-equiv="refresh" content="3"><% end %>
+<% end %>
+<h1>Run #<%= @run.id %>: <%= @run.step %> <span class="status-<%= @run.status %>"><%= @run.status %></span></h1>
+<table>
+  <tr><th>From</th><td><%= link_to @run.old_owner_email, ops_owner_handover_report_path(email: @run.old_owner_email) %></td></tr>
+  <% if @run.new_owner_email %><tr><th>To</th><td><%= @run.new_owner_email %></td></tr><% end %>
+  <tr><th>Groups</th><td><%= @run.groups.presence&.join(', ') || 'all' %></td></tr>
+  <tr><th>Run at</th><td><%= time_in_zone(@run.run_at) %></td></tr>
+  <tr><th>Started</th><td><%= time_in_zone(@run.started_at) %></td></tr>
+  <tr><th>Finished</th><td><%= time_in_zone(@run.finished_at) %></td></tr>
+  <tr><th>Queued by</th><td><%= describe_user(@run.created_by) %> at <%= time_in_zone(@run.created_at) %></td></tr>
+</table>
+
+<% if @run.status == 'queued' %>
+  <p>
+    <%= form_with url: ops_owner_handover_cancel_run_path(@run), method: :post, class: 'inline' do %>
+      <button type="submit">Cancel</button>
+    <% end %>
+    <span class="muted">Waits for run_at, or for another running run to finish.</span>
+  </p>
+<% end %>
+
+<% if @run.error %><div class="alert"><%= @run.error %></div><% end %>
+<h2>Output</h2>
+<pre><%= @run.log.presence || '(nothing yet)' %></pre>

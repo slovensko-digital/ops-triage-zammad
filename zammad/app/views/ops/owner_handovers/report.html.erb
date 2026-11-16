@@ -1,0 +1,55 @@
+<% content_for :title, "Report #{@old_owner.email}" %>
+<h1>Hand over <%= describe_user(@old_owner) %></h1>
+<p class="muted">
+  1. move the triggers of the groups to the new owner, 2. move the tickets to the owner the group is routed to then.
+  Every button here is a dry run first, nothing changes before you apply it on the next page.
+</p>
+
+<h2>Groups (<%= @groups.size %>)</h2>
+<% if @groups.empty? %>
+  <p>No triggers or tickets of this agent.</p>
+<% else %>
+  <table>
+    <tr><th></th><th>Group</th><th>Triggers routing to the agent</th><th>Tickets</th><th>Test tickets</th><th>Routing now</th><th></th></tr>
+    <% @groups.each do |group| %>
+      <tr>
+        <td><input type="checkbox" name="groups[]" value="<%= group.label %>" form="step-form"></td>
+        <td><%= group.label %></td>
+        <td>
+          <% group.triggers.each do |trigger| %>
+            #<%= trigger.id %> <span class="<%= trigger.active ? '' : 'muted' %>"><%= trigger.active ? '' : 'INACTIVE ' %><%= trigger.name %></span><br>
+          <% end %>
+        </td>
+        <td><%= group.tickets %></td>
+        <td class="muted"><%= group.test_tickets.nonzero? %></td>
+        <td class="<%= group.routing.start_with?('!!') || group.still_routed ? 'warn' : '' %>"><%= group.routing %></td>
+        <td>
+          <% if group.routed_owner && group.tickets.positive? %>
+            <%= render 'preview_button', step: 'tickets', old_email: @old_owner.email, new_email: group.routed_owner.email,
+                                         groups: [group.label], label: "Preview tickets → #{group.routed_owner.email}" %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </table>
+
+  <fieldset>
+    <legend>Dry run for the checked groups (none checked: all groups)</legend>
+    <%= form_with url: ops_owner_handover_preview_path, method: :post, id: 'step-form' do %>
+      <%= hidden_field_tag :old_email, @old_owner.email %>
+      <label><%= radio_button_tag :step, 'triggers', true %> move triggers</label>
+      <label><%= radio_button_tag :step, 'tickets' %> move tickets</label>
+      <label><%= radio_button_tag :step, 'reindex' %> reindex the agent's tickets</label>
+      <br><br>
+      <label>New owner <%= render 'agent_field', name: 'new_email' %></label>
+      <span class="muted">(not needed to reindex)</span>
+      <br><br>
+      <button type="submit">Preview (dry run)</button>
+    <% end %>
+  </fieldset>
+<% end %>
+
+<details>
+  <summary>Full text report (the same as <code>rake ops:owner_handover:report</code>)</summary>
+  <pre><%= @report %></pre>
+</details>
