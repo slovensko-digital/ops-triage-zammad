@@ -255,6 +255,19 @@ namespace :ops do
     task migrate: :environment do
       next unless User.any?
 
+      # Kamal replaces every container on deploy, so Zammad's self-restart is not needed.
+      # With it on, a migration that adds a ticket field makes Puma kill itself in a loop
+      # for 5 minutes, longer than deploy_timeout:
+      # - the migration's migration_execute calls AppVersion.trigger_restart, which sets
+      #   app_version to T and a Redis restart key T for 5 minutes;
+      # - this task runs in zammad-init on every boot and re-adds existing fields, so the
+      #   migration_execute calls below bump app_version to T' (trigger_browser_reload);
+      # - Puma boots with T' != T and kills itself; the next boot bumps app_version again.
+      # migration_execute(false) below would stop the bump, but old containers restarting
+      # on the restart key run the old init and bump it anyway, so we turn auto_shutdown off.
+      # See https://github.com/slovensko-digital/ops-triage-zammad/pull/132
+      Setting.set('auto_shutdown', false)
+
       puts "Migrating triage environment..."
       if User.count <= 2
         setup_admin_user
