@@ -1,4 +1,4 @@
-// Links the Ops admin pages from Zammad's admin menu, under System, opening in a new tab. hacks/hacks.rb loads it
+// Links the Ops admin pages from Zammad's admin menu, in its Ops section, opening in a new tab. hacks/hacks.rb loads it
 // right after application.js.
 (function () {
   'use strict';
@@ -7,10 +7,13 @@
 
   var PAGES = ['/ops/owner_handovers'];
 
+  // a section of its own, after System (prio 8000); admin only, so agents with an admin.* permission see no empty one
+  App.Config.set('Ops', { prio: 9000, name: 'Ops', target: '#ops', permission: ['admin'] }, 'NavBarAdmin');
+
   App.Config.set('OpsOwnerHandover', {
-    prio: 3800,
+    prio: 1000,
     name: 'Handover',
-    parent: '#system',
+    parent: '#ops',
     target: PAGES[0],
     // the menu lists only items with a controller; never run, the link leaves the app
     controller: class extends App.ControllerSubContent {},
