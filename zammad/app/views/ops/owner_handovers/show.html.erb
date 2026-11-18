@@ -60,27 +60,34 @@
   </p>
   <table>
     <tr>
-      <th>Group</th><th>Trigger</th><th>Tickets</th>
+      <th>Group</th><th>ID</th><th>Trigger</th><th>Active</th><th>Tickets</th>
       <th>New owner</th>
     </tr>
     <% to_hand_over.each do |group| %>
-      <tr>
-        <td><%= group.label %></td>
-        <td>
-          <% group.triggers.each do |trigger| %>
-            #<%= trigger.id %> <span class="<%= trigger.active ? '' : 'muted' %>"><%= 'INACTIVE ' unless trigger.active %><%= trigger.name %></span><br>
+      <% rows = group.triggers.size %>
+      <% group.triggers.each_with_index do |trigger, index| %>
+        <tr>
+          <% if index.zero? %>
+            <td rowspan="<%= rows %>">
+              <%= group.label %>
+              <% if rows > 1 %><br><span class="warn">several triggers, a group should have one: all move to the new owner</span><% end %>
+            </td>
           <% end %>
-          <% if group.triggers.size > 1 %><span class="warn">several triggers, a group should have one: all move to the new owner</span><% end %>
-        </td>
-        <td><%= tickets_cell.call(group) %></td>
-        <td>
-          <% if (run = busy_run(group.label)) %>
-            <%= busy_link.call(run) %>
-          <% else %>
-            <%= render 'agent_field', name: "owners[#{group.label}]", form: 'triggers-form' %>
+          <td class="<%= 'muted' unless trigger.active %>">#<%= trigger.id %></td>
+          <td class="<%= 'muted' unless trigger.active %>"><%= trigger.name %></td>
+          <td class="<%= 'muted' unless trigger.active %>"><%= trigger.active ? 'yes' : 'no' %></td>
+          <% if index.zero? %>
+            <td rowspan="<%= rows %>"><%= tickets_cell.call(group) %></td>
+            <td rowspan="<%= rows %>">
+              <% if (run = busy_run(group.label)) %>
+                <%= busy_link.call(run) %>
+              <% else %>
+                <%= render 'agent_field', name: "owners[#{group.label}]", form: 'triggers-form' %>
+              <% end %>
+            </td>
           <% end %>
-        </td>
-      </tr>
+        </tr>
+      <% end %>
     <% end %>
   </table>
   <%= form_with url: preview_ops_owner_handover_path(@old_owner), method: :post, id: 'triggers-form', class: 'step' do %>
