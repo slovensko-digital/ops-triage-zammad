@@ -1,5 +1,3 @@
-# The owner handover runs queued from the admin page /ops/owner_handovers (Ops::OwnerHandoverRun). Deleting a user
-# deletes the runs naming them.
 class CreateOpsOwnerHandoverRuns < ActiveRecord::Migration[7.2]
   def change
     create_table :ops_owner_handover_runs do |t|

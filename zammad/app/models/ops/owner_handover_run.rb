@@ -21,7 +21,6 @@ class Ops::OwnerHandoverRun < ActiveRecord::Base
   scope :active, -> { where(status: ACTIVE) }
   scope :recent, -> { order(id: :desc) }
 
-  # the Postgres advisory lock held by the one runner, see with_runner_lock
   RUNNER_LOCK_KEY = 7_316_001
 
   # Yields while this process is the one runner, false without yielding when another runner holds the lock. A session
@@ -53,9 +52,8 @@ class Ops::OwnerHandoverRun < ActiveRecord::Base
     end
   end
 
-  # The unsaved runs of a step for the owner leaving, as the admin page's preview form posts it (step, new_owner_id,
-  # groups[], owners[]): the triggers step is a run for each new owner in owners { group label => user id }, the groups
-  # left empty stay as they are; the tickets steps are one run, to new_owner_id or the owners by trigger, for the groups.
+  # Unsaved runs for the preview form: the triggers step is a run per new owner in owners { group label => user id },
+  # the tickets steps are one run.
   def self.build_for(old_owner, form, created_by:)
     attributes = { step: form[:step], old_owner:, created_by: }
     return build_trigger_runs(attributes, form[:owners].to_h) if form[:step] == 'triggers'

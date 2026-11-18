@@ -1,5 +1,4 @@
-# The steps of owner handovers queued from Ops::OwnerHandoversController#preview and run by Ops::OwnerHandoverJob: the
-# Jobs tab, a run's log, and the statuses public/assets/ops-run-watch.js polls.
+# Owner handover steps queued from Ops::OwnerHandoversController#preview and run by Ops::OwnerHandoverJob.
 class Ops::OwnerHandoverRunsController < Ops::BaseController
   include Ops::OwnerHandoverPages
 
@@ -11,7 +10,6 @@ class Ops::OwnerHandoverRunsController < Ops::BaseController
     @run = Ops::OwnerHandoverRun.find(params[:id])
   end
 
-  # the step as its preview showed it, for the owner leaving in old_owner_id
   def create
     old_owner = User.find(params[:old_owner_id])
     runs = build_runs(old_owner)
@@ -26,7 +24,7 @@ class Ops::OwnerHandoverRunsController < Ops::BaseController
                         'this page follows it and updates when it ends.'
   end
 
-  # { id => status } of the runs asked for
+  # polled by public/assets/ops-run-watch.js
   def statuses
     ids = Array(params[:ids]).map(&:to_i)
     render json: Ops::OwnerHandoverRun.where(id: ids).pluck(:id, :status).to_h

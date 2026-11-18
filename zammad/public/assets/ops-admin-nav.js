@@ -1,6 +1,5 @@
-// Links the Ops admin pages (/ops/..., rendered by Rails) from Zammad's admin menu, under System, for admins only, as the
-// server allows them. They open in a new tab. hacks/hacks.rb loads it into the app layout right after application.js,
-// which has started the app by then; the admin menu reads NavBarAdmin when it renders (redrawn below if it already has).
+// Links the Ops admin pages from Zammad's admin menu, under System, opening in a new tab. hacks/hacks.rb loads it
+// right after application.js.
 (function () {
   'use strict';
 

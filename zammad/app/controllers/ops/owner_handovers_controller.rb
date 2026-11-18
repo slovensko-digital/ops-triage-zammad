@@ -1,9 +1,5 @@
-# The owner handover for admins, in tabs: an agent's report, the mismatches and the runs (Ops::OwnerHandoverRunsController).
-# Previews (dry runs) right away and the steps applied by Ops::OwnerHandoverJob right away. The same classes as the
-# ops:owner_handover rake tasks, with their default test customers.
-#
-# The agent's report leads the handover: 1. the triggers, a new owner picked for each group, 2. the tickets, moved to
-# the agent each group is routed to then. Applying a step comes back to the report, which follows its runs.
+# Owner handover for admins, on top of the same classes as the ops:owner_handover rake tasks. The agent's report leads
+# the handover: 1. triggers, a new owner per group, 2. tickets, moved to the agent each group is routed to then.
 class Ops::OwnerHandoversController < Ops::BaseController
   include Ops::OwnerHandoverPages
 
@@ -11,7 +7,6 @@ class Ops::OwnerHandoversController < Ops::BaseController
 
   helper_method :busy_run, :routing_text
 
-  # the form of the owner leaving asks with their user id, as the agent field gives it
   def index
     redirect_to ops_owner_handover_path(params[:owner_id]) if params[:owner_id].present?
   end
@@ -32,8 +27,7 @@ class Ops::OwnerHandoversController < Ops::BaseController
     redirect_to ops_owner_handovers_path, alert: e.message
   end
 
-  # the preview (dry run) of a step, with the form queueing it (Ops::OwnerHandoverRunsController#create); @outputs are
-  # [run, output, error, tickets it moves], the tickets nil for the triggers step
+  # @outputs are [run, output, error, tickets it moves], the tickets nil for the triggers step
   def preview
     @runs = build_runs(@old_owner)
     @error = 'Pick the new owner of at least one group.' if @runs.empty?
@@ -57,12 +51,11 @@ class Ops::OwnerHandoversController < Ops::BaseController
     action_name == 'mismatches' ? :mismatches : :hand_over
   end
 
-  # the owner leaving, by user id
   def set_old_owner
     @old_owner = User.find(params[:id])
   end
 
-  # routes { owner id => trigger ids } of a group, when not a single other agent
+  # routes: { owner id => trigger ids }
   def routing_text(routes)
     return 'no active trigger routes this group' if routes.empty?
 
