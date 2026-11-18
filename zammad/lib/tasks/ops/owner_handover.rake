@@ -42,14 +42,14 @@ namespace :ops do
 
     # rake 'ops:owner_handover:tickets[old@example.org,new@example.org]' GROUPS='Pezinok;Bratislava / Devín' APPLY=1
     # GROUPS limits it to some groups, named as the report shows them; without APPLY=1 a dry run
-    desc 'Move the tickets of the old agent to the new one, closed ones too, silently'
+    desc 'Move the tickets (closed ones too) of the old agent to the new one, without notifications'
     task :tickets, %i[old_email new_email] => :environment do |_task, args|
       handover.call(args).reassign_tickets!(**reassign_options.call(args))
     end
 
     # rake 'ops:owner_handover:tickets_routed[old@example.org]' GROUPS='Pezinok;Bratislava / Devín' APPLY=1
     # each group's tickets to the agent its trigger routes it to now; GROUPS limits it to some groups
-    desc 'Move the tickets of the old agent to the agents their groups are routed to, closed ones too, silently'
+    desc 'Move the tickets (closed ones too) of the old agent to the agents their groups are routed to, without notifications'
     task :tickets_routed, [:old_email] => :environment do |_task, args|
       handover.call(args).reassign_tickets_to_routed_owners!(groups: list.call('GROUPS'), dry_run: ENV['APPLY'] != '1')
     end

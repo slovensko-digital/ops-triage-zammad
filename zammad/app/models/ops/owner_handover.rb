@@ -3,7 +3,7 @@
 #
 #   1. report             the old owner's triggers and tickets by group, with commands moving them to the routed owner
 #   2. reassign_triggers! points the triggers to the new owner, who gets full access to the groups
-#   3. reassign_tickets!  moves the tickets, closed ones too (they can be reopened), without notifications or triggers,
+#   3. reassign_tickets!  moves the tickets (closed ones too, they can be reopened), without notifications or triggers,
 #                         one transaction per group in the order listed, then reindexes the group's tickets itself;
 #                         refused while an active trigger still routes the group to the old owner;
 #                         reassign_tickets_to_routed_owners! does it for each group to the agent it is routed to now
