@@ -1,22 +1,18 @@
-# Layout with tabs and view helpers of the owner handover controllers. Each controller defines its tab.
+# Shared by the owner handover controllers: the layout with tabs, the helpers and the runs of the preview form. Each
+# controller defines its tab.
 module Ops::OwnerHandoverPages
   extend ActiveSupport::Concern
 
   included do
     layout 'ops_owner_handover'
-    helper_method :tab, :step_name
+    helper Ops::OwnerHandoversHelper
+    helper_method :tab
   end
 
   private
 
   def tab
     raise NotImplementedError
-  end
-
-  STEP_NAMES = { 'tickets_routed' => 'tickets to the owners by trigger' }.freeze
-
-  def step_name(step)
-    STEP_NAMES.fetch(step.to_s, step.to_s)
   end
 
   def build_runs(old_owner)

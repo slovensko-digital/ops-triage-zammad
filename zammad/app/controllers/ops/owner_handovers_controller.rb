@@ -5,7 +5,7 @@ class Ops::OwnerHandoversController < Ops::BaseController
 
   before_action :set_old_owner, only: %i[show preview]
 
-  helper_method :busy_run, :routing_text
+  helper_method :busy_run
 
   def index
     redirect_to ops_owner_handover_path(params[:owner_id]) if params[:owner_id].present?
@@ -53,17 +53,6 @@ class Ops::OwnerHandoversController < Ops::BaseController
 
   def set_old_owner
     @old_owner = User.find(params[:id])
-  end
-
-  # routes: { owner id => trigger ids }
-  def routing_text(routes)
-    return 'no active trigger routes this group' if routes.empty?
-
-    described = routes.map do |owner_id, trigger_ids|
-      user = User.find_by(id: owner_id)
-      "#{user ? describe_user(user) : "unknown user ##{owner_id}"} by #{trigger_ids.map { |id| "##{id}" }.join(', ')}"
-    end
-    routes.size > 1 ? "several triggers route it: #{described.join('; ')}" : described.first
   end
 
   # the queued or running run of the report touching the group, if any
