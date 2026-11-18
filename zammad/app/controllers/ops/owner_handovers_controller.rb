@@ -12,7 +12,9 @@ class Ops::OwnerHandoversController < Ops::BaseController
   end
 
   def mismatches
-    @mismatches = Ops::OwnerMismatches.new(out: StringIO.new).mismatches
+    out = StringIO.new
+    @mismatches = Ops::OwnerMismatches.new(out:).report
+    @report = out.string
     @open_state_ids = Ticket::State.by_category(:open).pluck(:id)
   end
 
