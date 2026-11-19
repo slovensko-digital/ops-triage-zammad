@@ -1,0 +1,41 @@
+<% step = params[:step].to_s %>
+<% content_for :title, "Preview: #{step_name(step)}" %>
+<h1>Preview: <%= step_name(step) %></h1>
+<p><%= link_to "← Back to the handover of #{@old_owner.email}", ops_owner_handover_path(@old_owner) %></p>
+
+<% if @error %>
+  <div class="alert"><%= @error %></div>
+<% else %>
+  <% @outputs.each do |run, output, error, tickets| %>
+    <table>
+      <tr><th>From</th><td><%= describe_user(run.old_owner) %></td></tr>
+      <tr><th>To</th><td><%= run.routed? ? 'the owner each group\'s trigger routes it to' : describe_user(run.new_owner) %></td></tr>
+      <tr><th>Groups</th><td><%= run.groups.presence&.join(', ') || 'all' %></td></tr>
+      <% if tickets %>
+        <tr><th>Tickets</th><td><%= number_with_delimiter(tickets, delimiter: ' ') %></td></tr>
+      <% end %>
+    </table>
+    <% if error %><div class="alert"><%= error %></div><% end %>
+    <% if output.present? %><pre><%= output %></pre><% end %>
+  <% end %>
+
+  <% if @outputs.none? { |_run, _output, error| error } %>
+    <fieldset>
+      <legend>Apply</legend>
+      <%= form_with url: ops_owner_handover_runs_path, method: :post do %>
+        <%= hidden_field_tag :old_owner_id, @old_owner.id %>
+        <%= hidden_field_tag :step, step %>
+        <%= hidden_field_tag :new_owner_id, params[:new_owner_id] %>
+        <% Array(params[:groups]).each do |group| %><%= hidden_field_tag 'groups[]', group, id: nil %><% end %>
+        <% @runs.select { |run| run.step == 'triggers' }.each do |run| %>
+          <% run.groups.each do |group| %><%= hidden_field_tag "owners[#{group}]", run.new_owner_id, id: nil %><% end %>
+        <% end %>
+        <p class="muted">
+          Runs right away in the background<%= ", as #{@runs.size} jobs one after another" if @runs.size > 1 %>, then back
+          to the handover page. Checked again when it runs, the result can differ from this preview.
+        </p>
+        <button type="submit" class="danger">Apply</button>
+      <% end %>
+    </fieldset>
+  <% end %>
+<% end %>

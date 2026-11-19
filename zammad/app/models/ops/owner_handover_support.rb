@@ -1,4 +1,4 @@
-# Shared by Ops::OwnerHandover and Ops::OwnerConflicts; call setup_handover_support in the initializer.
+# Shared by Ops::OwnerHandover and Ops::OwnerMismatches; call setup_handover_support in the initializer.
 module Ops::OwnerHandoverSupport
   GROUP_SEPARATOR = ' / '.freeze
   TICKET_IDS_SHOWN = 10

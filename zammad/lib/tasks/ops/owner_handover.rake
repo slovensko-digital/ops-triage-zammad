@@ -1,4 +1,4 @@
-# See Ops::OwnerHandover, Ops::OwnerConflicts and Ops::GroupRoutingCheck.
+# See Ops::OwnerHandover, Ops::OwnerMismatches and Ops::GroupRoutingCheck.
 #
 # Every task takes ALL_IDS=1 to list every ticket id, not only the 10 newest, and TEST_LOGINS='ops-user-63745;...' to set
 # the test customers, whose tickets are left out and never moved.
@@ -31,8 +31,8 @@ namespace :ops do
     end
 
     desc 'List the groups with tickets not owned by the agent the group is routed to, with the commands fixing them'
-    task conflicts: :environment do
-      Ops::OwnerConflicts.new(**options.call).report
+    task mismatches: :environment do
+      Ops::OwnerMismatches.new(**options.call).report
     end
 
     desc "Check that the tickets of each group have the municipality and responsible subject of the group's 700 trigger"
@@ -42,9 +42,16 @@ namespace :ops do
 
     # rake 'ops:owner_handover:tickets[old@example.org,new@example.org]' GROUPS='Pezinok;Bratislava / Devín' APPLY=1
     # GROUPS limits it to some groups, named as the report shows them; without APPLY=1 a dry run
-    desc 'Move the tickets of the old agent to the new one, closed ones too, silently'
+    desc 'Move the tickets (closed ones too) of the old agent to the new one, without notifications'
     task :tickets, %i[old_email new_email] => :environment do |_task, args|
       handover.call(args).reassign_tickets!(**reassign_options.call(args))
+    end
+
+    # rake 'ops:owner_handover:tickets_routed[old@example.org]' GROUPS='Pezinok;Bratislava / Devín' APPLY=1
+    # each group's tickets to the agent its trigger routes it to now; GROUPS limits it to some groups
+    desc 'Move the tickets (closed ones too) of the old agent to the agents their groups are routed to, without notifications'
+    task :tickets_routed, [:old_email] => :environment do |_task, args|
+      handover.call(args).reassign_tickets_to_routed_owners!(groups: list.call('GROUPS'), dry_run: ENV['APPLY'] != '1')
     end
 
     # rake 'ops:owner_handover:reindex[new@example.org]' GROUPS='Pezinok;Bratislava / Devín'

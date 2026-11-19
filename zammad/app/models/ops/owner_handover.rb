@@ -3,26 +3,31 @@
 #
 #   1. report             the old owner's triggers and tickets by group, with commands moving them to the routed owner
 #   2. reassign_triggers! points the triggers to the new owner, who gets full access to the groups
-#   3. reassign_tickets!  moves the tickets, closed ones too (they can be reopened), without notifications or triggers,
+#   3. reassign_tickets!  moves the tickets (closed ones too, they can be reopened), without notifications or triggers,
 #                         one transaction per group in the order listed, then reindexes the group's tickets itself;
-#                         refused while an active trigger still routes the group to the old owner
+#                         refused while an active trigger still routes the group to the old owner;
+#                         reassign_tickets_to_routed_owners! does it for each group to the agent it is routed to now
 #   4. reindex_tickets!   reindexes the agent's tickets, after a reassign_tickets! stopped while reindexing
 #
 # Test tickets (customers in test_customer_logins:) are never moved. The reassign methods are dry runs unless
 # dry_run: false; groups: limits them to some groups, named as the report shows them ("Bratislava / Devín").
+# preview: true words the dry runs for the Ops pages, as a preview applied from the page.
 #
 #   h = Ops::OwnerHandover.new('old@example.org')
 #   h.report
 #   h.reassign_triggers!(to: 'new@example.org', groups: ['Pezinok'], dry_run: false)
 #   h.reassign_tickets!(to: 'new@example.org', groups: ['Pezinok'], dry_run: false)
+#   h.reassign_tickets_to_routed_owners!(dry_run: false)
 #   Ops::OwnerHandover.new('new@example.org').reindex_tickets!(groups: ['Pezinok'])
 class Ops::OwnerHandover
   include Ops::OwnerHandoverSupport
 
   attr_reader :old_owner
 
-  def initialize(old_owner_email, out: $stdout, all_ids: false, test_customer_logins: DEFAULT_TEST_CUSTOMER_LOGINS)
+  def initialize(old_owner_email, out: $stdout, all_ids: false, test_customer_logins: DEFAULT_TEST_CUSTOMER_LOGINS,
+                 preview: false)
     setup_handover_support(out:, all_ids:, test_customer_logins:)
+    @preview = preview
     @old_owner = find_agent!(old_owner_email)
   end
 
@@ -104,6 +109,46 @@ class Ops::OwnerHandover
     { triggers: all_triggers, tickets: rows, test_tickets: test_rows }
   end
 
+  # what report says by group, for the admin page: routes are { owner id => trigger ids } of the active triggers of the
+  # group, routed_owner the agent they route it to when there is a single one other than the old owner. status is the
+  # handover step the group is at:
+  #
+  #   triggers   the old owner's trigger is still there, hand it over to the new owner first
+  #   tickets    the trigger routes the group to someone else, the old owner's tickets go to them
+  #   attention  tickets left but no single active trigger routes the group, fix the triggers in Zammad
+  #   done       only test tickets left, they stay with the old owner
+  GroupOverview = Struct.new(:group_id, :label, :triggers, :tickets, :test_tickets, :routes, :routed_owner,
+                             keyword_init: true) do
+    def status
+      if triggers.any? then :triggers
+      elsif tickets.zero? then :done
+      elsif routed_owner then :tickets
+      else :attention
+      end
+    end
+  end
+
+  def groups_overview(groups: nil)
+    triggers_by_group = triggers(groups:).group_by { |trigger| trigger_group_id(trigger) }
+    ticket_counts = without_test_tickets(owned_tickets(groups:)).group(:group_id).count
+    test_counts = only_test_tickets(owned_tickets(groups:)).group(:group_id).count
+    routes = routed_owners_by_group
+
+    (triggers_by_group.keys | ticket_counts.keys | test_counts.keys).compact.map do |group_id|
+      routed = routes.fetch(group_id, {})
+      routed_owner_id = single_routed_owner_id(routed)
+      GroupOverview.new(
+        group_id:,
+        label: group_name(group_id),
+        triggers: triggers_by_group.fetch(group_id, []),
+        tickets: ticket_counts.fetch(group_id, 0),
+        test_tickets: test_counts.fetch(group_id, 0),
+        routes: routed,
+        routed_owner: routed_owner_id && routed_owner_id != old_owner.id ? user(routed_owner_id) : nil
+      )
+    end.sort_by(&:label)
+  end
+
   def reassign_triggers!(to:, groups: nil, dry_run: true)
     new_owner = find_agent!(to)
     selected = triggers(groups:)
@@ -114,7 +159,9 @@ class Ops::OwnerHandover
       new_name = renamed(trigger.name, new_owner)
       say "  ##{trigger.id} #{trigger.name}"
       say "    -> #{new_name}" if new_name != trigger.name
-      say "    !! the name does not end with #{agent_name(old_owner).inspect}, it stays as it is" if new_name == trigger.name
+      if new_name == trigger.name && mentions_old_owner?(trigger.name)
+        say "    !! the name does not end with #{agent_name(old_owner).inspect}, it stays as it is"
+      end
       grant_group_access(new_owner, trigger_group_id(trigger), dry_run:)
       next if dry_run
 
@@ -164,6 +211,30 @@ class Ops::OwnerHandover
     say "Moved #{selected.size} tickets, #{tickets.count} left with #{describe(old_owner)} " \
         "(and #{test_tickets.count} test tickets)."
     selected
+  end
+
+  # reassign_tickets! for each group to the agent its trigger routes it to now, read when it runs; the groups not routed
+  # to a single other agent are skipped and listed
+  def reassign_tickets_to_routed_owners!(groups: nil, dry_run: true)
+    overview = groups_overview(groups:).select { |group| group.tickets.positive? }
+    ready, skipped = overview.partition { |group| group.status == :tickets }
+
+    if skipped.any?
+      say "Skipped, hand over the trigger or fix the routing first (#{skipped.size}):"
+      skipped.each { |group| say "  #{group.label}: #{describe_routing(group.routes, old_owner_id: old_owner.id)}" }
+      say ''
+    end
+    if ready.empty?
+      say 'No group with tickets ready to move to its routed owner.'
+      return []
+    end
+
+    ready.group_by(&:routed_owner).flat_map do |owner, owner_groups|
+      say "== #{owner_groups.size} #{owner_groups.one? ? 'group' : 'groups'} routed to #{describe(owner)}"
+      moved = reassign_tickets!(to: owner.email, groups: owner_groups.map(&:label), dry_run:)
+      say ''
+      moved
+    end
   end
 
   # the tickets of the agent this handover was created with, test tickets too, for the new owner after a
@@ -220,7 +291,8 @@ class Ops::OwnerHandover
   end
 
   def say_plan(what, new_owner, count, dry_run:)
-    say "#{dry_run ? '[DRY RUN] ' : ''}#{what} of #{describe(old_owner)} -> #{describe(new_owner)}: #{count}"
+    prefix = @preview ? '[PREVIEW] ' : '[DRY RUN] '
+    say "#{dry_run ? prefix : ''}#{what} of #{describe(old_owner)} -> #{describe(new_owner)}: #{count}"
   end
 
   PROGRESS_EVERY = 100
@@ -238,7 +310,7 @@ class Ops::OwnerHandover
 
   def say_dry_run_hint
     say ''
-    say 'Nothing changed, run again with dry_run: false to apply.'
+    say @preview ? 'Nothing changed, apply it below.' : 'Nothing changed, run again with dry_run: false to apply.'
   end
 
   def owned_tickets(groups: nil)
@@ -277,11 +349,14 @@ class Ops::OwnerHandover
 
   # ignores case and diacritics and matches the last part: "Devin" finds "Bratislava / Devín"
   def suggest_groups(name)
-    normalize = ->(value) { ActiveSupport::Inflector.transliterate(value.to_s).downcase.gsub(/\s+/, ' ').strip }
-    wanted = normalize.call(name.to_s.gsub('::', GROUP_SEPARATOR))
+    wanted = normalized(name.to_s.gsub('::', GROUP_SEPARATOR))
     Group.all.map { |group| group_label(group) }.select do |label|
-      normalize.call(label) == wanted || normalize.call(label.split(GROUP_SEPARATOR).last) == wanted
+      normalized(label) == wanted || normalized(label.split(GROUP_SEPARATOR).last) == wanted
     end
+  end
+
+  def normalized(value)
+    ActiveSupport::Inflector.transliterate(value.to_s).downcase.gsub(/\s+/, ' ').strip
   end
 
   # keep the trigger's format: the admin UI saves string ids with value_completion, the portal integers without it
@@ -314,6 +389,13 @@ class Ops::OwnerHandover
     return name unless name.end_with?(old_suffix)
 
     "#{name.delete_suffix(old_suffix)} #{agent_name(new_owner)}"
+  end
+
+  # the name has the old owner's first or last name, ignoring case and diacritics, so it likely meant to end with
+  # their name ("Anna Zelená"); a name without an agent in it ("... Magistrát na základe ulíc") does not
+  def mentions_old_owner?(name)
+    words = normalized(name).split
+    [old_owner.firstname, old_owner.lastname].compact_blank.any? { |part| (normalized(part).split - words).empty? }
   end
 
   def grant_group_access(user, group_id, dry_run:)

@@ -1,0 +1,7 @@
+<% content_for :title, 'Handover' %>
+
+<%= form_with url: ops_owner_handovers_path, method: :get do %>
+  <p class="muted">Shows the groups where the owner has triggers or tickets, and hands them over to other owners step by step.</p>
+  <label>Owner leaving <%= render 'agent_field', name: 'owner_id', required: true %></label>
+  <button type="submit">Show report</button>
+<% end %>
