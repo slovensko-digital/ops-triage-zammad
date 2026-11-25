@@ -14,7 +14,7 @@ docker compose up -d --build
 
 One stack runs with 1.5 GB of Docker Desktop memory, a second Zammad (e.g. a Backoffice) or Elasticsearch needs more (Settings → Resources). When memory runs out, Zammad containers exit with code 137.
 
-To click through together with the portal, follow "Local Triage" in the [ops-portal README](https://github.com/slovensko-digital/ops-portal#local-triage).
+To click through together with the portal, follow "Local Triage" in the [ops-portal README](https://github.com/slovensko-digital/ops-portal#local-triage). The portal's `bin/ops` starts Triage with `docker-compose.ops-postgres.yml`: instead of its own `zammad-postgresql`, Triage then keeps its database `ops_triage_development` in the portal's Postgres, next to the portal's and the Backoffices' databases (`postgresql://ops:ops@localhost:5432/ops_triage_development`). Plain `docker compose up` keeps its own Postgres, so the data of the two is not shared.
 
 ## First time deployment
 

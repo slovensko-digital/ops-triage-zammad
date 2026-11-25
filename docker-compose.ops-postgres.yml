@@ -1,0 +1,31 @@
+# Local development only: Triage keeps its database in the portal's Postgres (the container ops-postgres, or your own
+# server on port 5432) instead of starting zammad-postgresql. The portal's bin/ops loads it after docker-compose.yml:
+#
+#   docker compose -f docker-compose.yml [-f docker-compose.override.yml] -f docker-compose.ops-postgres.yml up -d
+#
+# One place to connect to every local database: postgresql://ops:ops@localhost:5432/ops_triage_development
+# zammad-init creates the database on the first start. Plain docker compose up and the CI fresh install leave this
+# file out and keep their own zammad-postgresql.
+x-ops-postgres: &ops-postgres
+  POSTGRESQL_HOST: host.docker.internal
+  POSTGRESQL_PORT: 5432
+  POSTGRESQL_USER: ops
+  POSTGRESQL_PASS: ops
+  POSTGRESQL_DB: ops_triage_development
+
+services:
+  zammad-postgresql:
+    profiles: [own-postgres]
+
+  zammad-init:
+    environment: *ops-postgres
+  zammad-dev-setup:
+    environment: *ops-postgres
+  zammad-nginx:
+    environment: *ops-postgres
+  zammad-railsserver:
+    environment: *ops-postgres
+  zammad-scheduler:
+    environment: *ops-postgres
+  zammad-websocket:
+    environment: *ops-postgres
