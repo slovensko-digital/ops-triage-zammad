@@ -218,6 +218,13 @@ def setup_elastic
   Setting.set('es_index', ENV.fetch('ELASTICSEARCH_NAMESPACE'))
 end
 
+# A failure must not stop the boot: search is down then, the rest works, and the next boot tries again.
+def repair_search_indexes
+  Ops::SearchIndexRepair.new.run
+rescue => e
+  puts "Search index repair failed, run rake ops:search_index:repair: #{e.message.lines.first}"
+end
+
 class RequestMock
   attr_accessor :remote_ip, :env
   def initialize(remote_ip, env)
@@ -292,7 +299,10 @@ namespace :ops do
 
       Setting.set('ui_ticket_zoom_sidebar_article_attachments', 'true')
 
-      setup_elastic if ENV['ELASTICSEARCH_ENABLED'] == 'true'
+      if ENV['ELASTICSEARCH_ENABLED'] == 'true'
+        setup_elastic
+        repair_search_indexes
+      end
 
       setup_google_oauth
 
